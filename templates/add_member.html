@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Member</title>
+  <style>/* ===============================
+   RESET
+================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
+
+:root{
+
+    --bg:#050608;
+    --card:#151b24;
+
+    --text:#f5f7fa;
+    --muted:#8b949e;
+
+    --primary:#3b82f6;
+    --primary-hover:#2563eb;
+
+    --border:#222b35;
+    --input:#181d24;
+
+    --radius:18px;
+}
+
+body.light{
+
+    --bg:#f5f7fa;
+    --card:#ffffff;
+
+    --text:#111827;
+    --muted:#6b7280;
+
+    --border:#d7dce3;
+    --input:#f8fafc;
+
+}
+
+body{
+    background:
+      radial-gradient(circle at top right,#1ac4f86c,transparent 45%),
+      radial-gradient(circle at bottom left,#d732fa33,transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:system-ui,sans-serif;
+    padding:25px 16px;
+}
+
+
+.container{
+    max-width:700px;
+    margin:auto;
+}
+
+header{
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    padding:22px;
+
+    border-radius:20px;
+
+    margin-bottom:22px;
+}
+
+header h1{
+    font-size:2rem;
+    margin-bottom:6px;
+}
+
+header p{
+    color:var(--muted);
+}
+
+    
+.card{
+    position:relative;
+    overflow:hidden;
+
+    background:
+        radial-gradient(circle at top right,
+            rgba(59,130,246,.12),
+            transparent 35%),
+        linear-gradient(
+            180deg,
+            #1b2330,
+            #141a23
+        );
+
+    border:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        0 15px 35px rgba(0,0,0,.35);
+    backdrop-filter:blur(14px);
+
+    border-radius:20px;
+    padding:28px;
+
+    margin-bottom:28px;
+
+    gap:22px;
+
+    transition:.25s;
+
+    animation:fade .45s ease;
+    }
+    
+      @keyframes fade{
+      
+      from{
+      
+      opacity:0;
+      transform:translateY(12px);
+      
+      }
+      
+      to{
+      
+      opacity:1;
+      transform:none;
+    
+    }
+}
+
+    
+.card:hover{
+    transform:translateY(-3px);
+    box-shadow:
+        0 18px 45px rgba(0,0,0,.45);
+                    }
+
+.card h2{
+    margin-bottom:18px;
+    font-size:1.1rem;
+}
+
+.input-group{
+    display:flex;
+    flex-direction:column;
+    margin-bottom:18px;
+}
+
+.input-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+}
+
+label{
+    margin-bottom:7px;
+    color:var(--muted);
+    font-size:.9rem;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:14px 16px;
+    border-radius:12px;
+    border:1px solid var(--border);
+
+    background:#171d25;
+    color:var(--text);
+
+    font-size:1rem;
+
+    outline:none;
+
+    box-shadow:inset 0 0 0 1px #2b3440;
+    transition:.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+
+    border-color:#3b82f6;
+
+    box-shadow:
+        0 0 0 4px rgba(59,130,246,.18);
+
+}
+
+
+.actions{
+    display:flex;
+    gap:12px;
+    margin-top:25px;
+}
+
+    
+button{
+    flex:1;
+    border:none;
+    border-radius:12px;
+    padding:15px;
+    cursor:pointer;
+    font-size:1rem;
+    font-weight:600;
+    transition:.2s;
+}
+
+button[type="submit"]{
+
+    background:
+    linear-gradient(135deg,#3b82f6,#2563eb);
+
+    box-shadow:
+    0 8px 22px rgba(59,130,246,.35);
+
+}
+
+button[type="submit"]:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 14px 30px rgba(59,130,246,.45);
+
+}
+
+
+button[type="reset"]{
+    background:var(--card);
+    color:var(--text);
+    border:1px solid var(--border);
+}
+
+button:hover{
+    transform:translateY(-2px);
+}
+    
+
+@media(max-width:600px){
+
+    .input-row{
+        grid-template-columns:1fr;
+    }
+
+    header h1{
+        font-size:1.7rem;
+    }
+
+}
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Add New Member</h1>
+        <p>Register a new gym member</p>
+    </header>
+
+    <form action="/add_member" method="POST">
+
+        <section class="card">
+            <h2>👤 Basic Information</h2>
+            <div class="input-group">
+                <label for="name">Full Name</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Enter full name"
+                    required>
+            </div>
+
+            <div class="input-group">
+                <label for="phone">Phone Number</label>
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="+91 XXXXX XXXXX"
+                    required>
+            </div>
+            
+            <div class="input-group">
+                <label for="address">Address</label>
+                <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    placeholder="Village/Town/City"
+                    required>
+            </div>
+
+        </section>
+
+        <section class="card">
+            <h2>💳 Membership</h2>
+
+            <div class="input-group">
+                <label for="plan">Membership Plan</label>
+                <select id="plan" name="plan">
+                    <option>Monthly</option>
+                    <option>2 Months</option>
+                    <option>3 Months</option>
+                    <option>4 Months</option>
+                    <option>6 Months</option>
+                    <option>Yearly</option>
+                </select>
+            </div>
+
+            <div class="input-row">
+
+                <div class="input-group">
+                    <label for="join_date">Joining Date</label>
+                    <input
+                        type="date"
+                        id="join_date"
+                        name="join_date">
+                </div>
+
+                <div class="input-group">
+                    <label for="fee">Fees</label>
+                    <input
+                        type="number"
+                        id="fee"
+                        name="fee"
+                        placeholder="₹">
+                </div>
+
+            </div>
+
+            <div class="input-group">
+                <label for="payment_status">Payment Status</label>
+                <select id="payment_status" name="payment_status">
+                    <option>Paid</option>
+                    <option>Pending</option>
+                    <option>Partial</option>
+                </select>
+            </div>
+
+        </section>
+      <section class="card">
+            <h2>📝 Notes</h2>
+
+            <div class="input-group">
+                <label for="notes">Additional Notes</label>
+                <textarea
+                    id="notes"
+                    name="notes"
+                    rows="4"
+                    placeholder="Payment issue? Half payment? Vacant days?"></textarea>
+            </div>
+
+      </section>
+
+        <div class="actions">
+            <button type="submit">Add Member</button>
+            <button type="reset">Reset</button>
+        </div>
+
+    </form>
+
+</div>
+
+  <script>
+    const today = new Date().toISOString().split("T")[0];
+
+document.getElementById("joining_date").value = today;
+  </script>
+</body>
+</html>
