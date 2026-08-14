@@ -321,7 +321,7 @@
             <div
                 id="error"
                 class="error"
-            ></div>
+            >{{error}}</div>
 
 
             <button
@@ -336,66 +336,6 @@
 
 
     </main>
-
-
-
-    <script>
-
-        function login(event) {
-
-            event.preventDefault();
-
-
-            const username =
-                document.getElementById(
-                    "username"
-                ).value;
-
-
-            const password =
-                document.getElementById(
-                    "password"
-                ).value;
-
-
-            /*
-                Temporary login.
-
-                Later Flask will handle this:
-
-                fetch("/login", {
-                    method: "POST",
-                    body: ...
-                })
-            */
-
-
-            if (
-                username === "" ||
-                password === ""
-            ) {
-
-                document.getElementById(
-                    "error"
-                ).textContent =
-                    "Enter username and password.";
-
-                return;
-            }
-
-
-            /*
-                Temporary demo behaviour
-            */
-
-            console.log(
-                "Login:",
-                username
-            );
-
-        }
-
-    </script>
 
 
 </body>
