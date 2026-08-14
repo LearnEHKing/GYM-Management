@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user , login_required, logout_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from models import GymOwner,db
+import config 
 
 app = Flask(__name__)
 app.secret_key = "ppp"
@@ -57,6 +58,5 @@ def logout():
 
     
 if __name__=="__main__":
-
   app.run()
   
