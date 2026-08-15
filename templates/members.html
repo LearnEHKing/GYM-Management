@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gym Members</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+}
+
+:root{
+    --bg:#050608;
+    --card:#11151b;
+    --card-hover:#181d25;
+
+    --text:#f5f7fa;
+    --muted:#8b94a3;
+
+    --primary:#3b82f6;
+    --border:#232933;
+
+    --shadow:rgba(0,0,0,.25);
+}
+
+body.light{
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --card-hover:#f2f5fa;
+
+    --text:#111827;
+    --muted:#6b7280;
+
+    --primary:#2563eb;
+    --border:#d7dde7;
+
+    --shadow:rgba(0,0,0,.08);
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    transition:.25s;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    padding:18px;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:22px;
+}
+
+.back-btn{
+    text-decoration:none;
+    color:white;
+    background:var(--primary);
+    padding:10px 18px;
+    border-radius:12px;
+    font-weight:bold;
+}
+
+body.light .back-btn{
+    color:white;
+}
+
+.theme-btn{
+    width:46px;
+    height:46px;
+    border:none;
+    border-radius:50%;
+    cursor:pointer;
+    background:var(--card);
+    color:var(--text);
+    border:1px solid var(--border);
+    font-size:18px;
+}
+
+h1{
+    margin-bottom:20px;
+    font-size:2rem;
+}
+
+.member{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+
+    padding:16px;
+    margin-bottom:14px;
+
+    box-shadow:0 8px 18px var(--shadow);
+    transition:.2s;
+}
+
+.member:hover{
+    background:var(--card-hover);
+}
+
+.info{
+    flex:1;
+}
+
+.name{
+    font-size:1.1rem;
+    font-weight:bold;
+}
+
+.phone{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:.95rem;
+}
+
+.address{
+    margin-top:2px;
+    color:var(--muted);
+    font-size:.9rem;
+}
+
+.view-btn{
+    text-decoration:none;
+    background:var(--primary);
+    color:white;
+    padding:10px 16px;
+    border-radius:10px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+@media(max-width:550px){
+
+.member{
+    flex-direction:column;
+    align-items:flex-start;
+}
+
+.view-btn{
+    width:100%;
+    text-align:center;
+}
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <div class="topbar">
+        <a href="/" class="back-btn">← Back</a>
+
+        <button class="theme-btn" id="themeBtn">🌙</button>
+    </div>
+
+    <h1>Members</h1>
+
+    <!-- Member -->
+
+    <div class="member">
+        <div class="info">
+            <div class="name">Rahul Sharma</div>
+            <div class="phone">📞 9876543210</div>
+            <div class="address">Sector 12...</div>
+        </div>
+
+        <a href="/members/Rahul%20Sharma" class="view-btn">
+            View
+        </a>
+    </div>
+
+    <div class="member">
+        <div class="info">
+            <div class="name">Ankit Verma</div>
+            <div class="phone">📞 9876501234</div>
+            <div class="address">Model To...</div>
+        </div>
+
+        <a href="/members/Ankit%20Verma" class="view-btn">
+            View
+        </a>
+    </div>
+
+    <div class="member">
+        <div class="info">
+            <div class="name">Rohit Kumar</div>
+            <div class="phone">📞 9123456780</div>
+            <div class="address">Green Pa...</div>
+        </div>
+
+        <a href="/members/Rohit%20Kumar" class="view-btn">
+            View
+        </a>
+    </div>
+
+</div>
+
+<script>
+const btn=document.getElementById("themeBtn");
+
+function loadTheme(){
+    if(localStorage.getItem("theme")==="light"){
+        document.body.classList.add("light");
+        btn.textContent="☀️";
+    }else{
+        btn.textContent="🌙";
+    }
+}
+
+btn.onclick=function(){
+    document.body.classList.toggle("light");
+
+    if(document.body.classList.contains("light")){
+        localStorage.setItem("theme","light");
+        btn.textContent="☀️";
+    }else{
+        localStorage.setItem("theme","dark");
+        btn.textContent="🌙";
+    }
+};
+
+loadTheme();
+</script>
+
+</body>
+</html>

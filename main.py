@@ -212,6 +212,11 @@ def manage_payment():
 @login_required
 def stats():
   return render_template("stats.html")
+
+@app.route("/members",methods=['GET','POST'])
+@login_required
+def members():
+  return render_template("members.html")
   
   
   

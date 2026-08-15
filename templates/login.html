@@ -1,344 +1,250 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width,
+    <meta
+      name="viewport"
+      content="width=device-width,
                    initial-scale=1.0,
                    maximum-scale=1.0,
-                   user-scalable=no">
+                   user-scalable=no"
+    />
 
     <title>Login | Iron House</title>
 
-
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-            -webkit-tap-highlight-color: transparent;
-        }
+      :root {
+        --bg: #050608;
+        --card: #090b0e;
 
+        --white: #f5f7fa;
+        --muted: #737b87;
 
-        :root {
-            --bg: #050608;
-            --card: #090b0e;
+        --blue: #3b82f6;
 
-            --white: #f5f7fa;
-            --muted: #737b87;
+        --border: #242931;
+      }
 
-            --blue: #3b82f6;
+      html,
+      body {
+        width: 100%;
+        height: 100%;
 
-            --border: #242931;
-        }
+        background: var(--bg);
+      }
 
+      body {
+        display: flex;
 
-        html,
-        body {
-            width: 100%;
-            height: 100%;
+        justify-content: center;
+        align-items: center;
 
-            background: var(--bg);
-        }
+        padding: 20px;
 
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
+          sans-serif;
 
-        body {
+        color: var(--white);
 
-            display: flex;
+        overflow: hidden;
+      }
 
-            justify-content: center;
-            align-items: center;
-
-            padding: 20px;
-
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Arial,
-                sans-serif;
-
-            color: var(--white);
-
-            overflow: hidden;
-        }
-
-
-        /* =====================================
+      /* =====================================
            LOGIN CONTAINER
         ===================================== */
 
-        .login-container {
+      .login-container {
+        width: 100%;
+        max-width: 360px;
 
-            width: 100%;
-            max-width: 360px;
+        text-align: center;
+      }
 
-            text-align: center;
-        }
-
-
-        /* =====================================
+      /* =====================================
            BRAND
         ===================================== */
 
-        .brand {
+      .brand {
+        margin-bottom: 38px;
+      }
 
-            margin-bottom: 38px;
-        }
+      .brand h1 {
+        font-size: 27px;
 
+        font-weight: 700;
 
-        .brand h1 {
+        letter-spacing: 0.5px;
+      }
 
-            font-size: 27px;
+      .brand span {
+        color: var(--blue);
 
-            font-weight: 700;
+        text-shadow: 0 0 15px rgba(59, 130, 246, 0.45);
+      }
 
-            letter-spacing: .5px;
-        }
-
-
-        .brand span {
-
-            color: var(--blue);
-
-            text-shadow:
-                0 0 15px
-                rgba(59,130,246,.45);
-        }
-
-
-        /* =====================================
+      /* =====================================
            FORM
         ===================================== */
 
-        .login-form {
+      .login-form {
+        display: flex;
 
-            display: flex;
+        flex-direction: column;
 
-            flex-direction: column;
+        gap: 13px;
+      }
 
-            gap: 13px;
-        }
-
-
-        /* =====================================
+      /* =====================================
            INPUT
         ===================================== */
 
-        .input {
+      .input {
+        width: 100%;
 
-            width: 100%;
+        height: 55px;
 
-            height: 55px;
+        padding: 0 17px;
 
-            padding:
-                0 17px;
+        border-radius: 15px;
 
-            border-radius: 15px;
+        border: 1px solid var(--border);
 
-            border: 1px solid var(--border);
+        background: linear-gradient(145deg, #0b0d10, #070809);
 
-            background:
-                linear-gradient(
-                    145deg,
-                    #0b0d10,
-                    #070809
-                );
+        color: var(--white);
 
-            color: var(--white);
+        font-size: 14px;
 
-            font-size: 14px;
+        outline: none;
 
-            outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
 
-            transition:
-                border-color .2s,
-                box-shadow .2s;
-        }
+      .input::placeholder {
+        color: #555d68;
+      }
 
+      .input:focus {
+        border-color: rgba(59, 130, 246, 0.7);
 
-        .input::placeholder {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+      }
 
-            color: #555d68;
-        }
-
-
-        .input:focus {
-
-            border-color:
-                rgba(59,130,246,.7);
-
-            box-shadow:
-                0 0 0 3px
-                rgba(59,130,246,.08);
-        }
-
-
-        /* =====================================
+      /* =====================================
            LOGIN BUTTON
         ===================================== */
 
-        .login-button {
+      .login-button {
+        width: 100%;
 
-            width: 100%;
+        height: 55px;
 
-            height: 55px;
+        margin-top: 5px;
 
-            margin-top: 5px;
+        border: none;
 
-            border: none;
+        border-radius: 15px;
 
-            border-radius: 15px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
 
-            background:
-                linear-gradient(
-                    135deg,
-                    #3b82f6,
-                    #2563eb
-                );
+        color: white;
 
-            color: white;
+        font-size: 14px;
 
-            font-size: 14px;
+        font-weight: 600;
 
-            font-weight: 600;
+        cursor: pointer;
 
-            cursor: pointer;
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.2);
 
-            box-shadow:
-                0 8px 25px
-                rgba(37,99,235,.20);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
 
-            transition:
-                transform .15s,
-                box-shadow .15s;
-        }
+      .login-button:active {
+        transform: scale(0.97);
 
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.15);
+      }
 
-        .login-button:active {
-
-            transform: scale(.97);
-
-            box-shadow:
-                0 4px 15px
-                rgba(37,99,235,.15);
-        }
-
-
-        /* =====================================
+      /* =====================================
            ERROR
         ===================================== */
 
-        .error {
+      .error {
+        min-height: 16px;
 
-            min-height: 16px;
+        color: #ef4444;
 
-            color: #ef4444;
+        font-size: 12px;
 
-            font-size: 12px;
+        margin-top: 2px;
+      }
 
-            margin-top: 2px;
-        }
-
-
-        /* =====================================
+      /* =====================================
            DESKTOP
         ===================================== */
 
-        @media (min-width: 600px) {
+      @media (min-width: 600px) {
+        .login-container {
+          padding: 35px;
 
-            .login-container {
+          border: 1px solid #171b20;
 
-                padding: 35px;
+          border-radius: 25px;
 
-                border:
-                    1px solid #171b20;
+          background: rgba(8, 10, 13, 0.65);
 
-                border-radius: 25px;
-
-                background:
-                    rgba(8,10,13,.65);
-
-                box-shadow:
-                    0 30px 80px
-                    rgba(0,0,0,.5);
-            }
-
+          box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
         }
-
+      }
     </style>
+  </head>
 
-</head>
-
-
-<body>
-
-
+  <body>
     <main class="login-container">
+      <div class="brand">
+        <h1>IRON <span>HOUSE</span></h1>
+      </div>
 
+      <form class="login-form" method="POST">
+        <input
+          name="username"
+          class="input"
+          type="text"
+          placeholder="Username"
+          autocomplete="username"
+          required
+        />
 
-        <div class="brand">
+        <input
+          name="password"
+          class="input"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        />
 
-            <h1>
-                IRON <span>HOUSE</span>
-            </h1>
+        {% if error %}
+        <div id="error" class="error">{{error}}</div>
+        {% endif %}
 
-        </div>
-
-
-        <form
-            class="login-form"
-            method="POST"
-        >
-
-
-            <input
-                name="username"
-                class="input"
-                type="text"
-                placeholder="Username"
-                autocomplete="username"
-                required
-            >
-
-
-            <input
-                name="password"
-                class="input"
-                type="password"
-                placeholder="Password"
-                autocomplete="current-password"
-                required
-            >
-    
-            {% if error %}
-                <div
-                    id="error"
-                    class="error"
-                >{{error}}</div>
-            {% endif %}
-
-
-            <button
-                class="login-button"
-                type="submit"
-            >
-                Login
-            </button>
-
-
-        </form>
-
-
+        <button class="login-button" type="submit">Login</button>
+      </form>
     </main>
-
-
-</body>
-
+  </body>
 </html>

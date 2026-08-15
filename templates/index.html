@@ -1,388 +1,232 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
 
-<title>Gym Manager</title>
+    <title>Gym Manager</title>
 
-<link rel="stylesheet" href="{{url_for('static', filename='index.css') }}">
-  
-</head>
+    <link
+      rel="stylesheet"
+      href="{{url_for('static', filename='index.css') }}"
+    />
+  </head>
 
-<body>
+  <body>
+    <div class="app">
+      <!-- Hero -->
 
-<div class="app">
+      <header class="hero">
+        <button id="themeBtn">🌙</button>
 
-    <!-- Hero -->
+        <p class="small-text">SMART GYM MANAGEMENT</p>
 
-    <header class="hero">
-       
-      <button id="themeBtn">🌙</button>
-
-        <p class="small-text">
-            SMART GYM MANAGEMENT
-        </p>
-      
-      
-        <h1>
-            Gym Manager
-        </h1>
+        <h1>Gym Manager</h1>
 
         <p class="hero-description">
-            One simple platform to manage members, attendance,
-            payments and your entire gym with ease.
+          One simple platform to manage members, attendance, payments and your
+          entire gym with ease.
         </p>
 
         <div class="hero-buttons">
-
-            <a href="/login" class="primary-btn">
-                Sign In
-            </a>
-
+          <a href="/login" class="primary-btn"> Sign In </a>
         </div>
+      </header>
 
-    </header>
+      <!-- Introduction -->
 
-
-
-    <!-- Introduction -->
-
-    <section class="intro">
-
-        <h2>
-            Built For Gym Owners
-        </h2>
+      <section class="intro">
+        <h2>Built For Gym Owners</h2>
 
         <p>
-            Stop wasting time with registers and spreadsheets.
-            Everything you need is available inside one beautiful dashboard.
+          Stop wasting time with registers and spreadsheets. Everything you need
+          is available inside one beautiful dashboard.
         </p>
+      </section>
 
-    </section>
+      <!-- Features -->
 
-
-
-    <!-- Features -->
-
-    <section class="features">
-
+      <section class="features">
         <div class="feature-card">
+          <div class="icon">👥</div>
 
-            <div class="icon">
-                👥
-            </div>
+          <h3>Members</h3>
 
-            <h3>
-                Members
-            </h3>
-
-            <p>
-                Store member details, membership plans,
-                contact information and joining history.
-            </p>
-
+          <p>
+            Store member details, membership plans, contact information and
+            joining history.
+          </p>
         </div>
 
-
-
         <div class="feature-card">
+          <div class="icon">✅</div>
 
-            <div class="icon">
-                ✅
-            </div>
+          <h3>Attendance</h3>
 
-            <h3>
-                Attendance
-            </h3>
-
-            <p>
-                Mark attendance in seconds and keep
-                a complete attendance history.
-            </p>
-
+          <p>
+            Mark attendance in seconds and keep a complete attendance history.
+          </p>
         </div>
 
-
-
         <div class="feature-card">
+          <div class="icon">💳</div>
 
-            <div class="icon">
-                💳
-            </div>
+          <h3>Payments</h3>
 
-            <h3>
-                Payments
-            </h3>
-
-            <p>
-                Track pending fees, renewals and payment
-                history without maintaining registers.
-            </p>
-
+          <p>
+            Track pending fees, renewals and payment history without maintaining
+            registers.
+          </p>
         </div>
 
-
-
         <div class="feature-card">
+          <div class="icon">📩</div>
 
-            <div class="icon">
-                📩
-            </div>
+          <h3>Automatic Reminders</h3>
 
-            <h3>
-                Automatic Reminders
-            </h3>
-
-            <p>
-                Notify members before their membership
-                expires and reduce missed payments.
-            </p>
-
+          <p>
+            Notify members before their membership expires and reduce missed
+            payments.
+          </p>
         </div>
 
-
-
         <div class="feature-card">
+          <div class="icon">📈</div>
 
-            <div class="icon">
-                📈
-            </div>
+          <h3>Analytics</h3>
 
-            <h3>
-                Analytics
-            </h3>
-
-            <p>
-                Understand your gym with daily reports,
-                income statistics and member growth.
-            </p>
-
+          <p>
+            Understand your gym with daily reports, income statistics and member
+            growth.
+          </p>
         </div>
 
-
-
         <div class="feature-card">
+          <div class="icon">🔒</div>
 
-            <div class="icon">
-                🔒
-            </div>
+          <h3>Secure Data</h3>
 
-            <h3>
-                Secure Data
-            </h3>
-
-            <p>
-                Your members and business data stay
-                protected and organized.
-            </p>
-
+          <p>Your members and business data stay protected and organized.</p>
         </div>
+      </section>
 
-    </section>
+      <!-- How it works -->
 
-
-
-    <!-- How it works -->
-
-    <section class="steps">
-
-        <h2>
-            Start In Three Steps
-        </h2>
+      <section class="steps">
+        <h2>Start In Three Steps</h2>
 
         <div class="step">
+          <span>1</span>
 
-            <span>1</span>
+          <div>
+            <h3>Create your gym</h3>
 
-            <div>
-
-                <h3>Create your gym</h3>
-
-                <p>
-                    Set up your gym in less than two minutes.
-                </p>
-
-            </div>
-
+            <p>Set up your gym in less than two minutes.</p>
+          </div>
         </div>
 
         <div class="step">
+          <span>2</span>
 
-            <span>2</span>
+          <div>
+            <h3>Add members</h3>
 
-            <div>
-
-                <h3>Add members</h3>
-
-                <p>
-                    Import or add all your gym members.
-                </p>
-
-            </div>
-
+            <p>Import or add all your gym members.</p>
+          </div>
         </div>
 
         <div class="step">
+          <span>3</span>
 
-            <span>3</span>
+          <div>
+            <h3>Manage everything</h3>
 
-            <div>
-
-                <h3>Manage everything</h3>
-
-                <p>
-                    Attendance, payments, reminders and reports
-                    from one place.
-                </p>
-
-            </div>
-
+            <p>Attendance, payments, reminders and reports from one place.</p>
+          </div>
         </div>
+      </section>
 
-    </section>
+      <!-- Why Choose -->
 
-
-
-    <!-- Why Choose -->
-
-    <section class="why">
-
-        <h2>
-            Why Gym Owners Love It
-        </h2>
+      <section class="why">
+        <h2>Why Gym Owners Love It</h2>
 
         <div class="points">
+          <div class="point">⚡ Fast & Easy</div>
 
-            <div class="point">
-                ⚡ Fast & Easy
-            </div>
+          <div class="point">📱 Mobile Friendly</div>
 
-            <div class="point">
-                📱 Mobile Friendly
-            </div>
+          <div class="point">💰 Saves Time</div>
 
-            <div class="point">
-                💰 Saves Time
-            </div>
+          <div class="point">📊 Powerful Reports</div>
 
-            <div class="point">
-                📊 Powerful Reports
-            </div>
+          <div class="point">🔔 Payment Reminders</div>
 
-            <div class="point">
-                🔔 Payment Reminders
-            </div>
-
-            <div class="point">
-                ❤️ Designed For Real Gyms
-            </div>
-
+          <div class="point">❤️ Designed For Real Gyms</div>
         </div>
+      </section>
 
-    </section>
+      <!-- Testimonials -->
 
-
-
-    <!-- Testimonials -->
-
-    <section class="testimonials">
-
-        <h2>
-            Imagine Your Gym
-        </h2>
+      <section class="testimonials">
+        <h2>Imagine Your Gym</h2>
 
         <div class="testimonial-card">
-
-            <p>
-                "No more searching registers.
-                Every member is just one tap away."
-            </p>
-
+          <p>
+            "No more searching registers. Every member is just one tap away."
+          </p>
         </div>
 
         <div class="testimonial-card">
-
-            <p>
-                "Know exactly who paid, who didn't,
-                and which memberships expire this week."
-            </p>
-
+          <p>
+            "Know exactly who paid, who didn't, and which memberships expire
+            this week."
+          </p>
         </div>
 
         <div class="testimonial-card">
-
-            <p>
-                "Spend more time growing your gym,
-                not managing paperwork."
-            </p>
-
+          <p>"Spend more time growing your gym, not managing paperwork."</p>
         </div>
+      </section>
 
-    </section>
+      <!-- CTA -->
 
+      <section class="cta">
+        <h2>Ready To Modernize Your Gym?</h2>
 
+        <p>Join hundreds of gym owners moving away from paper registers.</p>
+      </section>
 
-    <!-- CTA -->
+      <!-- Footer -->
 
-    <section class="cta">
+      <footer>
+        <h3>Gym Manager</h3>
 
-        <h2>
-            Ready To Modernize Your Gym?
-        </h2>
+        <p>Manage your gym with confidence.</p>
 
-        <p>
-            Join hundreds of gym owners moving away from paper registers.
-        </p>
+        <small> © 2026 Gym Manager. All rights reserved. </small>
+      </footer>
+    </div>
+    <script>
+      const btn = document.getElementById("themeBtn");
 
-    </section>
+      if (localStorage.getItem("theme") === "light") {
+        document.body.classList.add("light");
+        btn.textContent = "☀️";
+      }
 
+      btn.onclick = () => {
+        document.body.classList.toggle("light");
 
+        const light = document.body.classList.contains("light");
 
-    <!-- Footer -->
+        btn.textContent = light ? "☀️" : "🌙";
 
-    <footer>
-
-        <h3>
-            Gym Manager
-        </h3>
-
-        <p>
-            Manage your gym with confidence.
-        </p>
-
-        <small>
-            © 2026 Gym Manager. All rights reserved.
-        </small>
-
-    </footer>
-
-</div>
-<script>
-
-const btn=document.getElementById("themeBtn");
-
-if(localStorage.getItem("theme")==="light"){
-    document.body.classList.add("light");
-    btn.textContent="☀️";
-}
-
-btn.onclick=()=>{
-
-    document.body.classList.toggle("light");
-
-    const light=document.body.classList.contains("light");
-
-    btn.textContent=light ? "☀️" : "🌙";
-
-    localStorage.setItem(
-        "theme",
-        light ? "light" : "dark"
-    );
-
-};
-
-</script>
-</body>
+        localStorage.setItem("theme", light ? "light" : "dark");
+      };
+    </script>
+  </body>
 </html>
