@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width,
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,
                    initial-scale=1.0,
                    maximum-scale=1.0,
                    user-scalable=no">
 
-    <title>Member Details</title>
+  <title>Member Details</title>
 
-    <link rel="stylesheet" href="/static/member_details.css">
+  <link rel="stylesheet" href="/static/member_details.css">
 </head>
+
 <body>
 
-<div class="container">
+  <div class="container">
 
     <!-- ==========================
          HEADER
@@ -23,207 +24,182 @@
     <header class="page-header">
 
       <a href="/members" class="back-btn">
-          ←
+        ←
       </a>
-  
-      <div class="member-title">
-  
-          <h1>{{member.name}}</h1>
-  
-          <a href="/members/{{member.id}}/edit" class="edit-btn">
-              Edit
-          </a>
 
-    </div>
+      <div class="member-title">
+
+        <h1>{{member.name}}</h1>
+
+        <a href="/members/{{member.id}}/edit" class="edit-btn">
+          Edit
+        </a>
+
+      </div>
 
     </header>
 
 
     <form method="POST">
 
-        <!-- ==========================
+      <!-- ==========================
              CURRENT PAYMENT
         =========================== -->
 
-        <section class="card">
+      <section class="card">
 
-            <div class="section-title">
-                <h2>Current Payment</h2>
+        <div class="section-title">
+          <h2>Current Payment</h2>
 
-                <button type="button"
-                        class="secondary-btn">
-                    New Payment
-                </button>
-            </div>
+          <button type="button" class="secondary-btn">
+            New Payment
+          </button>
+        </div>
 
-            <div class="payment-summary">
+        <div class="payment-summary">
 
-                <div class="summary-box">
-                    <span>Plan</span>
+          <div class="summary-box">
+            <span>Plan</span>
 
-                    <input
-                        type="text"
-                        name="plan_name"
-                        value="Monthly">
-                </div>
+            <input type="text" name="plan_name" value="Monthly">
+          </div>
 
-                <div class="summary-box">
-                    <span>Status</span>
+          <div class="summary-box">
+            <span>Status</span>
 
-                    <input
-                        type="text"
-                        name="status"
-                        value="Paid">
-                </div>
+            <input type="text" name="status" value="Paid">
+          </div>
 
-                <div class="summary-box">
-                    <span>Amount</span>
+          <div class="summary-box">
+            <span>Amount</span>
 
-                    <input
-                        type="number"
-                        name="amount"
-                        value="1000">
-                </div>
+            <input type="number" name="amount" value="1000">
+          </div>
 
-                <div class="summary-box">
-                    <span>Paid</span>
+          <div class="summary-box">
+            <span>Paid</span>
 
-                    <input
-                        type="number"
-                        name="amount_paid"
-                        value="1000">
-                </div>
+            <input type="number" name="amount_paid" value="1000">
+          </div>
 
-                <div class="summary-box">
-                    <span>Start Date</span>
+          <div class="summary-box">
+            <span>Start Date</span>
 
-                    <input
-                        type="date"
-                        name="start_date">
-                </div>
+            <input type="date" name="start_date">
+          </div>
 
-                <div class="summary-box">
-                    <span>Expiry Date</span>
+          <div class="summary-box">
+            <span>Expiry Date</span>
 
-                    <input
-                        type="date"
-                        name="expiry_date">
-                </div>
+            <input type="date" name="expiry_date">
+          </div>
 
-                <div class="summary-box">
-                    <span>Payment Date</span>
+          <div class="summary-box">
+            <span>Payment Date</span>
 
-                    <input
-                        type="date"
-                        name="payment_date">
-                </div>
+            <input type="date" name="payment_date">
+          </div>
 
-                <div class="summary-box">
-                    <span>Duration</span>
+          <div class="summary-box">
+            <span>Duration</span>
 
-                    <input
-                        type="number"
-                        name="duration_days">
-                </div>
+            <input type="number" name="duration_days">
+          </div>
 
-            </div>
+        </div>
 
-            <label>
+        <label>
 
-                Remarks
+          Remarks
 
-                <textarea
-                    name="remarks"
-                    rows="3"></textarea>
+          <textarea name="remarks" rows="3"></textarea>
 
-            </label>
+        </label>
 
-        </section>
+      </section>
 
 
 
-        <!-- ==========================
+      <!-- ==========================
              PAYMENT HISTORY
         =========================== -->
 
-        <section class="card">
+      <section class="card">
 
-            <h2>Payment History</h2>
+        <h2>Payment History</h2>
 
-            <div class="payment-history">
+        <div class="payment-history">
 
-                <div class="payment-item">
-                    <span>01 Jul 2026</span>
-                    <span>Monthly</span>
-                    <span>₹1000</span>
-                    <span>Paid</span>
-                </div>
+          <div class="payment-item">
+            <span>01 Jul 2026</span>
+            <span>Monthly</span>
+            <span>₹1000</span>
+            <span>Paid</span>
+          </div>
 
-                <div class="payment-item">
-                    <span>01 Jun 2026</span>
-                    <span>Monthly</span>
-                    <span>₹1000</span>
-                    <span>Paid</span>
-                </div>
+          <div class="payment-item">
+            <span>01 Jun 2026</span>
+            <span>Monthly</span>
+            <span>₹1000</span>
+            <span>Paid</span>
+          </div>
 
-            </div>
+        </div>
 
-        </section>
+      </section>
 
 
 
-        <!-- ==========================
+      <!-- ==========================
              ATTENDANCE
         =========================== -->
 
-        <section class="card">
+      <section class="card">
 
-            <div class="section-title">
+        <div class="section-title">
 
-                <h2>Attendance</h2>
+          <h2>Attendance</h2>
 
-                <div class="calendar-controls">
+          <div class="calendar-controls">
 
-                    <button type="button">
-                        ◀
-                    </button>
+            <button type="button">
+              ◀
+            </button>
 
-                    <span>August 2026</span>
+            <span>August 2026</span>
 
-                    <button type="button">
-                        ▶
-                    </button>
+            <button type="button">
+              ▶
+            </button>
 
-                </div>
+          </div>
 
-            </div>
+        </div>
 
-            <div class="attendance-calendar">
+        <div class="attendance-calendar">
 
-                <!-- JS can generate this -->
+          <!-- JS can generate this -->
 
-            </div>
+        </div>
 
-        </section>
-
-
+      </section>
 
 
-        <!-- ==========================
+
+
+      <!-- ==========================
              SAVE
         =========================== -->
 
-        <section class="save-section">
+      <section class="save-section">
 
-            <button
-                type="submit"
-                class="save-btn">
+        <button type="submit" class="save-btn">
 
-                Save Changes
+          Save Changes
 
-            </button>
+        </button>
 
-        </section>
+      </section>
 
 
 
@@ -232,20 +208,16 @@
 
 
 
-</div>
+  </div>
 
-<script>
+  <script>
   // =========================================
 // ATTENDANCE CALENDAR
 // =========================================
-
-  function loadTheme() {
-    if (localStorage.getItem("theme") === "light") {
-      document.body.classList.add("light");
-        btn.innerHTML = "☀️";
-      }
-    }
-  loadTheme();
+if (localStorage.getItem("theme") === "light") {
+  document.body.classList.add("light")
+}
+    
   
 const calendar = document.querySelector(".attendance-calendar");
 
@@ -331,26 +303,28 @@ function drawCalendar(date){
             0
         ).getDate();
 
-    for(let d=1; d<=totalDays; d++){
+    for(let d = 1; d <= totalDays; d++){
 
-        const day = document.createElement("button");
+    const day = document.createElement("button");
 
-        day.type = "button";
-        day.className = "calendar-day";
+    day.type = "button";
+    day.className = "calendar-day";
+    day.textContent = d;
 
-        day.textContent = d;
+    day.addEventListener("click", (e) => {
 
-        day.addEventListener("click",()=>{
+        e.preventDefault();
+        e.stopPropagation();
 
-            day.classList.toggle("present");
+        day.classList.toggle("present");
 
-        });
+    });
 
-        grid.appendChild(day);
+    grid.appendChild(day);   // ← Missing line
 
-    }
+}
 
-    calendar.appendChild(grid);
+calendar.appendChild(grid);
 
         }
 
@@ -358,4 +332,5 @@ function drawCalendar(date){
 </script>
 
 </body>
+
 </html>
