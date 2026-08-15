@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Member</title>
+    <style>
+      /* ===============================
+   RESET
+================================= */
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      :root {
+        --bg: #050608;
+        --card: #151b24;
+
+        --text: #f5f7fa;
+        --muted: #8b949e;
+
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+
+        --border: #222b35;
+        --input: #181d24;
+
+        --radius: 18px;
+      }
+
+      body.light {
+        --bg: #f5f7fa;
+        --card: #ffffff;
+
+        --text: #111827;
+        --muted: #6b7280;
+
+        --border: #d7dce3;
+        --input: #f8fafc;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at top right, #1ac4f86c, transparent 45%),
+          radial-gradient(circle at bottom left, #d732fa33, transparent 40%),
+          var(--bg);
+        color: var(--text);
+        font-family: system-ui, sans-serif;
+        padding: 25px 16px;
+      }
+
+      .container {
+        max-width: 700px;
+        margin: auto;
+      }
+
+      header {
+        background: rgba(255, 255, 255, 0.03);
+
+        border: 1px solid rgba(255, 255, 255, 0.05);
+
+        padding: 22px;
+
+        border-radius: 20px;
+
+        margin-bottom: 22px;
+      }
+
+      header h1 {
+        font-size: 2rem;
+        margin-bottom: 6px;
+      }
+
+      header p {
+        color: var(--muted);
+      }
+
+      .card {
+        position: relative;
+        overflow: hidden;
+
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(59, 130, 246, 0.12),
+            transparent 35%
+          ),
+          linear-gradient(180deg, #1b2330, #141a23);
+
+        border: 1px solid rgba(255, 255, 255, 0.08);
+
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(14px);
+
+        border-radius: 20px;
+        padding: 28px;
+
+        margin-bottom: 28px;
+
+        gap: 22px;
+
+        transition: 0.25s;
+
+        animation: fade 0.45s ease;
+      }
+
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+      }
+
+      .card h2 {
+        margin-bottom: 18px;
+        font-size: 1.1rem;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 18px;
+      }
+
+      .input-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      label {
+        margin-bottom: 7px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+
+        background: #171d25;
+        color: var(--text);
+
+        font-size: 1rem;
+
+        outline: none;
+
+        box-shadow: inset 0 0 0 1px #2b3440;
+        transition: 0.2s;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: #3b82f6;
+
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+      }
+
+      button {
+        flex: 1;
+        border: none;
+        border-radius: 12px;
+        padding: 15px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: 0.2s;
+      }
+
+      button[type="submit"] {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+
+        box-shadow: 0 8px 22px rgba(59, 130, 246, 0.35);
+      }
+
+      button[type="submit"]:hover {
+        transform: translateY(-2px);
+
+        box-shadow: 0 14px 30px rgba(59, 130, 246, 0.45);
+      }
+
+      button[type="reset"] {
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+      }
+
+      .server-error {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+
+        margin-bottom: 24px;
+        padding: 18px;
+
+        border-radius: 18px;
+
+        background: linear-gradient(
+          135deg,
+          rgba(220, 38, 38, 0.18),
+          rgba(127, 29, 29, 0.08)
+        );
+
+        border: 1px solid rgba(239, 68, 68, 0.35);
+
+        box-shadow: 0 10px 25px rgba(220, 38, 38, 0.12);
+
+        animation: slideDown 0.3s ease;
+      }
+
+      .error-icon {
+        font-size: 1.6rem;
+        line-height: 1;
+      }
+
+      .error-content {
+        flex: 1;
+      }
+
+      .error-content h3 {
+        color: #fecaca;
+        margin-bottom: 6px;
+        font-size: 1rem;
+      }
+
+      .error-content p {
+        color: #fca5a5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .error-close {
+        border: none;
+        background: none;
+
+        color: #fca5a5;
+
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+
+      .error-close:hover {
+        color: white;
+      }
+
+      .success-toast {
+        position: fixed;
+
+        top: 20px;
+        left: 50%;
+
+        transform: translateX(-50%);
+
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        padding: 16px 22px;
+
+        border-radius: 16px;
+
+        background: linear-gradient(135deg, #16a34a, #15803d);
+
+        color: white;
+
+        font-weight: 600;
+
+        box-shadow: 0 12px 30px rgba(22, 163, 74, 0.35);
+
+        z-index: 9999;
+
+        animation: toastIn 0.35s ease;
+      }
+
+      .toast-icon {
+        width: 28px;
+        height: 28px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 50%;
+
+        background: rgba(255, 255, 255, 0.2);
+
+        font-size: 1rem;
+        font-weight: bold;
+      }
+
+      .toast-message {
+        white-space: nowrap;
+      }
+
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
+
+      .toast-hide {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+
+        transition:
+          opacity 0.3s,
+          transform 0.3s;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .input-error {
+        border: 1px solid #ef4444 !important;
+
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+      }
+
+      .field-error {
+        margin-top: 6px;
+
+        color: #f87171;
+
+        font-size: 0.85rem;
+
+        font-weight: 500;
+
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .field-error::before {
+        content: "⚠";
+
+        font-size: 0.8rem;
+      }
+
+      @media (max-width: 600px) {
+        .input-row {
+          grid-template-columns: 1fr;
+        }
+
+        header h1 {
+          font-size: 1.7rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Edit the Member</h1>
+        <p>Edit information of member.</p>
+      </header>
+
+      {% if server_error %}
+      <div class="server-error" id="serverError">
+        <div class="error-icon">⚠</div>
+
+        <div class="error-content">
+          <strong>Couldn't save member</strong>
+          <p>Please try again.</p>
+        </div>
+
+        <button type="button" class="error-close" onclick="closeError()">
+          ✕
+        </button>
+      </div>
+      {% endif %}
+
+      <form action="/add_member" method="POST">
+        <section class="card">
+          <h2>👤 Basic Information</h2>
+          <div class="input-group">
+            <label for="name">Full Name</label>
+
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="Enter full name"
+              value="{{ member.name }}"
+              class="{% if errors.name %}input-error{% endif %}"
+              required
+            />
+
+            {% if errors.name %}
+            <span class="field-error"> {{ errors.name }} </span>
+            {% endif %}
+          </div>
+
+          <div class="input-group">
+            <label for="phone">Phone Number</label>
+
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              placeholder="+91 XXXXX XXXXX"
+              value="{{ member.phone }}"
+              class="{% if errors.phone %}input-error{% endif %}"
+              required
+            />
+
+            {% if errors.phone %}
+            <span class="field-error"> {{ errors.phone }} </span>
+            {% endif %}
+          </div>
+
+          <div class="input-group">
+            <label for="address">Address</label>
+
+            <input
+              type="text"
+              id="address"
+              name="address"
+              placeholder="Village/Town/City"
+              value="{{ member.address }}"
+              class="{% if errors.address %}input-error{% endif %}"
+              required
+            />
+
+            {% if errors.address %}
+            <span class="field-error"> {{ errors.address }} </span>
+            {% endif %}
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>💳 Membership</h2>
+
+          <div class="input-group">
+            <label for="plan">Membership Plan</label>
+            <select id="plan" name="plan">
+              <option>Monthly</option>
+              <option>2 Months</option>
+              <option>3 Months</option>
+              <option>4 Months</option>
+              <option>5 Months</option>
+              <option>6 Months</option>
+              <option>Yearly</option>
+            </select>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label for="join_date">Joining Date</label>
+              <input
+                type="date"
+                id="join_date"
+                name="join_date"
+                value="{{ member.join_date }}"
+                class="{% if errors.address %}input-error{% endif %}"
+                required
+              />
+
+              {% if errors.join_date %}
+              <span class="field-error"> {{ errors.join_date }} </span>
+              {% endif %}
+            </div>
+
+            <div class="input-group">
+              <label for="fee">Fees</label>
+
+              <input
+                type="number"
+                id="fee"
+                name="fee"
+                placeholder="₹"
+                value="{{ member.fee }}"
+                class="{% if errors.fee %}input-error{% endif %}"
+              />
+
+              {% if errors.fee %}
+              <span class="field-error"> {{ errors.fee }} </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="payment_status">Payment Status</label>
+            <select id="payment_status" name="payment_status">
+              <option>Paid</option>
+              <option>Pending</option>
+              <option>Partial</option>
+            </select>
+          </div>
+        </section>
+        <section class="card">
+          <h2>📝 Notes</h2>
+
+          <div class="input-group">
+            <label for="notes">Additional Notes</label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows="4"
+              placeholder="Payment issue? Half payment? Vacant days?"
+            ></textarea>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button type="submit">Add Member</button>
+          <button type="reset">Reset</button>
+        </div>
+      </form>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %} {% for
+    category, message in messages %} {% if category == "success" %}
+    <div class="toast success-toast" id="successToast">
+      <span class="toast-icon">✓</span>
+
+      <span class="toast-message"> {{ message }} </span>
+    </div>
+    {% endif %} {% endfor %} {% endwith %}
+
+    <script>
+      if (localStorage.getItem("theme") === "light") {
+  document.body.classList.add("light")
+}
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("join_date").value = today;
+
+      function closeError() {
+        const error = document.getElementById("serverError");
+
+        if (error) {
+          error.remove();
+        }
+      }
+
+      const toast = document.getElementById("successToast");
+
+      if (toast) {
+        setTimeout(() => {
+          toast.classList.add("toast-hide");
+
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, 3000);
+      }
+    </script>
+  </body>
+</html>
