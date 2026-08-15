@@ -655,6 +655,7 @@
         position: relative;
 
         cursor: pointer;
+         text-decoration:none;
       }
 
       .nav-icon {
@@ -907,11 +908,11 @@
     <nav class="bottom-nav">
       <!-- HOME -->
 
-      <button class="nav-item active" onclick="selectNav(this, 'Home')">
+      <a href="/" class="nav-item active" onclick="selectNav(this, 'Home')">
         <div class="nav-icon">⌂</div>
 
         <span> Home </span>
-      </button>
+      </a>
 
       <!-- MEMBERS -->
 
@@ -923,11 +924,11 @@
 
       <!-- SETTINGS -->
 
-      <button class="nav-item" onclick="selectNav(this, 'Settings')">
+      <a href="/setting" class="nav-item" onclick="selectNav(this, 'Settings')">
         <div class="nav-icon">⚙</div>
 
         <span> Settings </span>
-      </button>
+      </a>
     </nav>
 
     <script>
