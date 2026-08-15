@@ -15,7 +15,7 @@
     <meta name="theme-color" content="#050608" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <title>Members</title>
+    <title>Settings</title>
 
     <style>
       /* =========================================
@@ -518,7 +518,7 @@
         height: 40px;
 
         border-radius: 13px;
- 
+
         background: var(--iconbg);
 
         display: flex;
@@ -726,31 +726,15 @@
     ====================================== -->
 
       <header class="header">
+        <h1>Settings</h1>
+        <button id="themeBtn" onclick="toggleTheme()">🌙</button>
+      </header>
 
-<div class="app">
-      <div class="header">
-        <div class="header-left">
-          <h1>Members</h1>
-          <p class="subtitle">{{members|length}} registered members</p>
-        </div>
+      <!-- =====================================
+         FLOATING INFORMATION SHOWCASE
+    ====================================== -->
 
-        <button id="themeBtn">🌙</button>
-      </div>
-      {% for member in members %}
-      <a href="/members/{{member.name}}" class="member">
-        <div class="left">
-          <div class="name">{{member.name}}</div>
-
-          <div class="address">{{member.address}}</div>
-        </div>
-
-        <div class="phone">{{member.phone}}</div>
-      </a>
-      {% endfor %}
-
-
-
-
+      
     <!-- =========================================
      BOTTOM NAVIGATION
 ========================================= -->
@@ -758,7 +742,7 @@
     <nav class="bottom-nav">
       <!-- HOME -->
 
-      <a href="/" class="nav-item " onclick="selectNav(this, 'Home')">
+      <a href="/" class="nav-item" onclick="selectNav(this, 'Home')">
         <div class="nav-icon">⌂</div>
 
         <span> Home </span>
@@ -766,7 +750,7 @@
 
       <!-- MEMBERS -->
 
-      <a href="/members" class="nav-item active" onclick="selectNav(this, 'Members')">
+      <a href="/members" class="nav-item" onclick="selectNav(this, 'Members')">
         <div class="nav-icon">♙</div>
 
         <span> Members </span>
@@ -774,7 +758,7 @@
 
       <!-- SETTINGS -->
 
-      <a href="/settings" class="nav-item" onclick="selectNav(this, 'Settings')">
+      <a href="/settings" class="nav-item active" onclick="selectNav(this, 'Settings')">
         <div class="nav-icon">⚙</div>
 
         <span> Settings </span>
@@ -782,7 +766,7 @@
     </nav>
 
     <script>
-const btn = document.getElementById("themeBtn");
+        const btn = document.getElementById("themeBtn");
 
       function loadTheme() {
         if (localStorage.getItem("theme") === "light") {
@@ -804,7 +788,6 @@ const btn = document.getElementById("themeBtn");
       };
 
       loadTheme();
-
     </script>
   </body>
 </html>
