@@ -1,0 +1,535 @@
+/* =========================================
+   RESET
+========================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
+
+:root{
+
+    --bg:#050608;
+    --card:#111418;
+    --text:#f5f7fa;
+    --muted:#8a929d;
+
+    --border:#272c34;
+
+    --primary:#2563eb;
+    --primary-hover:#1d4ed8;
+
+    --danger:#dc2626;
+    --danger-hover:#b91c1c;
+
+    --shadow:none;
+
+}
+
+/* =========================================
+   BODY
+========================================= */
+
+body.light{
+
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --text:#15181d;
+    --muted:#6b7280;
+
+    --border:#d9dde5;
+
+    --shadow:0 6px 18px rgba(0,0,0,.06);
+
+}
+
+
+body{
+
+    background:var(--bg);
+    color:var(--text);
+
+    font-family:system-ui,sans-serif;
+
+}
+
+.container{
+
+    width:min(900px,94%);
+    margin:auto;
+
+    padding:24px 0 50px;
+
+}
+
+/* =========================================
+   HEADER
+========================================= */
+.page-header{
+
+    margin-bottom:24px;
+
+}
+
+.back-btn{
+
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+
+    width:52px;
+    height:52px;
+
+    margin-bottom:18px;
+
+    text-decoration:none;
+
+    border:1px solid var(--border);
+    border-radius:14px;
+
+    background:var(--card);
+
+    color:var(--text);
+
+    font-size:1.8rem;
+    font-weight:700;
+
+}
+
+.member-title{
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    gap:16px;
+
+}
+
+.member-title h1{
+
+    font-size:1.6rem;
+    font-weight:700;
+
+    margin:0;
+
+}
+
+.edit-btn{
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    text-decoration:none;
+
+    padding:8px 14px;
+
+    border-radius:10px;
+
+    background:var(--primary);
+    color:white;
+
+    font-size:.9rem;
+    font-weight:600;
+
+    white-space:nowrap;
+
+}
+
+.edit-btn:hover{
+
+    background:var(--primary-hover);
+
+}
+
+/* =========================================
+   CARDS
+========================================= */
+
+.card{
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:20px;
+
+    margin-bottom:20px;
+
+    box-shadow:var(--shadow);
+
+}
+
+.card h2{
+
+    margin-bottom:18px;
+
+}
+
+/* =========================================
+   SECTION TITLE
+========================================= */
+
+.section-title{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:18px;
+
+    flex-wrap:wrap;
+
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+button{
+
+    cursor:pointer;
+
+    font:inherit;
+
+    border:none;
+
+    transition:.2s;
+
+}
+
+.secondary-btn{
+
+    background:var(--primary);
+
+    color:white;
+
+    padding:10px 18px;
+
+    border-radius:10px;
+
+}
+
+.secondary-btn:hover{
+
+    background:var(--primary-hover);
+
+}
+
+.save-btn{
+
+    width:100%;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    background:var(--primary);
+
+    color:white;
+
+    font-size:1rem;
+
+    font-weight:600;
+
+}
+
+.save-btn:hover{
+
+    background:var(--primary-hover);
+
+}
+
+/* =========================================
+   PAYMENT GRID
+========================================= */
+
+.payment-summary{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+
+    gap:16px;
+
+}
+
+/* =========================================
+   INPUTS
+========================================= */
+
+label{
+
+    display:block;
+
+    margin-bottom:18px;
+
+    color:var(--muted);
+
+    font-size:.9rem;
+
+}
+
+input,
+textarea,
+select{
+
+    width:100%;
+
+    margin-top:8px;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    border:1px solid #120051ca;
+
+    background:transparent;
+
+    color:var(--text);
+
+    font:inherit;
+
+    resize:vertical;
+
+    transition:.2s;
+
+}
+
+input:hover,
+textarea:hover,
+select:hover{
+
+    background:rgba(128,128,128,.06);
+
+}
+
+input:focus,
+textarea:focus,
+select:focus{
+
+    outline:none;
+
+    border-color:var(--primary);
+
+    background:rgba(37,99,235,.08);
+
+}
+
+/* =========================================
+   PAYMENT HISTORY
+========================================= */
+
+.payment-history{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.payment-item{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:10px;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    border:1px solid var(--border);
+
+}
+
+/* =========================================
+   CALENDAR
+========================================= */
+
+.calendar-controls{
+
+    display:grid;
+    grid-template-columns:40px 140px 40px;
+    align-items:center;
+
+    gap:8px;
+
+}
+
+.calendar-controls span{
+
+    text-align:center;
+    font-weight:600;
+
+}
+
+.calendar-controls button{
+
+    width:34px;
+    height:34px;
+
+    border-radius:50%;
+
+    background:var(--bg);
+
+    color:var(--text);
+
+}
+
+.calendar-controls button:hover{
+
+    background:var(--primary);
+
+    color:white;
+
+}
+
+
+.attendance-calendar{
+
+    margin-top:18px;
+
+    padding:18px;
+
+    min-height:260px;
+
+    border:2px dashed var(--border);
+
+    border-radius:14px;
+
+    color:var(--muted);
+
+}
+
+/* =========================================
+   SAVE
+========================================= */
+
+.save-section{
+
+    margin:30px 0;
+
+}
+
+/* =========================================
+   DANGER
+========================================= */
+
+.danger-zone{
+
+    border-color:rgba(220,38,38,.35);
+
+}
+
+.danger-zone p{
+
+    color:var(--muted);
+
+    margin-bottom:18px;
+
+    line-height:1.5;
+
+}
+
+.calendar-grid{
+
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:8px;
+    width:100%;
+
+}
+
+.calendar-header{
+
+    text-align:center;
+    font-weight:600;
+    color:var(--muted);
+
+}
+
+.calendar-empty{
+
+    aspect-ratio:1;
+
+}
+
+.calendar-day{
+
+    aspect-ratio:1;
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    background:var(--card);
+
+    color:var(--text);
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.calendar-day:hover{
+
+    border-color:var(--primary);
+
+}
+
+.calendar-day.present{
+
+    background:#22c55e;
+    border-color:#22c55e;
+    color:white;
+
+}
+
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media(max-width:700px){
+
+.page-header h1{
+
+    font-size:1.6rem;
+
+}
+
+.payment-item{
+
+    grid-template-columns:1fr 1fr;
+
+}
+
+.section-title{
+
+    align-items:flex-start;
+
+}
+
+.secondary-btn{
+
+    width:100%;
+
+}
+
+}
+

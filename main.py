@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_user , login_required, logout_user
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -224,7 +224,16 @@ def members():
 def settings():
   return render_template("settings.html")
   
-  
+
+@app.route("/members/<int:member_id>")
+@login_required
+def member_details(member_id):
+    member = Member.query.get_or_404(member_id)
+    # Security check
+    if member.owner_id != current_user.id:
+        abort(403)  # Forbidden
+
+    return render_template("member_details.html", member=member)
   
 
 @app.route("/login",methods=['GET','POST'])

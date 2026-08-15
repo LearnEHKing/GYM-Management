@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0,
+                   maximum-scale=1.0,
+                   user-scalable=no">
+
+    <title>Member Details</title>
+
+    <link rel="stylesheet" href="/static/member_details.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ==========================
+         HEADER
+    =========================== -->
+
+    <header class="page-header">
+
+      <a href="/members" class="back-btn">
+          ←
+      </a>
+  
+      <div class="member-title">
+  
+          <h1>{{member.name}}</h1>
+  
+          <a href="/members/{{member.id}}/edit" class="edit-btn">
+              Edit
+          </a>
+
+    </div>
+
+    </header>
+
+
+    <form method="POST">
+
+        <!-- ==========================
+             CURRENT PAYMENT
+        =========================== -->
+
+        <section class="card">
+
+            <div class="section-title">
+                <h2>Current Payment</h2>
+
+                <button type="button"
+                        class="secondary-btn">
+                    New Payment
+                </button>
+            </div>
+
+            <div class="payment-summary">
+
+                <div class="summary-box">
+                    <span>Plan</span>
+
+                    <input
+                        type="text"
+                        name="plan_name"
+                        value="Monthly">
+                </div>
+
+                <div class="summary-box">
+                    <span>Status</span>
+
+                    <input
+                        type="text"
+                        name="status"
+                        value="Paid">
+                </div>
+
+                <div class="summary-box">
+                    <span>Amount</span>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        value="1000">
+                </div>
+
+                <div class="summary-box">
+                    <span>Paid</span>
+
+                    <input
+                        type="number"
+                        name="amount_paid"
+                        value="1000">
+                </div>
+
+                <div class="summary-box">
+                    <span>Start Date</span>
+
+                    <input
+                        type="date"
+                        name="start_date">
+                </div>
+
+                <div class="summary-box">
+                    <span>Expiry Date</span>
+
+                    <input
+                        type="date"
+                        name="expiry_date">
+                </div>
+
+                <div class="summary-box">
+                    <span>Payment Date</span>
+
+                    <input
+                        type="date"
+                        name="payment_date">
+                </div>
+
+                <div class="summary-box">
+                    <span>Duration</span>
+
+                    <input
+                        type="number"
+                        name="duration_days">
+                </div>
+
+            </div>
+
+            <label>
+
+                Remarks
+
+                <textarea
+                    name="remarks"
+                    rows="3"></textarea>
+
+            </label>
+
+        </section>
+
+
+
+        <!-- ==========================
+             PAYMENT HISTORY
+        =========================== -->
+
+        <section class="card">
+
+            <h2>Payment History</h2>
+
+            <div class="payment-history">
+
+                <div class="payment-item">
+                    <span>01 Jul 2026</span>
+                    <span>Monthly</span>
+                    <span>₹1000</span>
+                    <span>Paid</span>
+                </div>
+
+                <div class="payment-item">
+                    <span>01 Jun 2026</span>
+                    <span>Monthly</span>
+                    <span>₹1000</span>
+                    <span>Paid</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==========================
+             ATTENDANCE
+        =========================== -->
+
+        <section class="card">
+
+            <div class="section-title">
+
+                <h2>Attendance</h2>
+
+                <div class="calendar-controls">
+
+                    <button type="button">
+                        ◀
+                    </button>
+
+                    <span>August 2026</span>
+
+                    <button type="button">
+                        ▶
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="attendance-calendar">
+
+                <!-- JS can generate this -->
+
+            </div>
+
+        </section>
+
+
+
+
+        <!-- ==========================
+             SAVE
+        =========================== -->
+
+        <section class="save-section">
+
+            <button
+                type="submit"
+                class="save-btn">
+
+                Save Changes
+
+            </button>
+
+        </section>
+
+
+
+    </form>
+
+
+
+
+</div>
+
+<script>
+  // =========================================
+// ATTENDANCE CALENDAR
+// =========================================
+
+  function loadTheme() {
+    if (localStorage.getItem("theme") === "light") {
+      document.body.classList.add("light");
+        btn.innerHTML = "☀️";
+      }
+    }
+  loadTheme();
+  
+const calendar = document.querySelector(".attendance-calendar");
+
+const monthLabel =
+    document.querySelector(".calendar-controls span");
+
+const prevBtn =
+    document.querySelector(".calendar-controls button:first-child");
+
+const nextBtn =
+    document.querySelector(".calendar-controls button:last-child");
+
+let currentDate = new Date();
+
+drawCalendar(currentDate);
+
+prevBtn.addEventListener("click", () => {
+
+    currentDate.setMonth(currentDate.getMonth() - 1);
+
+    drawCalendar(currentDate);
+
+});
+
+nextBtn.addEventListener("click", () => {
+
+    currentDate.setMonth(currentDate.getMonth() + 1);
+
+    drawCalendar(currentDate);
+
+});
+
+function drawCalendar(date){
+
+    calendar.innerHTML = "";
+
+    const monthNames = [
+        "January","February","March","April",
+        "May","June","July","August",
+        "September","October","November","December"
+    ];
+
+    monthLabel.textContent =
+        `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+
+    const days = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+
+    const grid = document.createElement("div");
+    grid.className = "calendar-grid";
+
+    // Weekday headers
+
+    days.forEach(day=>{
+
+        const head = document.createElement("div");
+        head.className = "calendar-header";
+        head.textContent = day;
+
+        grid.appendChild(head);
+
+    });
+
+    const firstDay =
+        new Date(date.getFullYear(),date.getMonth(),1);
+
+    let offset = firstDay.getDay();
+
+    offset = offset === 0 ? 6 : offset - 1;
+
+    for(let i=0;i<offset;i++){
+
+        const blank = document.createElement("div");
+        blank.className = "calendar-empty";
+
+        grid.appendChild(blank);
+
+    }
+
+    const totalDays =
+        new Date(
+            date.getFullYear(),
+            date.getMonth()+1,
+            0
+        ).getDate();
+
+    for(let d=1; d<=totalDays; d++){
+
+        const day = document.createElement("button");
+
+        day.type = "button";
+        day.className = "calendar-day";
+
+        day.textContent = d;
+
+        day.addEventListener("click",()=>{
+
+            day.classList.toggle("present");
+
+        });
+
+        grid.appendChild(day);
+
+    }
+
+    calendar.appendChild(grid);
+
+        }
+
+  
+</script>
+
+</body>
+</html>
