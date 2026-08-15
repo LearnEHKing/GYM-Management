@@ -241,8 +241,209 @@ button[type="reset"]{
 button:hover{
     transform:translateY(-2px);
 }
-    
 
+
+.server-error{
+
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+
+    margin-bottom:24px;
+    padding:18px;
+
+    border-radius:18px;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(220,38,38,.18),
+        rgba(127,29,29,.08)
+    );
+
+    border:1px solid rgba(239,68,68,.35);
+
+    box-shadow:
+        0 10px 25px rgba(220,38,38,.12);
+
+    animation:slideDown .3s ease;
+}
+
+.error-icon{
+
+    font-size:1.6rem;
+    line-height:1;
+}
+
+.error-content{
+
+    flex:1;
+}
+
+.error-content h3{
+
+    color:#fecaca;
+    margin-bottom:6px;
+    font-size:1rem;
+}
+
+.error-content p{
+
+    color:#fca5a5;
+    white-space:pre-wrap;
+    word-break:break-word;
+}
+
+.error-close{
+
+    border:none;
+    background:none;
+
+    color:#fca5a5;
+
+    cursor:pointer;
+    font-size:1.2rem;
+}
+
+.error-close:hover{
+
+    color:white;
+}
+
+.success-toast{
+
+    position:fixed;
+
+    top:20px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:16px 22px;
+
+    border-radius:16px;
+
+    background:
+    linear-gradient(
+        135deg,
+        #16a34a,
+        #15803d
+    );
+
+    color:white;
+
+    font-weight:600;
+
+    box-shadow:
+        0 12px 30px rgba(22,163,74,.35);
+
+    z-index:9999;
+
+    animation:
+        toastIn .35s ease;
+}
+
+.toast-icon{
+
+    width:28px;
+    height:28px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.2);
+
+    font-size:1rem;
+    font-weight:bold;
+}
+
+.toast-message{
+
+    white-space:nowrap;
+}
+
+@keyframes toastIn{
+
+    from{
+
+        opacity:0;
+        transform:translate(-50%,-20px);
+
+    }
+
+    to{
+
+        opacity:1;
+        transform:translate(-50%,0);
+
+    }
+
+}
+
+.toast-hide{
+
+    opacity:0;
+    transform:translate(-50%,-20px);
+
+    transition:
+        opacity .3s,
+        transform .3s;
+}
+
+@keyframes slideDown{
+
+    from{
+
+        opacity:0;
+        transform:translateY(-10px);
+    }
+
+    to{
+
+        opacity:1;
+        transform:none;
+    }
+}
+
+.input-error{
+
+    border:1px solid #ef4444 !important;
+
+    box-shadow:
+        0 0 0 4px rgba(239,68,68,.15);
+
+}
+
+.field-error{
+
+    margin-top:6px;
+
+    color:#f87171;
+
+    font-size:.85rem;
+
+    font-weight:500;
+
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+}
+
+.field-error::before{
+
+    content:"⚠";
+
+    font-size:.8rem;
+
+}
+    
 @media(max-width:600px){
 
     .input-row{
@@ -265,40 +466,88 @@ button:hover{
         <p>Register a new gym member</p>
     </header>
 
+    {% if server_error %}
+      <div class="server-error" id="serverError">
+      
+          <div class="error-icon">⚠</div>
+      
+          <div class="error-content">
+            
+            <strong>Couldn't save member</strong>
+            <p>Please try again.</p>
+          </div>
+      
+          <button
+              type="button"
+              class="error-close"
+              onclick="closeError()">
+              ✕
+          </button>
+      
+      </div>
+    {% endif %}
+  
     <form action="/add_member" method="POST">
 
         <section class="card">
             <h2>👤 Basic Information</h2>
             <div class="input-group">
-                <label for="name">Full Name</label>
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Enter full name"
-                    required>
-            </div>
+    <label for="name">Full Name</label>
+
+    <input
+        type="text"
+        id="name"
+        name="name"
+        placeholder="Enter full name"
+        value="{{ request.form.name }}"
+        class="{% if errors.name %}input-error{% endif %}"
+        required>
+
+    {% if errors.name %}
+        <span class="field-error">
+            {{ errors.name }}
+        </span>
+    {% endif %}
+</div>
 
             <div class="input-group">
-                <label for="phone">Phone Number</label>
-                <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    placeholder="+91 XXXXX XXXXX"
-                    required>
-            </div>
-            
-            <div class="input-group">
-                <label for="address">Address</label>
-                <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    placeholder="Village/Town/City"
-                    required>
-            </div>
+    <label for="phone">Phone Number</label>
 
+    <input
+        type="tel"
+        id="phone"
+        name="phone"
+        placeholder="+91 XXXXX XXXXX"
+        value="{{ request.form.phone }}"
+        class="{% if errors.phone %}input-error{% endif %}"
+        required>
+
+    {% if errors.phone %}
+        <span class="field-error">
+            {{ errors.phone }}
+        </span>
+    {% endif %}
+            </div>
+          
+            <div class="input-group">
+    <label for="address">Address</label>
+
+    <input
+        type="text"
+        id="address"
+        name="address"
+        placeholder="Village/Town/City"
+        value="{{ request.form.address }}"
+        class="{% if errors.address %}input-error{% endif %}"
+        required>
+
+    {% if errors.address %}
+        <span class="field-error">
+            {{ errors.address }}
+        </span>
+    {% endif %}
+            </div>
+          
         </section>
 
         <section class="card">
@@ -311,6 +560,7 @@ button:hover{
                     <option>2 Months</option>
                     <option>3 Months</option>
                     <option>4 Months</option>
+                    <option>5 Months</option>
                     <option>6 Months</option>
                     <option>Yearly</option>
                 </select>
@@ -327,12 +577,21 @@ button:hover{
                 </div>
 
                 <div class="input-group">
-                    <label for="fee">Fees</label>
-                    <input
-                        type="number"
-                        id="fee"
-                        name="fee"
-                        placeholder="₹">
+    <label for="fee">Fees</label>
+
+    <input
+        type="number"
+        id="fee"
+        name="fee"
+        placeholder="₹"
+        value="{{ request.form.fee }}"
+        class="{% if errors.fee %}input-error{% endif %}">
+
+    {% if errors.fee %}
+        <span class="field-error">
+            {{ errors.fee }}
+        </span>
+    {% endif %}
                 </div>
 
             </div>
@@ -370,10 +629,53 @@ button:hover{
 
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        {% if category == "success" %}
+        <div class="toast success-toast" id="successToast">
+            <span class="toast-icon">✓</span>
+
+            <span class="toast-message">
+                {{ message }}
+            </span>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endwith %}
+  
   <script>
     const today = new Date().toISOString().split("T")[0];
 
 document.getElementById("joining_date").value = today;
+
+    function closeError(){
+
+      const error=document.getElementById("serverError");
+  
+      if(error){
+          error.remove();
+    }
+
+    }
+
+    const toast = document.getElementById("successToast");
+
+if(toast){
+
+    setTimeout(() => {
+
+        toast.classList.add("toast-hide");
+
+        setTimeout(() => {
+
+            toast.remove();
+
+        },300);
+
+    },3000);
+
+}
+    
   </script>
 </body>
 </html>

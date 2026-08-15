@@ -36,8 +36,8 @@ class Member(db.Model):
 
     name = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(150), nullable=False)
-    phone = db.Column(db.String(15))
-    join_date = db.Column(db.Date)
+    phone = db.Column(db.String(15),nullable=False)
+    join_date = db.Column(db.Date,nullable=False)
     notes = db.Column(db.Text)
     active = db.Column(db.Boolean, default=True)
 

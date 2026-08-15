@@ -32,56 +32,171 @@ def index():
 @app.route("/add_member", methods=["GET", "POST"])
 @login_required
 def add_member():
-    if request.method == "POST":
+  errors={}
+  server_error=False
+  if request.method == "POST":
+  
+      name = request.form["name"].strip()
+      phone = request.form["phone"].strip()
+      address = request.form["address"].strip()
+      notes = request.form["notes"].strip()
+  
+      plan = request.form["plan"]
+      payment_status = request.form["payment_status"]
+  
+      # -------------------------
+      # Name
+      # -------------------------
+  
+      if len(name) < 3:
+          errors["name"] = "Name must contain at least 3 characters."
+  
+      elif len(name) > 100:
+          errors["name"] = "Name is too long."
+  
+      # -------------------------
+      # Phone
+      # -------------------------
+  
+      if not phone.isdigit():
+          errors["phone"] = "Phone number must contain only digits."
+  
+      elif len(phone) != 10:
+          errors["phone"] = "Phone number must contain exactly 10 digits."
+  
+      elif Member.query.filter_by(
+              owner_id=current_user.id,
+              phone=phone
+          ).first():
+  
+          errors["phone"] = "This phone number already exists."
+      if Member.query.filter_by( owner_id=current_user.id, name=name).first():
+        errors["name"] = (
+          "A member with this name already exists. "
+          "Please add a surname or father's name.")
+      # -------------------------
+      # Address
+      # -------------------------
+  
+      if len(address) < 3:
+          errors["address"] = "Please enter a valid address."
+  
+      # -------------------------
+      # Join Date
+      # -------------------------
+  
       try:
-        
-        
-        # Member details
-        name = request.form["name"]
-        phone = request.form["phone"]
-        address = request.form["address"]
-        notes = request.form["notes"]
-        join_date = datetime.strptime(
-            request.form["join_date"], "%Y-%m-%d"
-        ).date()
+  
+          join_date = datetime.strptime(
+              request.form["join_date"],
+              "%Y-%m-%d"
+          ).date()
+  
+          if join_date > date.today():
+              errors["join_date"] = "Joining date cannot be in the future."
+  
+      except ValueError:
+          errors["join_date"] = "Invalid joining date."
+  
+      # -------------------------
+      # Fee
+      # -------------------------
+  
+      try:
+  
+          fee = int(request.form["fee"])
+  
+          if fee <= 0:
+              errors["fee"] = "Fee must be greater than 0."
+  
+      except ValueError:
+  
+          errors["fee"] = "Enter a valid fee."
+  
+      # -------------------------
+      # Membership Plan
+      # -------------------------
+  
+      valid_plans = {
+          "Monthly",
+          "2 Months",
+          "3 Months",
+          "4 Months",
+          "5 Months",
+          "6 Months",
+          "Yearly"
+      }
+  
+      if plan not in valid_plans:
+          errors["plan"] = "Invalid membership plan."
+  
+      # -------------------------
+      # Payment Status
+      # -------------------------
+  
+      valid_status = {
+          "Paid",
+          "Pending",
+          "Partial"
+      }
+  
+      if payment_status not in valid_status:
+          errors["payment_status"] = "Invalid payment status."
+  
+      # -------------------------
+      # Save
+      # -------------------------
+  
+      if not errors:
+  
+          try:
+  
+              member = Member(
+                  owner_id=current_user.id,
+                  name=name,
+                  phone=phone,
+                  address=address,
+                  join_date=join_date,
+                  notes=notes
+              )
+            
+              db.session.add(member)
+              db.session.flush()
+  
+              payment = Payment(
+                  member_id=member.id,
+                  plan_name=plan,
+                  amount=fee,
+                  amount_paid=fee if payment_status == "Paid" else 0,
+                  status=payment_status,
+                  payment_date=join_date,
+                  start_date=join_date,
+                  expiry_date=join_date,
+                  duration_days=6
+              )
+  
+              db.session.add(payment)
+              db.session.commit()
+  
+              flash("Member added successfully!", "success")
+  
+              return redirect(url_for("add_member"))
+  
+          except Exception as e:
+  
+              print(e)
+  
+              db.session.rollback()
+  
+              server_error = True
+            
+  return render_template(
+    "add_member.html",
+    errors=errors,
+    server_error=server_error
+)
 
-        # Payment details
-        plan = request.form["plan"]
-        fee = int(request.form["fee"])
-        payment_status = request.form["payment_status"]
 
-        # Create member
-        member = Member(
-            owner_id=current_user.id,
-            name=name,
-            phone=phone,
-            address=address,
-            join_date=join_date,
-            notes=notes
-        )
-
-        db.session.add(member)
-        db.session.flush()  # Gives member.id before commit
-
-        # Create first payment
-        payment = Payment(
-            member_id=member.id,
-            plan_name=plan,
-            amount=fee,
-            amount_paid=fee if payment_status == "Paid" else 0,
-            status=payment_status,
-            payment_date=join_date,
-          start_date=join_date,
-          expiry_date=join_date,
-          duration_days=6
-        )
-
-        db.session.add(payment)
-        db.session.commit()
-        return redirect("/")
-      except Exception as e:
-        print("\n\n", e , "\n\n")
-    return render_template("add_member.html")
 
 @app.route("/attendance",methods=['GET','POST'])
 @login_required
