@@ -573,7 +573,16 @@ button:hover{
                     <input
                         type="date"
                         id="join_date"
-                        name="join_date">
+                        name="join_date"
+                        value="{{ request.form.join_date }}"
+                        class="{% if errors.address %}input-error{% endif %}"
+                    required>
+
+                    {% if errors.join_date %}
+                        <span class="field-error">
+                            {{ errors.join_date }}
+                        </span>
+                    {% endif %}
                 </div>
 
                 <div class="input-group">
@@ -645,8 +654,7 @@ button:hover{
   
   <script>
     const today = new Date().toISOString().split("T")[0];
-
-document.getElementById("joining_date").value = today;
+    document.getElementById("join_date").value = today;
 
     function closeError(){
 
@@ -660,21 +668,21 @@ document.getElementById("joining_date").value = today;
 
     const toast = document.getElementById("successToast");
 
-if(toast){
-
-    setTimeout(() => {
-
-        toast.classList.add("toast-hide");
-
+    if(toast){
+    
         setTimeout(() => {
-
-            toast.remove();
-
-        },300);
-
-    },3000);
-
-}
+    
+            toast.classList.add("toast-hide");
+    
+            setTimeout(() => {
+    
+                toast.remove();
+    
+            },300);
+    
+        },3000);
+    
+    }
     
   </script>
 </body>
