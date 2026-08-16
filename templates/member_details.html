@@ -16,7 +16,19 @@
 <body>
 
   <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toast-container">
 
+      {% for category,message in messages %}
+      <div class="toast {{ category }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+
+    </div>
+    {% endif %}
+    {% endwith %}
     <!-- ==========================
          HEADER
     =========================== -->
@@ -333,6 +345,20 @@
   </div>
 
   <script>
+    document.querySelectorAll(".toast").forEach((toast) => {
+
+        setTimeout(() => {
+
+            toast.classList.add("hide");
+
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+
+        }, 3500);
+      
+
+    });
   // =========================================
 // ATTENDANCE CALENDAR
 // =========================================

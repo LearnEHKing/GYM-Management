@@ -366,6 +366,13 @@
         summaryStatus.textContent = status;
 
         summaryExpiry.textContent = calculateExpiry(duration);
+        summaryStatus.className = "";
+
+        if (status === "Paid") {
+            summaryStatus.classList.add("paid");
+        } else {
+            summaryStatus.classList.add("partial");
+        }
     }
 
     // --------------------------
@@ -393,6 +400,7 @@
             }, 300);
 
         }, 3500);
+      
 
     });
 
@@ -401,13 +409,6 @@
     updateSummary();
 
 });
-    summaryStatus.className = "";
-
-if (status === "Paid") {
-    summaryStatus.classList.add("paid");
-} else {
-    summaryStatus.classList.add("partial");
-}
   </script>
 </body>
 

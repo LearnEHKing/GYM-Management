@@ -23,6 +23,19 @@
 
 <body>
   <div class="app">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toast-container">
+
+      {% for category,message in messages %}
+      <div class="toast {{ category }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+
+    </div>
+    {% endif %}
+    {% endwith %}
     {% block body %}{% endblock %}
   </div>
      <!--  =========================================
@@ -35,6 +48,20 @@
       if (localStorage.getItem("theme") === "light") {
     document.body.classList.add("light");
       }
+    document.querySelectorAll(".toast").forEach((toast) => {
+
+        setTimeout(() => {
+
+            toast.classList.add("hide");
+
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+
+        }, 3500);
+      
+
+    });
     {% block script %}{% endblock %}
       
     </script>
