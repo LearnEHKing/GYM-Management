@@ -1,16 +1,193 @@
 {% extends "components/base.html" %}
 {% block title %}Admin | Gym Management{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
 {% block body %}
 <main class="admin-page">
-  <section class="admin-hero"><div><p class="eyebrow">Platform administration</p><h1>Gym owner management</h1><p>Create profiles, update subscriptions, and record payments.</p></div><div class="admin-stat"><strong>{{ owners|length }}</strong><span>Gym owners</span></div></section>
-  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<p class="flash {{ category }}">{{ message }}</p>{% endfor %}{% endwith %}
-  <section class="admin-grid">
-    <form class="panel form-panel" action="{{ url_for('create_owner') }}" method="post"><h2>Create gym owner</h2><div class="form-grid"><label>Gym name<input name="name" required maxlength="100"></label><label>Username<input name="username" required maxlength="50" autocomplete="username"></label><label>Phone<input name="phone" required maxlength="15" inputmode="tel"></label><label>Temporary password<input name="password" required minlength="8" type="password" autocomplete="new-password"></label><label>Plan<input name="plan" required placeholder="Monthly"></label><label>Join date<input name="join_date" type="date" value="{{ today.isoformat() }}" required></label><label>Payment due date<input name="payment_due_date" type="date"></label></div><button type="submit">Create owner</button></form>
-    <form class="panel form-panel" action="{{ url_for('create_owner_payment') }}" method="post"><h2>Record owner payment</h2><div class="form-grid"><label>Gym owner<select name="owner_id" required><option value="" disabled selected>Select an owner</option>{% for owner in owners %}<option value="{{ owner.id }}">{{ owner.name }} — {{ owner.username }}</option>{% endfor %}</select></label><label>Amount<input name="amount" type="number" min="1" required inputmode="numeric"></label><label>Status<select name="status"><option>Paid</option><option>Partial</option><option>Pending</option></select></label><label>Payment date<input name="payment_date" type="date" value="{{ today.isoformat() }}" required></label><label class="wide">Remarks<input name="remarks" maxlength="500" placeholder="Optional note or receipt number"></label></div><button type="submit">Record payment</button></form>
+  <section class="admin-hero">
+    <div>
+      <p class="eyebrow">Platform administration</p>
+      <h1>Gym owner management</h1>
+      <p>Create profiles, update subscriptions, and record payments.</p>
+    </div>
+    <div class="admin-stat"><strong>{{ owners|length }}</strong><span>Gym owners</span></div>
   </section>
-  <section class="panel table-panel"><div class="panel-title"><div><p class="eyebrow">Directory</p><h2>All gym owners</h2></div><span>{{ owners|length }} total</span></div><div class="table-scroll"><table><thead><tr><th>Gym</th><th>Username</th><th>Phone</th><th>Plan</th><th>Due date</th><th>Action</th></tr></thead><tbody>{% for owner in owners %}<tr><td><strong>{{ owner.name }}</strong><small>Joined {{ owner.join_date.strftime('%d %b %Y') }}</small></td><td>{{ owner.username }}</td><td>{{ owner.phone }}</td><td><span class="pill">{{ owner.plan }}</span></td><td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td><td><button class="text-button" type="button" onclick="document.getElementById('edit-owner-{{ owner.id }}').showModal()">Edit</button></td></tr>{% else %}<tr><td colspan="6" class="empty">No gym-owner profiles yet.</td></tr>{% endfor %}</tbody></table></div></section>
-  <section class="panel table-panel"><div class="panel-title"><div><p class="eyebrow">Ledger</p><h2>Owner payments</h2></div><span>{{ owner_payments|length }} records</span></div><div class="table-scroll"><table><thead><tr><th>Gym</th><th>Amount</th><th>Status</th><th>Date</th><th>Remarks</th></tr></thead><tbody>{% for payment in owner_payments %}<tr><td><strong>{{ payment.owner.name }}</strong><small>{{ payment.owner.username }}</small></td><td>₹{{ '{:,.0f}'.format(payment.amount) }}</td><td><span class="status {{ payment.status|lower }}">{{ payment.status }}</span></td><td>{{ payment.payment_date.strftime('%d %b %Y') }}</td><td>{{ payment.remarks or '—' }}</td></tr>{% else %}<tr><td colspan="5" class="empty">No owner payments recorded.</td></tr>{% endfor %}</tbody></table></div></section>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<p
+    class="flash {{ category }}">{{ message }}</p>{% endfor %}{% endwith %}
+  <section class="admin-grid">
+    <form class="panel form-panel" action="{{ url_for('create_owner') }}" method="post">
+      <h2>Create gym owner</h2>
+      <div class="form-grid">
+        <label>Gym name<input name="name" required maxlength="100"></label>
+        <label>Username<input name="username" required maxlength="50" autocomplete="username"></label>
+        <label>Phone<input name="phone" required maxlength="15" inputmode="tel"></label>
+        <label>Password<input name="password" required minlength="8" type="password"
+            autocomplete="new-password"></label>
+
+        <div class="wide">
+          <h3>Membership Plans</h3>
+
+          <div id="plans-container">
+
+            <div class="plan-row">
+              <input type="text" name="plan_name[]" placeholder="Plan name (Monthly)" required>
+
+              <input type="number" name="plan_duration[]" placeholder="Months" min="1" required>
+
+              <input type="number" name="plan_fee[]" placeholder="Fee (₹)" min="1" required>
+
+              <button type="button" onclick="removePlan(this)">✕</button>
+            </div>
+
+          </div>
+
+          <button type="button" id="add-plan-btn">
+            + Add another plan
+          </button>
+        </div>
+        <label>Join date<input name="join_date" type="date" value="{{ today.isoformat() }}"
+            required></label><label>Payment due date<input name="payment_due_date" type="date"></label>
+      </div><button type="submit">Create owner</button>
+    </form>
+
+    <form class="panel form-panel" action="{{ url_for('create_owner_payment') }}" method="post">
+      <h2>Record owner payment</h2>
+      <div class="form-grid"><label>Gym owner<select name="owner_id" required>
+            <option value="" disabled selected>Select an owner</option>{% for owner in owners %}<option
+              value="{{ owner.id }}">{{ owner.name }} — {{ owner.username }}</option>{% endfor %}
+          </select></label><label>Amount<input name="amount" type="number" min="1" required
+            inputmode="numeric"></label><label>Status<select name="status">
+            <option>Paid</option>
+            <option>Partial</option>
+            <option>Pending</option>
+          </select></label><label>Payment date<input name="payment_date" type="date" value="{{ today.isoformat() }}"
+            required></label><label class="wide">Remarks<input name="remarks" maxlength="500"
+            placeholder="Optional note or receipt number"></label></div><button type="submit">Record payment</button>
+    </form>
+  </section>
+  <section class="panel table-panel">
+    <div class="panel-title">
+      <div>
+        <p class="eyebrow">Directory</p>
+        <h2>All gym owners</h2>
+      </div><span>{{ owners|length }} total</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Gym</th>
+            <th>Username</th>
+            <th>Phone</th>
+            <th>Plan</th>
+            <th>Due date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>{% for owner in owners %}<tr>
+            <td><strong>{{ owner.name }}</strong><small>Joined {{ owner.join_date.strftime('%d %b %Y') }}</small></td>
+            <td>{{ owner.username }}</td>
+            <td>{{ owner.phone }}</td>
+            <td><span class="pill">{{ owner.plan }}</span></td>
+            <td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td>
+            <td><button class="text-button" type="button"
+                onclick="document.getElementById('edit-owner-{{ owner.id }}').showModal()">Edit</button></td>
+          </tr>{% else %}<tr>
+            <td colspan="6" class="empty">No gym-owner profiles yet.</td>
+          </tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </section>
+  <section class="panel table-panel">
+    <div class="panel-title">
+      <div>
+        <p class="eyebrow">Ledger</p>
+        <h2>Owner payments</h2>
+      </div><span>{{ owner_payments|length }} records</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Gym</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>{% for payment in owner_payments %}<tr>
+            <td><strong>{{ payment.owner.name }}</strong><small>{{ payment.owner.username }}</small></td>
+            <td>₹{{ '{:,.0f}'.format(payment.amount) }}</td>
+            <td><span class="status {{ payment.status|lower }}">{{ payment.status }}</span></td>
+            <td>{{ payment.payment_date.strftime('%d %b %Y') }}</td>
+            <td>{{ payment.remarks or '—' }}</td>
+          </tr>{% else %}<tr>
+            <td colspan="5" class="empty">No owner payments recorded.</td>
+          </tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </section>
 </main>
-{% for owner in owners %}<dialog id="edit-owner-{{ owner.id }}"><form class="edit-form" action="{{ url_for('edit_owner', owner_id=owner.id) }}" method="post"><div class="dialog-title"><h2>Edit {{ owner.name }}</h2><button type="button" class="close" onclick="this.closest('dialog').close()">×</button></div><div class="form-grid"><label>Gym name<input name="name" value="{{ owner.name }}" required maxlength="100"></label><label>Username<input name="username" value="{{ owner.username }}" required maxlength="50"></label><label>Phone<input name="phone" value="{{ owner.phone }}" required maxlength="15"></label><label>Plan<input name="plan" value="{{ owner.plan }}" required></label><label>Join date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}" required></label><label>Payment due date<input name="payment_due_date" type="date" value="{{ owner.payment_due_date.isoformat() if owner.payment_due_date else '' }}"></label><label class="wide">New password <small>(leave blank to keep the current password)</small><input name="password" type="password" minlength="8" autocomplete="new-password"></label></div><button type="submit">Save changes</button></form></dialog>{% endfor %}
+{% for owner in owners %}<dialog id="edit-owner-{{ owner.id }}">
+  <form class="edit-form" action="{{ url_for('edit_owner', owner_id=owner.id) }}" method="post">
+    <div class="dialog-title">
+      <h2>Edit {{ owner.name }}</h2><button type="button" class="close"
+        onclick="this.closest('dialog').close()">×</button>
+    </div>
+    <div class="form-grid"><label>Gym name<input name="name" value="{{ owner.name }}" required
+          maxlength="100"></label><label>Username<input name="username" value="{{ owner.username }}" required
+          maxlength="50"></label><label>Phone<input name="phone" value="{{ owner.phone }}" required
+          maxlength="15"></label><label>Plan<input name="plan" value="{{ owner.plan }}" required></label><label>Join
+        date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
+          required></label><label>Payment due date<input name="payment_due_date" type="date"
+          value="{{ owner.payment_due_date.isoformat() if owner.payment_due_date else '' }}"></label><label
+        class="wide">New password <small>(leave blank to keep the current password)</small><input name="password"
+          type="password" minlength="8" autocomplete="new-password"></label></div><button type="submit">Save
+      changes</button>
+  </form>
+</dialog>{% endfor %}
+{% endblock %}
+{% block script %}
+
+const container = document.getElementById("plans-container");
+
+document.getElementById("add-plan-btn").addEventListener("click", () => {
+    const row = document.createElement("div");
+
+    row.className = "plan-row";
+
+    row.innerHTML = `
+        <input
+            type="text"
+            name="plan_name[]"
+            placeholder="Plan name"
+            required>
+
+        <input
+            type="number"
+            name="plan_duration[]"
+            placeholder="Months"
+            min="1"
+            required>
+
+        <input
+            type="number"
+            name="plan_fee[]"
+            placeholder="Fee (₹)"
+            min="1"
+            required>
+
+        <button type="button" onclick="removePlan(this)">✕</button>
+    `;
+
+    container.appendChild(row);
+});
+
+function removePlan(button) {
+    if (container.children.length > 1) {
+        button.parentElement.remove();
+    }
+}
+
 {% endblock %}

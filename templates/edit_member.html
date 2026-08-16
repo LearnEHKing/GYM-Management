@@ -1,191 +1,104 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edit Member</title>
-    <link
-      rel="stylesheet"
-      href="{{url_for('static', filename='css/add_member.css') }}"
-    />
-  </head>
-  <body>
-    <div class="container">
-      <header>
-        <h1>Edit the Member</h1>
-        <p>Edit information of member.</p>
-      </header>
 
-      {% if server_error %}
-      <div class="server-error" id="serverError">
-        <div class="error-icon">⚠</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Member</title>
+  <link rel="stylesheet" href="{{url_for('static', filename='css/add_member.css') }}" />
+</head>
 
-        <div class="error-content">
-          <strong>Couldn't save member</strong>
-          <p>Please try again.</p>
-        </div>
+<body>
+  <div class="container">
+    <header>
+      <h1>Edit the Member</h1>
+      <p>Edit information of member.</p>
+    </header>
 
-        <button type="button" class="error-close" onclick="closeError()">
-          ✕
-        </button>
+    {% if server_error %}
+    <div class="server-error" id="serverError">
+      <div class="error-icon">⚠</div>
+
+      <div class="error-content">
+        <strong>Couldn't save member</strong>
+        <p>Please try again.</p>
       </div>
-      {% endif %}
 
-      <form action="/add_member" method="POST">
-        <section class="card">
-          <h2>👤 Basic Information</h2>
-          <div class="input-group">
-            <label for="name">Full Name</label>
+      <button type="button" class="error-close" onclick="closeError()">
+        ✕
+      </button>
+    </div>
+    {% endif %}
 
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Enter full name"
-              value="{{ member.name }}"
-              class="{% if errors.name %}input-error{% endif %}"
-              required
-            />
+    <form action="/members/{{ member.id }}/edit" method="POST">
+      <section class="card">
+        <h2>👤 Basic Information</h2>
+        <div class="input-group">
+          <label for="name">Full Name</label>
 
-            {% if errors.name %}
-            <span class="field-error"> {{ errors.name }} </span>
-            {% endif %}
-          </div>
+          <input type="text" id="name" name="name" placeholder="Enter full name" value="{{ request.form.name or member.name }}"
+            class="{% if errors.name %}input-error{% endif %}" required />
 
-          <div class="input-group">
-            <label for="phone">Phone Number</label>
-
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="+91 XXXXX XXXXX"
-              value="{{ member.phone }}"
-              class="{% if errors.phone %}input-error{% endif %}"
-              required
-            />
-
-            {% if errors.phone %}
-            <span class="field-error"> {{ errors.phone }} </span>
-            {% endif %}
-          </div>
-
-          <div class="input-group">
-            <label for="address">Address</label>
-
-            <input
-              type="text"
-              id="address"
-              name="address"
-              placeholder="Village/Town/City"
-              value="{{ member.address }}"
-              class="{% if errors.address %}input-error{% endif %}"
-              required
-            />
-
-            {% if errors.address %}
-            <span class="field-error"> {{ errors.address }} </span>
-            {% endif %}
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>💳 Membership</h2>
-
-          <div class="input-group">
-            <label for="plan">Membership Plan</label>
-            <select id="plan" name="plan">
-              <option>Monthly</option>
-              <option>2 Months</option>
-              <option>3 Months</option>
-              <option>4 Months</option>
-              <option>5 Months</option>
-              <option>6 Months</option>
-              <option>Yearly</option>
-            </select>
-          </div>
-
-          <div class="input-row">
-            <div class="input-group">
-              <label for="join_date">Joining Date</label>
-              <input
-                type="date"
-                id="join_date"
-                name="join_date"
-                value="{{ member.join_date }}"
-                class="{% if errors.address %}input-error{% endif %}"
-                required
-              />
-
-              {% if errors.join_date %}
-              <span class="field-error"> {{ errors.join_date }} </span>
-              {% endif %}
-            </div>
-
-            <div class="input-group">
-              <label for="fee">Fees</label>
-
-              <input
-                type="number"
-                id="fee"
-                name="fee"
-                placeholder="₹"
-                value="{{ member.fee }}"
-                class="{% if errors.fee %}input-error{% endif %}"
-              />
-
-              {% if errors.fee %}
-              <span class="field-error"> {{ errors.fee }} </span>
-              {% endif %}
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label for="payment_status">Payment Status</label>
-            <select id="payment_status" name="payment_status">
-              <option>Paid</option>
-              <option>Pending</option>
-              <option>Partial</option>
-            </select>
-          </div>
-        </section>
-        <section class="card">
-          <h2>📝 Notes</h2>
-
-          <div class="input-group">
-            <label for="notes">Additional Notes</label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows="4"
-              placeholder="Payment issue? Half payment? Vacant days?"
-            ></textarea>
-          </div>
-        </section>
-
-        <div class="actions">
-          <button type="submit">Add Member</button>
-          <button type="reset">Reset</button>
+          {% if errors.name %}
+          <span class="field-error"> {{ errors.name }} </span>
+          {% endif %}
         </div>
-      </form>
-    </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %} {% for
-    category, message in messages %} {% if category == "success" %}
-    <div class="toast success-toast" id="successToast">
-      <span class="toast-icon">✓</span>
+        <div class="input-group">
+          <label for="phone">Phone Number</label>
 
-      <span class="toast-message"> {{ message }} </span>
-    </div>
-    {% endif %} {% endfor %} {% endwith %}
+          <input type="tel" id="phone" name="phone" placeholder="+91 XXXXX XXXXX" value="{{ request.form.phone or member.phone }}"
+            class="{% if errors.phone %}input-error{% endif %}" required />
 
-    <script>
+          {% if errors.phone %}
+          <span class="field-error"> {{ errors.phone }} </span>
+          {% endif %}
+        </div>
+
+        <div class="input-group">
+          <label for="address">Address</label>
+
+          <input type="text" id="address" name="address" placeholder="Village/Town/City" value="{{ request.form.address or member.address }}"
+            class="{% if errors.address %}input-error{% endif %}" required />
+
+          {% if errors.address %}
+          <span class="field-error"> {{ errors.address }} </span>
+          {% endif %}
+        </div>
+      </section>
+      
+      <section class="card">
+        <h2>📝 Notes</h2>
+
+        <div class="input-group">
+          <label for="notes">Additional Notes</label>
+          <textarea id="notes" name="notes" rows="4" placeholder="Payment issue? Half payment? Vacant days?">{{request.form.notes or member.notes}}</textarea>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button type="submit">Save changes</button>
+        <a href="/members/{{ member.id }}" class="button-secondary">
+    Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} {% for
+  category, message in messages %} {% if category == "success" %}
+  <div class="toast success-toast" id="successToast">
+    <span class="toast-icon">✓</span>
+
+    <span class="toast-message"> {{ message }} </span>
+  </div>
+  {% endif %} {% endfor %} {% endwith %}
+
+  <script>
       if (localStorage.getItem("theme") === "light") {
   document.body.classList.add("light")
 }
-      const today = new Date().toISOString().split("T")[0];
-      document.getElementById("join_date").value = today;
-
+      
       function closeError() {
         const error = document.getElementById("serverError");
 
@@ -206,5 +119,6 @@
         }, 3000);
       }
     </script>
-  </body>
+</body>
+
 </html>

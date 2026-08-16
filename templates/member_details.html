@@ -31,10 +31,6 @@
 
         <h1>{{member.name}}</h1>
 
-        <a href="/members/{{member.id}}/edit" class="edit-btn">
-          Edit
-        </a>
-
       </div>
 
     </header>
@@ -45,108 +41,231 @@
       <!-- ==========================
              CURRENT PAYMENT
         =========================== -->
+      <section class="membership-card">
 
+        <div class="card-header">
+          <h2>Membership Information</h2>
+
+          {% if member.membership_expiry >= today %}
+          <span class="status active">Active</span>
+          {% else %}
+          <span class="status expired">Expired</span>
+          {% endif %}
+        </div>
+
+        <div class="membership-grid">
+
+          <div class="item">
+            <span class="label">Current Plan</span>
+            <span class="value">{{ member.current_plan }}</span>
+          </div>
+
+          <div class="item">
+            <span class="label">Membership Fee</span>
+            <span class="value">₹{{ member.latest_payment.fee }}</span>
+          </div>
+
+          <div class="item">
+            <span class="label">Amount Paid</span>
+            <span class="value">₹{{ member.latest_payment.amount_paid }}</span>
+          </div>
+
+          <div class="item">
+            <span class="label">Pending</span>
+            <span class="value">
+              ₹{{ member.latest_payment.fee - member.latest_payment.amount_paid }}
+            </span>
+          </div>
+
+          <div class="item">
+            <span class="label">Started</span>
+            <span class="value">
+              {{ member.membership_start.strftime("%d %b %Y") }}
+            </span>
+          </div>
+
+          <div class="item">
+            <span class="label">Expires</span>
+            <span class="value">
+              {{ member.membership_expiry.strftime("%d %b %Y") }}
+            </span>
+          </div>
+
+          <div class="item">
+            <span class="label">Days Remaining</span>
+
+            {% if member.membership_expiry >= today %}
+            <span class="value green">
+              {{ (member.membership_expiry - today).days }}
+              day{{ '' if (member.membership_expiry - today).days == 1 else 's' }}
+            </span>
+            {% else %}
+            <span class="value red">
+              Expired
+            </span>
+            {% endif %}
+
+          </div>
+
+          <div class="item">
+            <span class="label">Payment Status</span>
+
+            {% if member.latest_payment.amount_paid >= member.latest_payment.fee %}
+            <span class="value green">Paid</span>
+
+            {% elif member.latest_payment.amount_paid == 0 %}
+            <span class="value red">Unpaid</span>
+
+            {% else %}
+            <span class="value orange">Partial</span>
+            {% endif %}
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- -=======================
+           Personal details 
+      ===========================!-->
       <section class="card">
 
         <div class="section-title">
-          <h2>Current Payment</h2>
+          <h2>Member Details</h2>
 
-          <button type="button" class="secondary-btn">
-            New Payment
-          </button>
+          <a href="/members/{{member.id}}/edit" class="secondary-btn">
+            Edit
+          </a>
         </div>
 
-        <div class="payment-summary">
+        <div class="details-grid">
 
-          <div class="summary-box">
-            <span>Plan</span>
-
-            <input type="text" name="plan_name" value="Monthly">
+          <div class="detail">
+            <span>Name</span>
+            <strong>{{ member.name }}</strong>
           </div>
 
-          <div class="summary-box">
-            <span>Status</span>
-
-            <input type="text" name="status" value="Paid">
+          <div class="detail">
+            <span>Phone</span>
+            <strong>{{ member.phone }}</strong>
           </div>
 
-          <div class="summary-box">
-            <span>Amount</span>
-
-            <input type="number" name="amount" value="1000">
+          <div class="detail full-width">
+            <span>Address</span>
+            <strong>{{ member.address }}</strong>
           </div>
 
-          <div class="summary-box">
-            <span>Paid</span>
-
-            <input type="number" name="amount_paid" value="1000">
+          <div class="detail full-width">
+            <span>Notes</span>
+            <strong>{{ member.notes }}</strong>
           </div>
 
-          <div class="summary-box">
-            <span>Start Date</span>
-
-            <input type="date" name="start_date">
-          </div>
-
-          <div class="summary-box">
-            <span>Expiry Date</span>
-
-            <input type="date" name="expiry_date">
-          </div>
-
-          <div class="summary-box">
-            <span>Payment Date</span>
-
-            <input type="date" name="payment_date">
-          </div>
-
-          <div class="summary-box">
-            <span>Duration</span>
-
-            <input type="number" name="duration_days">
-          </div>
 
         </div>
 
-        <label>
+      </section>
+      <section class="stats-section">
 
-          Remarks
+        <h2>Quick Statistics</h2>
 
-          <textarea name="remarks" rows="3"></textarea>
+        <div class="stats-grid">
 
-        </label>
+          <div class="stat-card">
+            <span class="stat-title">Total Payments</span>
+            <span class="stat-value">
+              ₹{{ total_paid }}
+            </span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-title">Payments Made</span>
+            <span class="stat-value">
+              {{ payments|length }}
+            </span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-title">Member Since</span>
+            <span class="stat-value">
+              {{ member.join_date.strftime("%b %Y") }}
+            </span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-title">Membership Age</span>
+            <span class="stat-value">
+              {{membership_months}} Months
+            </span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-title">Attendance</span>
+            <span class="stat-value">
+              {{attendance_this_month}}
+            </span>
+            <span class="stat-small">This Month</span>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-title">Last Visit</span>
+            <span class="stat-value">
+              {{last_visit}}
+            </span>
+          </div>
+
+        </div>
 
       </section>
 
-
-
+      
       <!-- ==========================
-             PAYMENT HISTORY
-        =========================== -->
+     PAYMENT HISTORY
+=========================== -->
 
-      <section class="card">
+      <br>
 
-        <h2>Payment History</h2>
+      {% if payments %}
 
-        <div class="payment-history">
+      {% for payment in payments %}
 
-          <div class="payment-item">
-            <span>01 Jul 2026</span>
-            <span>Monthly</span>
-            <span>₹1000</span>
-            <span>Paid</span>
-          </div>
+      <div class="payment-item">
 
-          <div class="payment-item">
-            <span>01 Jun 2026</span>
-            <span>Monthly</span>
-            <span>₹1000</span>
-            <span>Paid</span>
-          </div>
+        <div>
+
+          <strong>{{ payment.plan_name }}</strong><br>
+
+          <small>
+            {{ payment.payment_date.strftime("%d %b %Y") }}
+            • ₹{{ payment.amount_paid }}
+
+            {% if payment.status == "Paid" %}
+            • Paid
+            {% elif payment.status == "Partial" %}
+            • Partial
+            {% elif payment.status == "Pending" %}
+            • Pending
+            {% else %}
+            • {{ payment.status }}
+            {% endif %}
+
+          </small>
 
         </div>
 
-      </section>
+        <a href="{{ url_for('edit_payment', payment_id=payment.id) }}" class="secondary-btn">
+          Edit
+        </a>
+
+      </div>
+
+      {% endfor %}
+
+      {% else %}
+
+      <p>No payment history.</p>
+
+      {% endif %}
 
 
 
@@ -327,6 +446,34 @@ function drawCalendar(date){
 calendar.appendChild(grid);
 
         }
+
+    document.querySelectorAll(".stat-value").forEach(el => {
+
+    const text = el.textContent.trim();
+
+    if (!text.match(/^\₹?\d+/))
+        return;
+
+    const number = parseInt(text.replace(/[^\d]/g, ""));
+    const prefix = text.startsWith("₹") ? "₹" : "";
+
+    let current = 0;
+    const speed = Math.max(1, Math.ceil(number / 40));
+
+    const timer = setInterval(() => {
+
+        current += speed;
+
+        if (current >= number) {
+            current = number;
+            clearInterval(timer);
+        }
+
+        el.textContent = prefix + current;
+
+    }, 15);
+
+});
 
   
 </script>

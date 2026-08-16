@@ -71,16 +71,25 @@
         <h2>💳 Membership</h2>
 
         <div class="input-group">
-          <label for="plan">Membership Plan</label>
-          <select id="plan" name="plan">
-            <option>Monthly</option>
-            <option>2 Months</option>
-            <option>3 Months</option>
-            <option>4 Months</option>
-            <option>5 Months</option>
-            <option>6 Months</option>
-            <option>Yearly</option>
-          </select>
+          <label>
+            Membership Plan
+
+            <select name="plan_id" required>
+
+              <option value="" disabled selected>
+                Select a plan
+              </option>
+
+              {% for plan in plans %}
+              <option value="{{ plan.id }}">
+                {{ plan.name }}
+                ({{ plan.duration_months }} month{{ 's' if plan.duration_months != 1 else '' }})
+                - ₹{{ plan.fee }}
+              </option>
+              {% endfor %}
+
+            </select>
+          </label>
         </div>
 
         <div class="input-row">
@@ -95,7 +104,7 @@
           </div>
 
           <div class="input-group">
-            <label for="fee">Fees</label>
+            <label for="fee">Fees Paid</label>
 
             <input type="number" id="fee" name="fee" placeholder="₹" value="{{ request.form.fee }}"
               class="{% if errors.fee %}input-error{% endif %}" />
@@ -106,14 +115,7 @@
           </div>
         </div>
 
-        <div class="input-group">
-          <label for="payment_status">Payment Status</label>
-          <select id="payment_status" name="payment_status">
-            <option>Paid</option>
-            <option>Pending</option>
-            <option>Partial</option>
-          </select>
-        </div>
+
       </section>
       <section class="card">
         <h2>📝 Notes</h2>
