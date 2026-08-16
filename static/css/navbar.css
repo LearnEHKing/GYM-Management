@@ -1,0 +1,86 @@
+/* =========================================
+           BOTTOM NAVIGATION
+        ========================================= */
+
+.bottom-nav {
+  position: fixed;
+
+  z-index: 100;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  max-width: 500px;
+
+  height: 70px;
+
+  margin: auto;
+
+  background: var(--navbg);
+  border-top: 1px solid var(--cardborder);
+
+  backdrop-filter: blur(18px);
+
+  display: flex;
+
+  justify-content: space-around;
+}
+
+.nav-item {
+  width: 33.33%;
+
+  border: none;
+
+  background: transparent;
+  color: var(--muted);
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: center;
+
+  gap: 4px;
+
+  position: relative;
+
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.nav-icon {
+  font-size: 21px;
+}
+
+.nav-item span {
+  font-size: 10px;
+}
+
+.nav-item.active {
+  color: var(--white);
+}
+
+.nav-item.active .nav-icon {
+  color: var(--blue);
+
+  text-shadow: 0 0 14px rgba(59, 130, 246, 0.8);
+}
+
+.nav-item.active::after {
+  content: "";
+
+  position: absolute;
+
+  bottom: 0;
+
+  width: 25px;
+
+  height: 2px;
+
+  background: var(--blue);
+
+  box-shadow: 0 0 10px var(--blue);
+}

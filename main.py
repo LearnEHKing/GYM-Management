@@ -26,7 +26,7 @@ def load_user(user_id):
 @app.route("/")
 def index():
   if current_user.is_authenticated:
-    return render_template("home.html")
+    return render_template("home.html",active_page="home")
   return render_template("index.html")
   
 @app.route("/add_member", methods=["GET", "POST"])
@@ -347,7 +347,7 @@ def edit_member(member_id):
               db.session.add(payment)
               db.session.commit()
   
-              flash("Member added successfully!", "success")
+              flash("Member edited successfully!", "success")
   
               return redirect(url_for(f"members/{member_id}"))
   
@@ -360,7 +360,7 @@ def edit_member(member_id):
               server_error = True
             
   return render_template(
-    "add_member.html",
+    "edit_member.html",
     member=member,
     errors=errors,
     server_error=server_error
@@ -387,12 +387,12 @@ def stats():
 @login_required
 def members():
   members = current_user.members
-  return render_template("members.html", members=members)
+  return render_template("members.html", members=members, active_page="members")
 
 @app.route("/settings",methods=['GET'])
 @login_required
 def settings():
-  return render_template("settings.html")
+  return render_template("settings.html",active_page="settings")
   
 
 @app.route("/members/<int:member_id>")

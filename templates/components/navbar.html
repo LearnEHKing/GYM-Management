@@ -1,0 +1,29 @@
+<!-- =========================================
+     BOTTOM NAVIGATION
+========================================= -->
+
+  <nav class="bottom-nav">
+    <!-- HOME -->
+
+    <a href="/" class="nav-item {% if active_page == 'home' %}active{% endif %}">
+      <div class="nav-icon">⌂</div>
+
+      <span> Home </span>
+    </a>
+
+    <!-- MEMBERS -->
+
+    <a href="{{ url_for('members') }}" class="nav-item {% if active_page == 'members' %}active{% endif %}">
+      <div class="nav-icon">♙</div>
+
+      <span> Members </span>
+    </a>
+
+    <!-- SETTINGS -->
+
+    <a href="{{ url_for('settings') }}" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+      <div class="nav-icon">⚙</div>
+
+      <span> Settings </span>
+    </a>
+  </nav>
