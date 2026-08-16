@@ -14,6 +14,20 @@ class GymOwner( UserMixin, db.Model):
     plan  = db.Column(db.String(20),nullable=False)
 
     members = db.relationship("Member",backref="owner", lazy=True)
+    owner_payments = db.relationship(
+        "OwnerPayment", backref="owner", lazy=True, cascade="all, delete-orphan"
+    )
+
+
+class OwnerPayment(db.Model):
+    __tablename__ = "owner_payment"
+
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False, index=True)
+    amount = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="Paid")
+    payment_date = db.Column(db.Date, nullable=False, default=date.today)
+    remarks = db.Column(db.Text)
 
 class Member(db.Model):
     __tablename__ = "member"
