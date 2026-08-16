@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment | Gym Management</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
+</head>
+
+<body>
+
+  <header class="topbar">
+
+    <a href="javascript:history.back()" class="back-btn">
+      ← Back
+    </a>
+
+    <div class="title-area">
+      <h1>Payment</h1>
+      <p>Record membership payment</p>
+    </div>
+
+  </header>
+
+  <main class="page">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toast-container">
+
+      {% for category,message in messages %}
+      <div class="toast {{ category }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if server_error %}
+    <section class="server-error">
+      {{ server_error }}
+    </section>
+    {% endif %}
+
+    <section class="member-card glass">
+
+      <div class="card-header">
+        <h2>Member Details</h2>
+      </div>
+
+      <div class="member-grid">
+
+        <div class="item">
+          <span class="label">Name</span>
+          <span class="value">{{ member.name }}</span>
+        </div>
+
+        <div class="item">
+          <span class="label">Phone</span>
+          <span class="value">{{ member.phone }}</span>
+        </div>
+
+        <div class="item">
+          <span class="label">Current Plan</span>
+          <span class="value">
+            {{ member.current_plan or "No Active Plan" }}
+          </span>
+        </div>
+
+        <div class="item">
+          <span class="label">Current Expiry</span>
+          <span class="value">
+            {{ member.membership_expiry or "-" }}
+          </span>
+        </div>
+
+        <div class="item full">
+          <span class="label">Address</span>
+          <span class="value">
+            {{ member.address }}
+          </span>
+        </div>
+
+      </div>
+
+    </section>
+
+    <section class="payment-layout">
+
+      <form method="POST" class="glass payment-form" novalidate>
+
+        <h2>Payment Information</h2>
+
+        <div class="form-group">
+
+          <label for="plan_id">
+            Membership Plan
+          </label>
+
+          <select id="plan_id" name="plan_id" required>
+
+            <option value="">
+              Select Plan
+            </option>
+
+            {% for plan in plans %}
+
+            <option value="{{ plan.id }}" data-fee="{{ plan.fee }}" data-duration="{{ plan.duration_months }}"
+              data-name="{{ plan.name }}">
+
+              {{ plan.name }}
+              (₹{{ plan.fee }} /
+              {{ plan.duration_months }}
+              Month{% if plan.duration_months != 1 %}s{% endif %})
+
+            </option>
+
+            {% endfor %}
+
+          </select>
+
+          {% if errors.plan_id %}
+          <small class="field-error">
+            {{ errors.plan_id }}
+          </small>
+          {% endif %}
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="amount_paid">
+            Amount Paid
+          </label>
+
+          <input type="number" id="amount_paid" name="amount_paid" min="0" step="1" placeholder="Enter amount">
+
+          {% if errors.amount_paid %}
+          <small class="field-error">
+            {{ errors.amount_paid }}
+          </small>
+          {% endif %}
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="payment_date">
+            Payment Date
+          </label>
+
+          <input type="date" id="payment_date" name="payment_date">
+
+          {% if errors.payment_date %}
+          <small class="field-error">
+            {{ errors.payment_date }}
+          </small>
+          {% endif %}
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="remarks">
+            Remarks
+          </label>
+
+          <textarea id="remarks" name="remarks" rows="5" placeholder="Optional remarks"></textarea>
+
+          {% if errors.remarks %}
+          <small class="field-error">
+            {{ errors.remarks }}
+          </small>
+          {% endif %}
+
+        </div>
+
+        <div class="form-actions">
+
+          <button type="submit" class="primary-btn">
+
+            Save Payment
+
+          </button>
+
+          <a href="javascript:history.back()" class="secondary-btn">
+
+            Cancel
+
+          </a>
+
+        </div>
+
+      </form>
+
+      <aside class="glass summary-card">
+
+        <h2>Payment Summary</h2>
+
+        <div class="summary-row">
+          <span>Plan</span>
+          <strong id="summary-plan">
+            -
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Duration</span>
+          <strong id="summary-duration">
+            -
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Plan Fee</span>
+          <strong id="summary-fee">
+            ₹0
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Amount Paid</span>
+          <strong id="summary-paid">
+            ₹0
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Remaining</span>
+          <strong id="summary-remaining">
+            ₹0
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Status</span>
+          <strong id="summary-status">
+            -
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Expiry Date</span>
+          <strong id="summary-expiry">
+            -
+          </strong>
+        </div>
+
+      </aside>
+
+    </section>
+
+  </main>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+    // --------------------------
+    // Theme
+    // --------------------------
+
+    if (localStorage.getItem("theme") === "light") {
+        document.body.classList.add("light");
+    }
+
+    // --------------------------
+    // Elements
+    // --------------------------
+
+    const planSelect = document.getElementById("plan_id");
+    const amountInput = document.getElementById("amount_paid");
+    const paymentDate = document.getElementById("payment_date");
+
+    const summaryPlan = document.getElementById("summary-plan");
+    const summaryDuration = document.getElementById("summary-duration");
+    const summaryFee = document.getElementById("summary-fee");
+    const summaryPaid = document.getElementById("summary-paid");
+    const summaryRemaining = document.getElementById("summary-remaining");
+    const summaryStatus = document.getElementById("summary-status");
+    const summaryExpiry = document.getElementById("summary-expiry");
+
+    // --------------------------
+    // Today's Date
+    // --------------------------
+
+    if (!paymentDate.value) {
+        const today = new Date();
+        paymentDate.value = today.toISOString().split("T")[0];
+    }
+
+    // --------------------------
+    // Expiry Calculator
+    // --------------------------
+
+    function calculateExpiry(months) {
+
+        if (!paymentDate.value || months <= 0)
+            return "-";
+
+        const date = new Date(paymentDate.value);
+
+        date.setMonth(date.getMonth() + months);
+
+        return date.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        });
+    }
+
+    // --------------------------
+    // Update Summary
+    // --------------------------
+
+    function updateSummary() {
+
+        const option = planSelect.options[planSelect.selectedIndex];
+
+        if (!option || !option.value) {
+
+            summaryPlan.textContent = "-";
+            summaryDuration.textContent = "-";
+            summaryFee.textContent = "₹0";
+            summaryPaid.textContent = "₹0";
+            summaryRemaining.textContent = "₹0";
+            summaryStatus.textContent = "-";
+            summaryExpiry.textContent = "-";
+
+            return;
+        }
+
+        const planName = option.dataset.name;
+
+        const fee = Number(option.dataset.fee);
+
+        const duration = Number(option.dataset.duration);
+
+        const paid = Number(amountInput.value || 0);
+
+        let remaining = fee - paid;
+
+        if (remaining < 0)
+            remaining = 0;
+
+        let status = "Partial";
+
+        if (paid >= fee)
+            status = "Paid";
+
+        summaryPlan.textContent = planName;
+
+        summaryDuration.textContent =
+            duration +
+            " Month" +
+            (duration > 1 ? "s" : "");
+
+        summaryFee.textContent = "₹" + fee;
+
+        summaryPaid.textContent = "₹" + paid;
+
+        summaryRemaining.textContent = "₹" + remaining;
+
+        summaryStatus.textContent = status;
+
+        summaryExpiry.textContent = calculateExpiry(duration);
+    }
+
+    // --------------------------
+    // Events
+    // --------------------------
+
+    planSelect.addEventListener("change", updateSummary);
+
+    amountInput.addEventListener("input", updateSummary);
+
+    paymentDate.addEventListener("change", updateSummary);
+
+    // --------------------------
+    // Auto Hide Toasts
+    // --------------------------
+
+    document.querySelectorAll(".toast").forEach((toast) => {
+
+        setTimeout(() => {
+
+            toast.classList.add("hide");
+
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+
+        }, 3500);
+
+    });
+
+    // Initial update
+
+    updateSummary();
+
+});
+    summaryStatus.className = "";
+
+if (status === "Paid") {
+    summaryStatus.classList.add("paid");
+} else {
+    summaryStatus.classList.add("partial");
+}
+  </script>
+</body>
+
+</html>

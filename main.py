@@ -342,10 +342,103 @@ def member_details(member_id):
 
 
 
-@app.route("/payments/<int:member_id>", methods=["GET", "POST"])
+@app.route("/members/<int:member_id>/payment", methods=["GET", "POST"])
 @login_required
-def new_payment(member_id):
-    return f"Hehehe yr id is {member_id} "
+def payment(member_id):
+
+    member = Member.query.get_or_404(member_id)
+    plans = MembershipPlan.query.order_by(MembershipPlan.fee).all()
+
+    errors = {}
+
+    if request.method == "POST":
+
+        # -------------------------
+        # Read form
+        # -------------------------
+
+        plan_id = request.form.get("plan_id")
+        amount_paid = request.form.get("amount_paid")
+        payment_date = request.form.get("payment_date")
+        remarks = request.form.get("remarks", "").strip()
+
+        # -------------------------
+        # Validation
+        # -------------------------
+
+        plan = MembershipPlan.query.get(plan_id)
+
+        if not plan:
+            errors["plan_id"] = "Please select a membership plan."
+
+        try:
+            amount_paid = int(amount_paid)
+
+            if amount_paid < 0:
+                raise ValueError
+
+        except (TypeError, ValueError):
+            errors["amount_paid"] = "Enter a valid amount."
+
+        try:
+            payment_date = datetime.strptime(
+                payment_date,
+                "%Y-%m-%d"
+            ).date()
+
+        except (TypeError, ValueError):
+            errors["payment_date"] = "Invalid payment date."
+
+        # -------------------------
+        # Save
+        # -------------------------
+
+        if not errors:
+
+            status = (
+                "Paid"
+                if amount_paid >= plan.fee
+                else "Partial"
+            )
+
+            try:
+
+                new_payment(
+                    member=member,
+                    plan=plan,
+                    amount_paid=amount_paid,
+                    payment_date=payment_date,
+                    status=status,
+                    remarks=remarks
+                )
+
+                db.session.commit()
+
+                flash("Payment recorded successfully.", "success")
+
+                return redirect(
+                    f"/members/{member.id}"
+                )
+
+            except Exception:
+
+                db.session.rollback()
+
+                return render_template(
+                    "payment.html",
+                    member=member,
+                    plans=plans,
+                    errors=errors,
+                    server_error=True
+                )
+
+    return render_template(
+        "payment.html",
+        member=member,
+        plans=plans,
+        errors=errors,
+        server_error=False
+    )
 
 @app.route("/payments/<int:payment_id>/edit", methods=["GET", "POST"])
 @login_required
@@ -356,7 +449,7 @@ def edit_payment(payment_id):
         .join(Member)
         .filter(
             Payment.id == payment_id,
-            Member.gym_owner_id == current_user.id
+            Member.owner_id == current_user.id
         )
         .first_or_404()
     )
