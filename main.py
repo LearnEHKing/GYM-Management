@@ -339,6 +339,14 @@ def member_details(member_id):
       )
     )
 
+
+
+
+@app.route("/payments/<int:member_id>", methods=["GET", "POST"])
+@login_required
+def new_payment(member_id):
+    return f"Hehehe yr id is {member_id} "
+
 @app.route("/payments/<int:payment_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_payment(payment_id):
@@ -396,6 +404,13 @@ def login():
 def logout():
   logout_user()
   return redirect("/")
+
+
+
+
+#====================================
+#            ADMIN 
+#====================================
 
 @app.route("/admin", methods=['GET','POST'])
 @login_required

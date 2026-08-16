@@ -187,6 +187,8 @@ button {
   transition: 0.2s;
 }
 
+
+
 button[type="submit"] {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
 
@@ -478,4 +480,19 @@ body.light .success-toast {
 body.light .input-error {
   border-color: #ef4444 !important;
   box-shadow: 0 0 0 4px rgba(239, 68, 68, .12);
+}
+
+.button-secondary {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: 0.2s;
+  color: #ff0303cd;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, .12);
+  text-decoration: none;
 }

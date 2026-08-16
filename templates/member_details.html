@@ -21,29 +21,32 @@
          HEADER
     =========================== -->
 
-    <header class="page-header">
+    <div class="sticky-top">
 
-      <a href="/members" class="back-btn">
-        ←
-      </a>
+      <header class="page-header">
 
-      <div class="member-title">
+        <a href="{{url_for('members')}}" class="back-btn">←</a>
+        <a href="{{ url_for('new_payment', member_id=member.id) }}" class="payment-btn">
+        💳 New Payment
+        </a>
+      </header>
 
-        <h1>{{member.name}}</h1>
-
-      </div>
-
-    </header>
-
+    </div>
 
     <form method="POST">
-
+      
       <!-- ==========================
              CURRENT PAYMENT
         =========================== -->
       <section class="membership-card">
+        <div class="member-title">
 
+        <h1>{{member.name}}</h1>
+
+        </div>
+        <br>
         <div class="card-header">
+          
           <h2>Membership Information</h2>
 
           {% if member.membership_expiry >= today %}
@@ -218,7 +221,7 @@
 
       </section>
 
-      
+
       <!-- ==========================
      PAYMENT HISTORY
 =========================== -->
