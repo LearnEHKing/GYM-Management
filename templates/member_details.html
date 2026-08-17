@@ -324,7 +324,7 @@
               ◀
             </button>
 
-            <span>August 2026</span>
+            <span></span>
 
             <button type="button">
               ▶
@@ -335,10 +335,13 @@
         </div>
 
         <div class="attendance-calendar">
-
-          <!-- JS can generate this -->
-
         </div>
+
+        <p class="attendance-help">Tap an available date to mark attendance. Green dates can be tapped to remove attendance.</p>
+        <form id="attendance-edit-form" method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}">
+          <input type="hidden" name="attendance_date" id="attendance-date-input">
+          <input type="hidden" name="action" id="attendance-action-input">
+        </form>
 
       </section>
 
@@ -364,6 +367,19 @@
       </form>
     </dialog>
 
+    <dialog class="status-dialog" id="remove-attendance-dialog">
+      <form method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}" class="status-dialog-card">
+        <input type="hidden" name="attendance_date" id="remove-attendance-date">
+        <input type="hidden" name="action" value="remove">
+        <h2>Remove attendance?</h2>
+        <p>Are you sure you want to unmark attendance for <strong id="remove-attendance-label"></strong>?</p>
+        <div class="status-dialog-actions">
+          <button type="button" class="secondary-btn" data-close-attendance-dialog>Cancel</button>
+          <button type="submit" class="danger-btn dialog-danger">Yes, unmark</button>
+        </div>
+      </form>
+    </dialog>
+
 
 
 
@@ -379,6 +395,9 @@
     });
     document.querySelectorAll("[data-close-dialog]").forEach((button) => {
       button.addEventListener("click", () => button.closest("dialog").close());
+    });
+    document.querySelector("[data-close-attendance-dialog]").addEventListener("click", () => {
+      document.getElementById("remove-attendance-dialog").close();
     });
 
     document.querySelectorAll(".toast").forEach((toast) => {
@@ -404,6 +423,13 @@ if (localStorage.getItem("theme") === "light") {
     
   
 const calendar = document.querySelector(".attendance-calendar");
+const attendanceDates = new Set({{ attendance_dates|tojson }});
+const joinDate = "{{ member.join_date.isoformat() }}";
+const todayDate = "{{ today.isoformat() }}";
+const attendanceForm = document.getElementById("attendance-edit-form");
+const attendanceDateInput = document.getElementById("attendance-date-input");
+const attendanceActionInput = document.getElementById("attendance-action-input");
+const removeAttendanceDialog = document.getElementById("remove-attendance-dialog");
 
 const monthLabel =
     document.querySelector(".calendar-controls span");
@@ -495,14 +521,26 @@ function drawCalendar(date){
     day.className = "calendar-day";
     day.textContent = d;
 
-    day.addEventListener("click", (e) => {
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        day.classList.toggle("present");
-
-    });
+    const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (attendanceDates.has(isoDate)) day.classList.add("present");
+    const isEditable = isoDate >= joinDate && isoDate <= todayDate;
+    day.disabled = !isEditable;
+    if (!isEditable) {
+        day.classList.add("unavailable");
+        day.title = isoDate < joinDate ? "Before the member joined" : "Future dates cannot be marked";
+    } else {
+        day.addEventListener("click", () => {
+            if (attendanceDates.has(isoDate)) {
+                document.getElementById("remove-attendance-date").value = isoDate;
+                document.getElementById("remove-attendance-label").textContent = new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+                removeAttendanceDialog.showModal();
+            } else {
+                attendanceDateInput.value = isoDate;
+                attendanceActionInput.value = "mark";
+                attendanceForm.submit();
+            }
+        });
+    }
 
     grid.appendChild(day);   // ← Missing line
 

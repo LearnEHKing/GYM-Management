@@ -5,7 +5,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required
 from sqlalchemy import func
 
-from models import Member, Membership, MembershipPlan, db
+from models import Attendance, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership, recalculate_memberships
 
 members_bp = Blueprint("members", __name__)
@@ -92,10 +92,126 @@ def edit_member(member_id):
     return render_template("edit_member.html", member=member, errors=errors, server_error=server_error)
 
 
-@members_bp.route("/attendance", methods=["GET", "POST"])
+@members_bp.route("/attendance")
 @login_required
 def attendance():
-    return render_template("attendance.html")
+    """Show today's check-in board, prioritised by yesterday's arrival time."""
+    today = date.today()
+    yesterday = today - relativedelta(days=1)
+    now = datetime.now()
+
+    members = Member.query.filter_by(owner_id=current_user.id).all()
+    today_attendance = {
+        record.member_id: record
+        for record in Attendance.query.join(Member).filter(
+            Member.owner_id == current_user.id,
+            Attendance.attendance_date == today,
+        ).all()
+    }
+    yesterday_attendance = {
+        record.member_id: record
+        for record in Attendance.query.join(Member).filter(
+            Member.owner_id == current_user.id,
+            Attendance.attendance_date == yesterday,
+        ).all()
+    }
+
+    def member_order(member):
+        # Active members who still need a check-in are always first.  Within that
+        # group, yesterday's matching hour is first, then the neighbouring hours.
+        attendance_record = today_attendance.get(member.id)
+        if not member.active:
+            status_rank = 2
+        elif attendance_record is None:
+            status_rank = 0
+        else:
+            status_rank = 1
+
+        yesterday_record = yesterday_attendance.get(member.id)
+        if yesterday_record:
+            hour_distance = abs(yesterday_record.check_in.hour - now.hour)
+            yesterday_rank = 0
+        else:
+            hour_distance = 99
+            yesterday_rank = 1
+        return status_rank, yesterday_rank, hour_distance, member.name.lower()
+
+    ordered_members = sorted(members, key=member_order)
+    return render_template(
+        "attendance.html",
+        members=ordered_members,
+        attendance_by_member=today_attendance,
+        today=today,
+        active_unchecked=sum(m.active and m.id not in today_attendance for m in members),
+        active_page="attendance",
+    )
+
+
+@members_bp.route("/attendance/<int:member_id>/check-in", methods=["POST"])
+@login_required
+def check_in_member(member_id):
+    member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
+    today = date.today()
+    existing = Attendance.query.filter_by(member_id=member.id, attendance_date=today).first()
+    if existing:
+        flash(f"{member.name} is already checked in today.", "info")
+    else:
+        db.session.add(Attendance(member_id=member.id, attendance_date=today, check_in=datetime.now()))
+        db.session.commit()
+        flash(f"Attendance marked for {member.name}.", "success")
+    return redirect(url_for("members.attendance"))
+
+
+@members_bp.route("/attendance/<int:member_id>/check-in/remove", methods=["POST"])
+@login_required
+def remove_check_in(member_id):
+    member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
+    record = Attendance.query.filter_by(member_id=member.id, attendance_date=date.today()).first()
+    if not record:
+        flash(f"{member.name} has no attendance record for today.", "info")
+    else:
+        db.session.delete(record)
+        db.session.commit()
+        flash(f"Attendance removed for {member.name}.", "success")
+    return redirect(url_for("members.attendance"))
+
+
+@members_bp.route("/members/<int:member_id>/attendance", methods=["POST"])
+@login_required
+def edit_member_attendance(member_id):
+    """Mark or remove one valid attendance date from a member profile."""
+    member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
+    action = request.form.get("action")
+    try:
+        attendance_date = datetime.strptime(request.form.get("attendance_date", ""), "%Y-%m-%d").date()
+    except ValueError:
+        flash("Please choose a valid attendance date.", "error")
+        return redirect(url_for("members.member_details", member_id=member.id))
+
+    # Never accept future check-ins or dates from before the member existed.
+    if attendance_date < member.join_date or attendance_date > date.today():
+        flash("Attendance can only be edited between the joining date and today.", "error")
+        return redirect(url_for("members.member_details", member_id=member.id))
+
+    record = Attendance.query.filter_by(member_id=member.id, attendance_date=attendance_date).first()
+    if action == "mark":
+        if record:
+            flash("Attendance is already marked for that date.", "info")
+        else:
+            check_in = datetime.combine(attendance_date, datetime.now().time())
+            db.session.add(Attendance(member_id=member.id, attendance_date=attendance_date, check_in=check_in))
+            db.session.commit()
+            flash("Attendance marked successfully.", "success")
+    elif action == "remove":
+        if record:
+            db.session.delete(record)
+            db.session.commit()
+            flash("Attendance removed successfully.", "success")
+        else:
+            flash("There is no attendance record for that date.", "info")
+    else:
+        abort(400)
+    return redirect(url_for("members.member_details", member_id=member.id))
 
 
 @members_bp.route("/manage_payment", methods=["GET", "POST"])
@@ -126,7 +242,33 @@ def member_details(member_id):
     membership_months = (date.today().year - member.join_date.year) * 12 + date.today().month - member.join_date.month
     payments = Membership.query.filter_by(member_id=member.id).order_by(Membership.payment_date.desc()).all()
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id, active=True).order_by(MembershipPlan.name).all()
-    return render_template("member_details.html", member=member, total_paid=total_paid, membership_months=membership_months, attendance_this_month=21, last_visit="Yesterday", today=date.today(), payments=payments, plans=plans)
+    month_start = date.today().replace(day=1)
+    attendance_this_month = Attendance.query.filter(
+        Attendance.member_id == member.id,
+        Attendance.attendance_date >= month_start,
+        Attendance.attendance_date <= date.today(),
+    ).count()
+    attendance_dates = Attendance.query.filter_by(member_id=member.id).with_entities(
+        Attendance.attendance_date
+    ).all()
+    latest_attendance = Attendance.query.filter_by(member_id=member.id).order_by(
+        Attendance.attendance_date.desc(), Attendance.check_in.desc()
+    ).first()
+    if latest_attendance:
+        if latest_attendance.attendance_date == date.today():
+            last_visit = "Today"
+        elif latest_attendance.attendance_date == date.today() - relativedelta(days=1):
+            last_visit = "Yesterday"
+        else:
+            last_visit = latest_attendance.attendance_date.strftime("%d %b %Y")
+    else:
+        last_visit = "No visits yet"
+    return render_template(
+        "member_details.html", member=member, total_paid=total_paid,
+        membership_months=membership_months, attendance_this_month=attendance_this_month,
+        attendance_dates=[record.attendance_date.isoformat() for record in attendance_dates],
+        last_visit=last_visit, today=date.today(), payments=payments, plans=plans,
+    )
 
 
 @members_bp.route("/members/<int:member_id>/active-status", methods=["POST"])

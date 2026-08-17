@@ -1,0 +1,24 @@
+.attendance-header { margin: 4px 0 18px; }
+.attendance-header h1 { margin: 2px 0 4px; font-size: 30px; }
+.eyebrow, .summary { color: var(--muted); margin: 0; font-size: 13px; }
+.search-wrap { margin-bottom: 14px; }
+#search { width: 100%; box-sizing: border-box; padding: 13px 14px; border: 1px solid var(--cardborder); border-radius: 12px; background: var(--card); color: var(--white); font: inherit; }
+.member-list { border: 1px solid var(--cardborder); border-radius: 16px; overflow: hidden; background: var(--card); }
+.attendance-member { min-height: 70px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.attendance-member:last-child { border-bottom: 0; }
+.member-profile { min-width: 0; flex: 1; display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
+.avatar { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(59,130,246,.16); color: var(--blue); font-weight: 800; }
+.member-copy { min-width: 0; display: grid; gap: 3px; }
+.member-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-copy small { color: var(--muted); }
+.inactive .member-copy strong, .inactive .member-copy small { color: #ef4444; }
+.inactive .avatar { background: rgba(239,68,68,.14); color: #ef4444; }
+.attendance-toggle { width: 42px; height: 42px; border: 1px solid var(--cardborder); border-radius: 12px; background: transparent; color: var(--muted); font-size: 21px; font-weight: 800; cursor: pointer; }
+.attendance-toggle:hover { border-color: var(--blue); color: var(--blue); }
+.attendance-toggle.checked { border-color: #22c55e; background: rgba(34,197,94,.14); color: #22c55e; }
+.checked-in { display: flex; align-items: center; gap: 8px; color: #22c55e; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.confirm-dialog { padding: 0; border: 0; border-radius: 18px; background: var(--card); color: var(--white); width: min(360px, calc(100vw - 32px)); }
+.confirm-dialog::backdrop { background: rgba(0,0,0,.65); }
+.confirm-dialog form { padding: 22px; }.confirm-dialog h2 { margin: 0 0 8px; }.confirm-dialog p { color: var(--muted); line-height: 1.5; }
+.dialog-actions { display: flex; gap: 10px; margin-top: 20px; }.dialog-actions button { flex: 1; padding: 11px; border: 0; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; }.cancel { background: var(--surface2); color: var(--white); }.remove { background: #dc2626; color: #fff; }
+.empty { padding: 22px; color: var(--muted); text-align: center; }

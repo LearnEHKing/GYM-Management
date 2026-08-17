@@ -293,6 +293,27 @@ border-color:var(--success);
 border-color:var(--primary);
 }
 
+.calendar-day.unavailable,
+.calendar-day:disabled{
+opacity:.35;
+cursor:not-allowed;
+}
+
+.calendar-day:not(:disabled){cursor:pointer;}
+
+.attendance-help{
+margin-top:14px;
+font-size:.82rem;
+color:var(--muted);
+line-height:1.4;
+}
+
+.dialog-danger{
+margin-top:0;
+width:auto;
+flex:1;
+}
+
 @media(max-width:700px){
 .membership-grid,
 .details-grid,

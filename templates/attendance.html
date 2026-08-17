@@ -1,0 +1,72 @@
+{% extends "components/base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/attendance.css') }}">
+{% endblock %}
+{% block title %}Attendance{% endblock %}
+
+{% block body %}
+<header class="attendance-header">
+  <div>
+    <p class="eyebrow">{{ today.strftime('%A, %d %B') }}</p>
+    <h1>Attendance</h1>
+    <p class="summary">{{ active_unchecked }} active member{{ '' if active_unchecked == 1 else 's' }} still to check in</p>
+  </div>
+</header>
+
+<div class="search-wrap">
+  <input id="search" type="search" placeholder="Search member or phone" autocomplete="off">
+</div>
+
+<section class="member-list" aria-label="Member attendance list">
+  {% for member in members %}
+  {% set record = attendance_by_member.get(member.id) %}
+  <article class="attendance-member {% if not member.active %}inactive{% endif %}" data-member>
+    <a class="member-profile" href="{{ url_for('members.member_details', member_id=member.id) }}">
+      <span class="avatar">{{ member.name[0]|upper }}</span>
+      <span class="member-copy">
+        <strong>{{ member.name }}</strong>
+        <small>{% if not member.active %}Inactive · {% endif %}+91 {{ member.phone }}</small>
+      </span>
+    </a>
+    {% if record %}
+    <div class="checked-in">
+      <span>✓ {{ record.check_in.strftime('%I:%M %p') }}</span>
+      <button type="button" class="attendance-toggle checked" data-remove-dialog="remove-{{ member.id }}" aria-label="Remove attendance for {{ member.name }}">✓</button>
+    </div>
+    <dialog class="confirm-dialog" id="remove-{{ member.id }}">
+      <form method="post" action="{{ url_for('members.remove_check_in', member_id=member.id) }}">
+        <h2>Remove attendance?</h2>
+        <p>Are you sure you want to unmark <strong>{{ member.name }}</strong> for today?</p>
+        <div class="dialog-actions">
+          <button type="button" class="cancel" data-close-dialog>Cancel</button>
+          <button type="submit" class="remove">Yes, unmark</button>
+        </div>
+      </form>
+    </dialog>
+    {% else %}
+    <form method="post" action="{{ url_for('members.check_in_member', member_id=member.id) }}">
+      <button class="attendance-toggle" type="submit" aria-label="Mark {{ member.name }} present">✓</button>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}
+  <p class="empty">No members yet. Add a member before recording attendance.</p>
+  {% endfor %}
+</section>
+{% endblock %}
+
+{% block script %}
+const search = document.getElementById('search');
+search?.addEventListener('input', () => {
+  const query = search.value.trim().toLowerCase();
+  document.querySelectorAll('[data-member]').forEach((card) => {
+    card.hidden = !card.textContent.toLowerCase().includes(query);
+  });
+});
+document.querySelectorAll('[data-remove-dialog]').forEach((button) => {
+  button.addEventListener('click', () => document.getElementById(button.dataset.removeDialog).showModal());
+});
+document.querySelectorAll('[data-close-dialog]').forEach((button) => {
+  button.addEventListener('click', () => button.closest('dialog').close());
+});
+{% endblock %}
