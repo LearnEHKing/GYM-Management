@@ -11,6 +11,64 @@ from services.memberships import new_membership, recalculate_memberships
 members_bp = Blueprint("members", __name__)
 
 
+def build_recent_activity(owner_id):
+    activities = []
+
+    def add_activity(timestamp, icon, kind, title, when_text):
+        if timestamp is None:
+            return
+        activities.append({
+            "at": timestamp,
+            "icon": icon,
+            "kind": kind,
+            "title": title,
+            "when": when_text,
+        })
+
+    recent_checkins = Attendance.query.join(Member).filter(
+        Member.owner_id == owner_id
+    ).order_by(Attendance.check_in.desc()).limit(20).all()
+    for record in recent_checkins:
+        if record.member is None:
+            continue
+        add_activity(
+            record.check_in,
+            "✓",
+            "green",
+            f"{record.member.name} checked in",
+            record.check_in.strftime("%d %b, %I:%M %p"),
+        )
+
+    recent_payments = Membership.query.join(Member).filter(
+        Member.owner_id == owner_id
+    ).order_by(Membership.payment_date.desc(), Membership.id.desc()).limit(20).all()
+    for payment in recent_payments:
+        if payment.member is None:
+            continue
+        add_activity(
+            datetime.combine(payment.payment_date, datetime.min.time()),
+            "₹",
+            "blue",
+            f"{payment.member.name} paid ₹{payment.amount_paid}",
+            payment.payment_date.strftime("%d %b %Y"),
+        )
+
+    recent_members = Member.query.filter_by(owner_id=owner_id).order_by(
+        Member.join_date.desc(), Member.id.desc()
+    ).limit(20).all()
+    for member in recent_members:
+        add_activity(
+            datetime.combine(member.join_date, datetime.min.time()),
+            "+",
+            "green",
+            f"{member.name} joined the gym",
+            member.join_date.strftime("%d %b %Y"),
+        )
+
+    activities.sort(key=lambda item: item["at"], reverse=True)
+    return activities[:5]
+
+
 def validate_member_form(member=None):
     name = request.form["name"].strip()
     phone = request.form["phone"].strip()
@@ -53,45 +111,11 @@ def index():
             Member.membership_expiry >= today,
             Member.membership_expiry <= today + relativedelta(days=7),
         ).count()
-        activities = []
-        recent_checkins = Attendance.query.join(Member).filter(
-            Member.owner_id == current_user.id
-        ).order_by(Attendance.check_in.desc()).limit(5).all()
-        for record in recent_checkins:
-            activities.append({
-                "at": record.check_in,
-                "icon": "✓",
-                "kind": "green",
-                "title": f"{record.member.name} checked in",
-                "when": record.check_in.strftime("%d %b, %I:%M %p"),
-            })
-        recent_payments = Membership.query.join(Member).filter(
-            Member.owner_id == current_user.id
-        ).order_by(Membership.payment_date.desc(), Membership.id.desc()).limit(5).all()
-        for payment in recent_payments:
-            activities.append({
-                "at": datetime.combine(payment.payment_date, datetime.min.time()),
-                "icon": "₹",
-                "kind": "blue",
-                "title": f"{payment.member.name} paid ₹{payment.amount_paid}",
-                "when": payment.payment_date.strftime("%d %b %Y"),
-            })
-        recent_members = Member.query.filter_by(owner_id=current_user.id).order_by(
-            Member.join_date.desc(), Member.id.desc()
-        ).limit(5).all()
-        for member in recent_members:
-            activities.append({
-                "at": datetime.combine(member.join_date, datetime.min.time()),
-                "icon": "+",
-                "kind": "green",
-                "title": f"{member.name} joined the gym",
-                "when": member.join_date.strftime("%d %b %Y"),
-            })
-        activities.sort(key=lambda item: item["at"], reverse=True)
+
         return render_template(
             "home.html", active_page="home", total_members=total_members,
             monthly_revenue=monthly_revenue, today_attendance=today_attendance,
-            expiring_soon=expiring_soon, activities=activities[:5],
+            expiring_soon=expiring_soon, activities=build_recent_activity(current_user.id),
         )
     return render_template("index.html")
 
