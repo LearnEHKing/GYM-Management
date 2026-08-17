@@ -525,6 +525,41 @@
   word-break: break-word;
 }
 
+/* Light mode status cards */
+body.light .status-item.expired {
+  background: linear-gradient(145deg, #ffe7e7, #ffd9d9);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+body.light .status-item.warning {
+  background: linear-gradient(145deg, #fff5d8, #ffefbf);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* Make text dark and readable */
+body.light .status-item.expired .status-body strong,
+body.light .status-item.warning .status-body strong {
+  color: #1f2937;
+}
+
+body.light .status-item.expired .status-body small,
+body.light .status-item.expired .status-body p,
+body.light .status-item.warning .status-body small,
+body.light .status-item.warning .status-body p {
+  color: #4b5563;
+}
+
+/* Slightly stronger badges for light mode */
+body.light .status-badge.expired {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
+body.light .status-badge.warning {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+}
+
 @media (max-width: 420px) {
   .status-item {
     align-items: flex-start;
