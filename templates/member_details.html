@@ -38,27 +38,27 @@
       <header class="page-header">
 
         <a href="{{url_for('members')}}" class="back-btn">←</a>
-        <a href="{{ url_for('payment', member_id=member.id) }}" class="payment-btn">
-        💳 New Payment
+        <a href="{{ url_for('add_membership', member_id=member.id) }}" class="payment-btn">
+          💳 New Payment
         </a>
       </header>
 
     </div>
 
     <form method="POST">
-      
+
       <!-- ==========================
              CURRENT PAYMENT
         =========================== -->
       <section class="membership-card">
         <div class="member-title">
 
-        <h1>{{member.name}}</h1>
+          <h1>{{member.name}}</h1>
 
         </div>
         <br>
         <div class="card-header">
-          
+
           <h2>Membership Information</h2>
 
           {% if member.membership_expiry >= today %}
@@ -72,52 +72,57 @@
 
           <div class="item">
             <span class="label">Current Plan</span>
-            <span class="value">{{ member.current_plan }}</span>
+            <span class="value">
+              {{ member.latest_membership.plan_name if member.latest_membership else "-" }}
+            </span>
           </div>
 
           <div class="item">
             <span class="label">Membership Fee</span>
-            <span class="value">₹{{ member.latest_payment.fee }}</span>
+            <span class="value">
+              ₹{{ member.latest_membership.fee if member.latest_membership else 0 }}
+            </span>
           </div>
 
           <div class="item">
             <span class="label">Amount Paid</span>
-            <span class="value">₹{{ member.latest_payment.amount_paid }}</span>
+            <span class="value">
+              ₹{{ member.latest_membership.amount_paid if member.latest_membership else 0 }}
+            </span>
           </div>
 
           <div class="item">
             <span class="label">Pending</span>
             <span class="value">
-              ₹{{ member.latest_payment.fee - member.latest_payment.amount_paid }}
+              ₹{{ (member.latest_membership.fee - member.latest_membership.amount_paid) if member.latest_membership else
+              0 }}
             </span>
           </div>
 
           <div class="item">
             <span class="label">Started</span>
             <span class="value">
-              {{ member.membership_start.strftime("%d %b %Y") }}
+              {{ member.membership_start.strftime("%d %b %Y") if member.membership_start else "-" }}
             </span>
           </div>
 
           <div class="item">
             <span class="label">Expires</span>
             <span class="value">
-              {{ member.membership_expiry.strftime("%d %b %Y") }}
+              {{ member.membership_expiry.strftime("%d %b %Y") if member.membership_expiry else "-" }}
             </span>
           </div>
 
           <div class="item">
             <span class="label">Days Remaining</span>
 
-            {% if member.membership_expiry >= today %}
+            {% if member.membership_expiry and member.membership_expiry >= today %}
             <span class="value green">
               {{ (member.membership_expiry - today).days }}
               day{{ '' if (member.membership_expiry - today).days == 1 else 's' }}
             </span>
             {% else %}
-            <span class="value red">
-              Expired
-            </span>
+            <span class="value red">Expired</span>
             {% endif %}
 
           </div>
@@ -125,20 +130,21 @@
           <div class="item">
             <span class="label">Payment Status</span>
 
-            {% if member.latest_payment.amount_paid >= member.latest_payment.fee %}
+            {% if member.latest_membership %}
+            {% if member.latest_membership.amount_paid >= member.latest_membership.fee %}
             <span class="value green">Paid</span>
-
-            {% elif member.latest_payment.amount_paid == 0 %}
+            {% elif member.latest_membership.amount_paid == 0 %}
             <span class="value red">Unpaid</span>
-
             {% else %}
             <span class="value orange">Partial</span>
+            {% endif %}
+            {% else %}
+            <span class="value">-</span>
             {% endif %}
 
           </div>
 
         </div>
-
       </section>
 
       <!-- -=======================
@@ -251,24 +257,15 @@
           <strong>{{ payment.plan_name }}</strong><br>
 
           <small>
-            {{ payment.payment_date.strftime("%d %b %Y") }}
-            • ₹{{ payment.amount_paid }}
+  {{ payment.payment_date.strftime("%d %b %Y") }}
+  • ₹{{ payment.amount_paid }}
 
-            {% if payment.status == "Paid" %}
-            • Paid
-            {% elif payment.status == "Partial" %}
-            • Partial
-            {% elif payment.status == "Pending" %}
-            • Pending
-            {% else %}
-            • {{ payment.status }}
-            {% endif %}
-
+  
           </small>
 
         </div>
 
-        <a href="{{ url_for('edit_payment', payment_id=payment.id) }}" class="secondary-btn">
+        <a href="{{ url_for('delete_membership', membership_id=payment.id) }}" class="secondary-btn">
           Edit
         </a>
 

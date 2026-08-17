@@ -100,7 +100,6 @@
           <label for="plan_id">
             Membership Plan
           </label>
-
           <select id="plan_id" name="plan_id" required>
 
             <option value="">
@@ -110,14 +109,12 @@
             {% for plan in plans %}
 
             <option value="{{ plan.id }}" data-fee="{{ plan.fee }}" data-duration="{{ plan.duration_months }}"
-              data-name="{{ plan.name }}">
-
+              data-name="{{ plan.name }}" {% if request.form.get("plan_id")==plan.id|string %}selected{% endif %}>
               {{ plan.name }}
-              (₹{{ plan.fee }} /
-              {{ plan.duration_months }}
+              (₹{{ plan.fee }} / {{ plan.duration_months }}
               Month{% if plan.duration_months != 1 %}s{% endif %})
-
             </option>
+            <br>
 
             {% endfor %}
 

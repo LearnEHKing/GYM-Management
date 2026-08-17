@@ -1,6 +1,6 @@
 from flask_login import LoginManager, current_user, login_user , login_required, logout_user
 from flask import Flask, render_template, redirect, url_for, request, flash, abort
-from models import GymOwner, db, Member, Payment, OwnerPayment, MembershipPlan
+from models import GymOwner, db, Member, Membership, OwnerPayment, MembershipPlan
 from werkzeug.security import generate_password_hash,check_password_hash
 from dateutil.relativedelta import relativedelta
 from flask_sqlalchemy import SQLAlchemy
@@ -23,7 +23,7 @@ db.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-   return GymOwner.query.get(int(user_id))
+   return db.session.get(GymOwner, int(user_id))
 
 @app.route("/")
 def index():
@@ -43,14 +43,7 @@ def add_member():
       phone = request.form["phone"].strip()
       address = request.form["address"].strip()
       notes = request.form["notes"].strip()
-      plan = MembershipPlan.query.get_or_404(request.form["plan_id"])
-      amount_paid = int(request.form["fee"].strip())
-      if amount_paid == 0:
-          payment_status = "Pending"
-      elif amount_paid < plan.fee:
-          payment_status = "Partial"
-      else:
-          payment_status = "Paid"
+      
   
       # -------------------------
       # Name
@@ -100,22 +93,7 @@ def add_member():
       except ValueError:
           errors["join_date"] = "Invalid joining date."
   
-      # -------------------------
-      # Fee
-      # -------------------------
-  
-      try:
-          if amount_paid <= 0:
-              errors["fee"] = "Paid Amount must be greater than 0."
-          if amount_paid>plan.fee:
-              errors["fee"] = f"Paid Amount cannot be greater than the membership plan - {plan.fee}."
-            
-
-        
-      except ValueError:
-  
-          errors["fee"] = "Enter a valid fee."
-  
+      
       # -------------------------
       # Save
       # -------------------------
@@ -134,21 +112,36 @@ def add_member():
       
               db.session.add(member)
               db.session.flush()
-      
-              new_payment(
-                  member=member,
-                  plan=plan,
-                  amount_paid=amount_paid,
-                  payment_date=join_date,
-                  status=payment_status,
-                  remarks=""
+              trial_start = join_date
+              trial_expiry = join_date + relativedelta(days=current_user.trial_days)
+              
+              member.membership_start = trial_start
+              member.membership_expiry = trial_expiry
+              member.active = True
+              
+              db.session.add(
+                  Membership(
+                      member_id=member.id,
+                      plan_id=None,
+                      plan_name="Trial",
+                      duration_months=0,
+                      fee=0,
+                      amount_paid=0,
+                      payment_date=join_date,
+                      start_date=trial_start,
+                      expiry_date=trial_expiry,
+                      remarks="Trial membership"
+                  )
               )
+              
       
               db.session.commit()
-      
+            
               flash("Member added successfully!", "success")
-              return redirect(url_for("add_member"))
-      
+              return redirect(
+                  url_for("member_details", member_id=member.id)
+                            )
+                          
           except Exception as e:
       
               print(e)
@@ -158,8 +151,7 @@ def add_member():
   return render_template(
     "add_member.html",
     errors=errors,
-    server_error=server_error,
-    plans = [plan for plan in current_user.plans if plan.active]
+    server_error=server_error
 )
   
 
@@ -239,7 +231,7 @@ def edit_member(member_id):
                 flash("Member updated successfully!", "success")
 
                 return redirect(url_for(
-                    "members",
+                    "member_details",
                     member_id=member.id
                 ))
 
@@ -286,20 +278,29 @@ def settings():
 @app.route("/settings/plans", methods=["POST"])
 @login_required
 def create_plan():
-
-    name = request.form["name"].strip()
-    months = int(request.form["duration_months"])
-    fee = int(request.form["fee"])
-
-    plan = MembershipPlan(
-        owner_id=current_user.id,
-        name=name,
-        duration_months=months,
-        fee=fee
-    )
-
-    db.session.add(plan)
-    db.session.commit()
+    try :
+        name = request.form["name"].strip()
+        months = int(request.form["duration_months"])
+        fee = int(request.form["fee"])
+        if not name:
+            flash("Plan name is required.", "error")
+            return redirect(url_for("settings"))
+        if months<0 or fee<0:
+            flash("Invalid data.", "error")
+            return redirect(url_for("settings"))
+        plan = MembershipPlan(
+            owner_id=current_user.id,
+            name=name,
+            duration_months=months,
+            fee=fee
+        )
+    
+        db.session.add(plan)
+        db.session.commit()
+    except Exception as error:
+        db.session.rollback()
+        flash("Server error! Please try again.", "error")
+        return redirect(url_for("settings"))
 
     return redirect(url_for("settings"))
 
@@ -311,9 +312,9 @@ def member_details(member_id):
     if member.owner_id != current_user.id:
         abort(403)  # Forbidden
 
-    total_paid = db.session.query(func.sum(Payment.amount_paid)).filter_by(member_id=member.id).scalar() or 0
+    total_paid = db.session.query(func.sum(Membership.amount_paid)).filter_by(member_id=member.id).scalar() or 0
 
-    payment_count = Payment.query.filter_by(member_id=member.id).count()
+    payment_count = Membership.query.filter_by(member_id=member.id).count()
 
     membership_months = (
       (date.today().year - member.join_date.year) * 12 +
@@ -332,9 +333,9 @@ def member_details(member_id):
       last_visit=last_visit,
       today=date.today(),
       payments = (
-        Payment.query
+        Membership.query
         .filter_by(member_id=member.id)
-        .order_by(Payment.payment_date.desc())
+        .order_by(Membership.payment_date.desc())
         .all()
       )
     )
@@ -342,12 +343,17 @@ def member_details(member_id):
 
 
 
-@app.route("/members/<int:member_id>/payment", methods=["GET", "POST"])
+@app.route("/members/<int:member_id>/membership", methods=["GET", "POST"])
 @login_required
-def payment(member_id):
+def add_membership(member_id):
 
     member = Member.query.get_or_404(member_id)
-    plans = MembershipPlan.query.order_by(MembershipPlan.fee).all()
+    plans = MembershipPlan.query.filter_by(
+        owner_id=current_user.id,
+        active=True
+    ).all()
+    if member.owner_id != current_user.id:
+      abort(403)
 
     errors = {}
 
@@ -366,7 +372,11 @@ def payment(member_id):
         # Validation
         # -------------------------
 
-        plan = MembershipPlan.query.get(plan_id)
+        plan = MembershipPlan.query.filter_by(
+            id=plan_id,
+            owner_id=current_user.id,
+            active=True
+        ).first()
 
         if not plan:
             errors["plan_id"] = "Please select a membership plan."
@@ -374,7 +384,7 @@ def payment(member_id):
         try:
             amount_paid = int(amount_paid)
 
-            if amount_paid < 0:
+            if amount_paid <= 0 or amount_paid>plan.fee:
                 raise ValueError
 
         except (TypeError, ValueError):
@@ -395,20 +405,13 @@ def payment(member_id):
 
         if not errors:
 
-            status = (
-                "Paid"
-                if amount_paid >= plan.fee
-                else "Partial"
-            )
-
             try:
 
-                new_payment(
+                new_membership(
                     member=member,
                     plan=plan,
                     amount_paid=amount_paid,
                     payment_date=payment_date,
-                    status=status,
                     remarks=remarks
                 )
 
@@ -440,39 +443,56 @@ def payment(member_id):
         server_error=False
     )
 
-@app.route("/payments/<int:payment_id>/edit", methods=["GET", "POST"])
+@app.route("/membership/<int:membership_id>/delete", methods=["POST"])
 @login_required
-def edit_payment(payment_id):
+def delete_membership(membership_id):
 
-    payment = (
-        Payment.query
+    membership = (
+        Membership.query
         .join(Member)
         .filter(
-            Payment.id == payment_id,
+            Membership.id == membership_id,
             Member.owner_id == current_user.id
         )
         .first_or_404()
     )
 
-    if request.method == "POST":
+    member = membership.member
 
-        payment.plan_name = request.form["plan_name"]
-        payment.amount_paid = int(request.form["amount_paid"])
-        payment.status = request.form["status"]
-        payment.remarks = request.form["remarks"]
+    try:
+        db.session.delete(membership)
+        db.session.flush()
+
+        latest = (
+            Membership.query
+            .filter_by(member_id=member.id)
+            .order_by(Membership.expiry_date.desc())
+            .first()
+        )
+
+        if latest:
+            member.current_plan_id = latest.plan_id
+            member.membership_start = latest.start_date
+            member.membership_expiry = latest.expiry_date
+            member.active = latest.expiry_date >= date.today()
+        else:
+            member.current_plan_id = None
+            member.membership_start = None
+            member.membership_expiry = None
+            member.active = False
 
         db.session.commit()
+        flash("Membership deleted successfully.", "success")
 
-        return redirect(url_for(
-            "member_details",
-            member_id=payment.member_id
-        ))
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        flash("Could not delete membership.", "error")
 
-    return render_template(
-        "edit_payment.html",
-        payment=payment
-    )
-    
+    return redirect(url_for(
+        "member_details",
+        member_id=member.id
+    ))
 
 @app.route("/login",methods=['GET','POST'])
 def login():
@@ -560,11 +580,11 @@ def create_owner():
     db.session.add(owner)
     db.session.flush()      # Gives owner.id before commit
     
-    for name, duration, fee in zip(plan_names, plan_durations, plan_fees):
+    for plan_name, duration, fee in zip(plan_names, plan_durations, plan_fees):
         db.session.add(
             MembershipPlan(
                 owner_id=owner.id,
-                name=name,
+                name=plan_name,
                 duration_months=int(duration),
                 fee=int(fee)
             ))
@@ -618,11 +638,8 @@ def create_owner_payment():
   try:
     owner = GymOwner.query.get_or_404(int(request.form["owner_id"]))
     amount = int(request.form["amount"])
-    status = request.form.get("status", "Paid")
-    if amount <= 0 or status not in {"Paid", "Partial", "Pending"}:
-      raise ValueError
     payment_date = datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date()
-    db.session.add(OwnerPayment(owner_id=owner.id, amount=amount, status=status, payment_date=payment_date, remarks=request.form.get("remarks", "").strip() or None))
+    db.session.add(OwnerPayment(owner_id=owner.id, amount=amount, payment_date=payment_date, remarks=request.form.get("remarks", "").strip() or None))
     db.session.commit()
     flash("Owner payment recorded.", "success")
   except (KeyError, TypeError, ValueError):
@@ -634,53 +651,58 @@ def create_owner_payment():
 
 
 
+  
+def new_membership(  
+    member,  
+    plan,  
+    amount_paid,  
+    payment_date,  
+    remarks=""  
+):  
+    """  
+    Creates a payment and updates the member's current membership.  
+    Does NOT commit the database.  
+    """  
+  
+    
+    if member.membership_expiry and member.membership_expiry >= payment_date:
+        start_date = member.membership_expiry + relativedelta(days=1)
+    else:
+        start_date = payment_date
 
-def new_payment(
-    member,
-    plan,
-    amount_paid,
-    payment_date,
-    status,
-    remarks=""
-):
-    """
-    Creates a payment and updates the member's current membership.
-    Does NOT commit the database.
-    """
-
-    expiry_date = payment_date + relativedelta(
-        months=plan.duration_months
+    expiry_date = (
+      start_date +
+      relativedelta(months=plan.duration_months) -
+      relativedelta(days=1)
     )
+    membership = Membership(  
+        member_id=member.id,  
+  
+        plan_id=plan.id,  
+        plan_name=plan.name,  
+  
+        duration_months=plan.duration_months,  
+  
+        fee=plan.fee,  
+        amount_paid=amount_paid,  
+  
+        payment_date=payment_date,  
+  
+        start_date=start_date,  
+        expiry_date=expiry_date,  
+        remarks=remarks  
+    )  
+  
+    db.session.add(membership)  
+  
+    # Cache current membership on Member  
+    member.current_plan_id = plan.id
+    member.membership_start = start_date  
+    member.membership_expiry = expiry_date  
+    member.active = expiry_date >= date.today()  
+  
+    return membership
 
-    payment = Payment(
-        member_id=member.id,
-
-        plan_id=plan.id,
-        plan_name=plan.name,
-
-        duration_months=plan.duration_months,
-
-        fee=plan.fee,
-        amount_paid=amount_paid,
-
-        payment_date=payment_date,
-
-        start_date=payment_date,
-        expiry_date=expiry_date,
-
-        status=status,
-        remarks=remarks
-    )
-
-    db.session.add(payment)
-
-    # Cache current membership on Member
-    member.current_plan = plan.name
-    member.membership_start = payment_date
-    member.membership_expiry = expiry_date
-    member.active = expiry_date >= date.today()
-
-    return payment
 
 
 if __name__=="__main__":
