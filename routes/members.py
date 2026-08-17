@@ -35,8 +35,29 @@ def validate_member_form(member=None):
 @members_bp.route("/")
 def index():
     if current_user.is_authenticated:
+        today = date.today()
+        month_start = today.replace(day=1)
         total_members = Member.query.filter_by(owner_id=current_user.id).count()
-        return render_template("home.html", active_page="home", total_members=total_members)
+        monthly_revenue = db.session.query(func.sum(Membership.amount_paid)).join(Member).filter(
+            Member.owner_id == current_user.id,
+            Membership.payment_date >= month_start,
+            Membership.payment_date <= today,
+        ).scalar() or 0
+        today_attendance = Attendance.query.join(Member).filter(
+            Member.owner_id == current_user.id,
+            Attendance.attendance_date == today,
+        ).count()
+        expiring_soon = Member.query.filter(
+            Member.owner_id == current_user.id,
+            Member.active.is_(True),
+            Member.membership_expiry >= today,
+            Member.membership_expiry <= today + relativedelta(days=7),
+        ).count()
+        return render_template(
+            "home.html", active_page="home", total_members=total_members,
+            monthly_revenue=monthly_revenue, today_attendance=today_attendance,
+            expiring_soon=expiring_soon,
+        )
     return render_template("index.html")
 
 

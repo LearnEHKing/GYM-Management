@@ -5,6 +5,7 @@
 #search { width: 100%; box-sizing: border-box; padding: 13px 14px; border: 1px solid var(--cardborder); border-radius: 12px; background: var(--card); color: var(--white); font: inherit; }
 .member-list { border: 1px solid var(--cardborder); border-radius: 16px; overflow: hidden; background: var(--card); }
 .attendance-member { min-height: 70px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.attendance-member[hidden] { display: none; }
 .attendance-member:last-child { border-bottom: 0; }
 .member-profile { min-width: 0; flex: 1; display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
 .avatar { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(59,130,246,.16); color: var(--blue); font-weight: 800; }

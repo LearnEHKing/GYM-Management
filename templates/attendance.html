@@ -20,7 +20,7 @@
 <section class="member-list" aria-label="Member attendance list">
   {% for member in members %}
   {% set record = attendance_by_member.get(member.id) %}
-  <article class="attendance-member {% if not member.active %}inactive{% endif %}" data-member>
+  <article class="attendance-member {% if not member.active %}inactive{% endif %}" data-member data-search-text="{{ (member.name ~ ' ' ~ member.phone ~ ' ' ~ member.address)|lower }}">
     <a class="member-profile" href="{{ url_for('members.member_details', member_id=member.id) }}">
       <span class="avatar">{{ member.name[0]|upper }}</span>
       <span class="member-copy">
@@ -60,7 +60,7 @@ const search = document.getElementById('search');
 search?.addEventListener('input', () => {
   const query = search.value.trim().toLowerCase();
   document.querySelectorAll('[data-member]').forEach((card) => {
-    card.hidden = !card.textContent.toLowerCase().includes(query);
+    card.hidden = !card.dataset.searchText.includes(query);
   });
 });
 document.querySelectorAll('[data-remove-dialog]').forEach((button) => {

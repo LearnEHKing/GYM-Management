@@ -29,9 +29,7 @@
       <div class="stat-number">{{total_members}}</div>
 
       <div class="stat-growth green">
-        ↑ 12
-
-        <span> this month </span>
+        <span> registered members </span>
       </div>
     </div>
 
@@ -40,12 +38,10 @@
     <div class="stat-card">
       <div class="stat-label">MONTHLY REVENUE</div>
 
-      <div class="stat-number">₹38.5K</div>
+      <div class="stat-number">₹{{ monthly_revenue }}</div>
 
       <div class="stat-growth green">
-        ↑ 8.4%
-
-        <span> this month </span>
+        <span> payments this month </span>
       </div>
     </div>
 
@@ -54,12 +50,10 @@
     <div class="stat-card">
       <div class="stat-label">TODAY'S ATTENDANCE</div>
 
-      <div class="stat-number">82</div>
+      <div class="stat-number">{{ today_attendance }}</div>
 
       <div class="stat-growth blue">
-        ↑ 6
-
-        <span> vs yesterday </span>
+        <span> checked in today </span>
       </div>
     </div>
 
@@ -68,12 +62,10 @@
     <div class="stat-card">
       <div class="stat-label">EXPIRING SOON</div>
 
-      <div class="stat-number">14</div>
+      <div class="stat-number">{{ expiring_soon }}</div>
 
       <div class="stat-growth green">
-        ↓ 3
-
-        <span> this week </span>
+        <span> expiring within 7 days </span>
       </div>
     </div>
   </div>
