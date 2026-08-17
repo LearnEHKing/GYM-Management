@@ -444,6 +444,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
 
   padding: 14px 12px;
 
@@ -476,6 +478,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .status-badge.expired {
@@ -491,6 +494,8 @@
 .status-body {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .status-body strong {
@@ -499,6 +504,8 @@
   font-weight: 600;
   color: var(--white);
   margin-bottom: 3px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .status-body small {
@@ -506,12 +513,32 @@
   color: var(--muted);
   font-size: 11px;
   margin-bottom: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .status-body p {
   color: var(--muted);
   font-size: 11px;
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 420px) {
+  .status-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .status-badge {
+    min-width: 70px;
+    padding: 7px 8px;
+  }
+
+  .status-body {
+    width: calc(100% - 82px);
+  }
 }
 
 
