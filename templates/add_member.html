@@ -108,7 +108,8 @@
   document.body.classList.add("light")
       }
       const today = new Date().toISOString().split("T")[0];
-      document.getElementById("join_date").value = today;
+      const joinDateInput = document.getElementById("join_date");
+      if (!joinDateInput.value) joinDateInput.value = today;
 
       function closeError() {
         const error = document.getElementById("serverError");

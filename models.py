@@ -114,6 +114,8 @@ class Member(db.Model):
         db.ForeignKey("membership_plan.id")
     )
 
+    current_plan = db.relationship("MembershipPlan", foreign_keys=[current_plan_id])
+
     membership_start = db.Column(db.Date)
     membership_expiry = db.Column(db.Date)
 

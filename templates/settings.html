@@ -1,38 +1,12 @@
 {% extends "components/base.html" %}
-{% block head%}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">{% endblock %}
 {% block title %}Settings{% endblock %}
-
-
 {% block body %}
-   
-
-      <!-- =====================================
-         HEADER
-    ====================================== -->
-
-      <header class="header">
-        <h1>Settings</h1>
-        <button id="themeBtn" onclick="toggleTheme()">🌙</button>
-      </header>
-      <a href="{{url_for('auth.logout')}}">Logout</a>
+<header class="settings-header"><div><p class="eyebrow">Gym setup</p><h1>Settings</h1></div><button id="themeBtn" class="theme-button" type="button" aria-label="Toggle theme">◐</button></header>
+<section class="settings-card"><div class="section-heading"><div><h2>Membership plans</h2><p>Plans are used when recording member payments.</p></div></div>
+  <form class="plan-form" method="post" action="{{ url_for('settings.create_plan') }}"><input name="name" maxlength="30" placeholder="Plan name" required><input name="duration_months" type="number" min="1" placeholder="Months" required><input name="fee" type="number" min="1" placeholder="Fee (₹)" required><button type="submit">Add plan</button></form>
+  <div class="plans-list">{% for plan in plans %}<article class="plan-row {% if not plan.active %}inactive{% endif %}"><form method="post" action="{{ url_for('settings.edit_plan', plan_id=plan.id) }}" class="plan-form edit-plan"><input name="name" maxlength="30" value="{{ plan.name }}" required><input name="duration_months" type="number" min="1" value="{{ plan.duration_months }}" required><input name="fee" type="number" min="1" value="{{ plan.fee }}" required><button type="submit">Save</button></form><form method="post" action="{{ url_for('settings.toggle_plan_status', plan_id=plan.id) }}"><button type="submit" class="status-button">{{ 'Deactivate' if plan.active else 'Activate' }}</button></form></article>{% else %}<p class="empty">No membership plans yet. Add your first plan above.</p>{% endfor %}</div>
+</section>
+<section class="settings-card account-card"><h2>Account</h2><p>Sign out from this gym owner account on this device.</p><a class="logout-button" href="{{ url_for('auth.logout') }}">Log out</a></section>
 {% endblock %}
-      
-    {% block script %}
-        const btn = document.getElementById("themeBtn");
-
-      
-
-      btn.onclick = function () {
-        document.body.classList.toggle("light");
-
-        if (document.body.classList.contains("light")) {
-          localStorage.setItem("theme", "light");
-          btn.innerHTML = "☀️";
-        } else {
-          localStorage.setItem("theme", "dark");
-          btn.innerHTML = "🌙";
-        }
-      };
-    {% endblock %}
+{% block script %}document.getElementById('themeBtn').addEventListener('click', () => { document.body.classList.toggle('light'); localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark'); });{% endblock %}

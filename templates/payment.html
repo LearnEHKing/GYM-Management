@@ -67,7 +67,7 @@
         <div class="item">
           <span class="label">Current Plan</span>
           <span class="value">
-            {{ member.current_plan or "No Active Plan" }}
+            {{ member.current_plan.name if member.current_plan else "No Active Plan" }}
           </span>
         </div>
 

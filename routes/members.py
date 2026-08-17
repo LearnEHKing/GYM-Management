@@ -214,16 +214,45 @@ def edit_member_attendance(member_id):
     return redirect(url_for("members.member_details", member_id=member.id))
 
 
-@members_bp.route("/manage_payment", methods=["GET", "POST"])
+@members_bp.route("/reports")
 @login_required
-def manage_payment():
-    return render_template("manage_payment.html")
+def reports():
+    today = date.today()
+    week_start = today - relativedelta(days=6)
+    attendance_rows = db.session.query(
+        Attendance.attendance_date, func.count(Attendance.id)
+    ).join(Member).filter(
+        Member.owner_id == current_user.id,
+        Attendance.attendance_date >= week_start,
+        Attendance.attendance_date <= today,
+    ).group_by(Attendance.attendance_date).all()
+    attendance_counts = {record_date: count for record_date, count in attendance_rows}
+    attendance_labels = []
+    attendance_values = []
+    for offset in range(6, -1, -1):
+        day = today - relativedelta(days=offset)
+        attendance_labels.append(day.strftime("%d %b"))
+        attendance_values.append(attendance_counts.get(day, 0))
 
+    revenue_labels, revenue_values = [], []
+    for offset in range(5, -1, -1):
+        month = (today.replace(day=1) - relativedelta(months=offset))
+        next_month = month + relativedelta(months=1)
+        revenue = db.session.query(func.sum(Membership.amount_paid)).join(Member).filter(
+            Member.owner_id == current_user.id,
+            Membership.payment_date >= month,
+            Membership.payment_date < next_month,
+        ).scalar() or 0
+        revenue_labels.append(month.strftime("%b"))
+        revenue_values.append(revenue)
 
-@members_bp.route("/stats", methods=["GET", "POST"])
-@login_required
-def stats():
-    return render_template("stats.html")
+    return render_template(
+        "reports.html", active_page="reports",
+        attendance_labels=attendance_labels, attendance_values=attendance_values,
+        revenue_labels=revenue_labels, revenue_values=revenue_values,
+        active_members=Member.query.filter_by(owner_id=current_user.id, active=True).count(),
+        today_attendance=attendance_values[-1],
+    )
 
 
 @members_bp.route("/members")
@@ -331,6 +360,8 @@ def add_membership(member_id):
             errors["plan_id"] = "Please select a membership plan."
         try:
             payment_date = datetime.strptime(request.form.get("payment_date"), "%Y-%m-%d").date()
+            if payment_date < member.join_date or payment_date > date.today():
+                errors["payment_date"] = "Payment date must be between the joining date and today."
         except (TypeError, ValueError):
             errors["payment_date"] = "Invalid payment date."
         if not errors:

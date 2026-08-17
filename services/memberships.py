@@ -42,6 +42,7 @@ def recalculate_memberships(member):
         member.current_plan_id = current.plan_id
         member.membership_start = current.start_date
         member.membership_expiry = current.expiry_date
+        member.active = current.expiry_date >= date.today()
     else:
         member.current_plan_id = None
         member.membership_start = None

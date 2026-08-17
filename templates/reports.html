@@ -1,0 +1,28 @@
+{% extends "components/base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">{% endblock %}
+{% block title %}Reports{% endblock %}
+{% block body %}
+<header class="reports-header"><p>Performance overview</p><h1>Reports</h1></header>
+<section class="report-summary"><div><span>Today’s attendance</span><strong>{{ today_attendance }}</strong></div><div><span>Active members</span><strong>{{ active_members }}</strong></div></section>
+<section class="chart-section"><h2>Attendance — last 7 days</h2><canvas id="attendanceChart" aria-label="Attendance chart for the last 7 days" role="img"></canvas></section>
+<section class="chart-section"><h2>Revenue — last 6 months</h2><canvas id="revenueChart" aria-label="Revenue chart for the last 6 months" role="img"></canvas></section>
+{% endblock %}
+{% block script %}
+const charts = [
+  { canvas: document.getElementById('attendanceChart'), labels: {{ attendance_labels|tojson }}, values: {{ attendance_values|tojson }}, prefix: '', color: '#3b82f6' },
+  { canvas: document.getElementById('revenueChart'), labels: {{ revenue_labels|tojson }}, values: {{ revenue_values|tojson }}, prefix: '₹', color: '#22c55e' },
+];
+function drawChart({canvas, labels, values, prefix, color}) {
+  const ratio = window.devicePixelRatio || 1, width = canvas.clientWidth, height = 210;
+  canvas.width = width * ratio; canvas.height = height * ratio;
+  const ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio);
+  const text = getComputedStyle(document.body).getPropertyValue('--muted').trim(), line = getComputedStyle(document.body).getPropertyValue('--line').trim();
+  const max = Math.max(...values, 1), left = 42, right = 12, top = 20, bottom = 34, plotWidth = width - left - right, plotHeight = height - top - bottom;
+  ctx.font = '11px system-ui'; ctx.fillStyle = text; ctx.strokeStyle = line; ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) { const y = top + plotHeight * i / 3, value = Math.round(max - max * i / 3); ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke(); ctx.fillText(prefix + value, 2, y + 4); }
+  const step = labels.length > 1 ? plotWidth / (labels.length - 1) : 0;
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); values.forEach((value, index) => { const x = left + step * index, y = top + plotHeight - value / max * plotHeight; index ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+  values.forEach((value, index) => { const x = left + step * index, y = top + plotHeight - value / max * plotHeight; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = text; ctx.textAlign = 'center'; ctx.fillText(labels[index], x, height - 10); }); ctx.textAlign = 'start';
+}
+function drawAllCharts(){ charts.forEach(drawChart); } drawAllCharts(); window.addEventListener('resize', drawAllCharts);
+{% endblock %}

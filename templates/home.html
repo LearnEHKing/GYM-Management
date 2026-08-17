@@ -123,23 +123,23 @@
       </div>
     </a>
 
-    <a href="manage_payment" class="action-card">
-      <div class="icon green-icon">₹</div>
+    <a href="{{ url_for('members.members') }}" class="action-card">
+      <div class="icon green-icon">♙</div>
 
       <div>
-        <span> Payments </span>
+        <span> Members </span>
 
-        <small> Manage fees </small>
+        <small> View all members </small>
       </div>
     </a>
 
-    <a href="stats" class="action-card">
-      <div class="icon blue-icon">◈</div>
+    <a href="{{ url_for('members.reports') }}" class="action-card">
+      <div class="icon blue-icon">₹</div>
 
       <div>
-        <span> Statistics </span>
+        <span> Reports </span>
 
-        <small> View reports </small>
+        <small> Attendance and revenue </small>
       </div>
     </a>
   </div>
