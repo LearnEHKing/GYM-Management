@@ -138,27 +138,46 @@
 </section>
 
 <!-- =====================================
-         RECENT ACTIVITY
+         MEMBERSHIP STATUS
     ====================================== -->
 
-<section class="activity-section">
+<section class="status-section">
   <div class="section-title">
-    <h2>Recent Activity</h2>
+    <h2>Membership Status</h2>
   </div>
 
-  {% for activity in activities %}
-  <div class="activity">
-    <div class="activity-icon {{ activity.kind }}">{{ activity.icon }}</div>
-    <div class="activity-info">
-      <strong>{{ activity.title }}</strong>
-      <p>{{ activity.when }}</p>
+  {% if expired_members or expiring_members %}
+  <div class="status-list">
+    {% for member in expired_members %}
+    <div class="status-item expired">
+      <div class="status-badge expired">Expired</div>
+      <div class="status-body">
+        <strong>{{ member.name }}</strong>
+        <small>Expired on {{ member.membership_expiry.strftime('%d %b %Y') if member.membership_expiry else '—' }}</small>
+        <p>{{ (today - member.membership_expiry).days }} day{% if (today - member.membership_expiry).days != 1 %}s{% endif %} overdue</p>
+      </div>
     </div>
+    {% endfor %}
+
+    {% for member in expiring_members %}
+    <div class="status-item warning">
+      <div class="status-badge warning">Expiring</div>
+      <div class="status-body">
+        <strong>{{ member.name }}</strong>
+        <small>Expires on {{ member.membership_expiry.strftime('%d %b %Y') if member.membership_expiry else '—' }}</small>
+        <p>{{ (member.membership_expiry - today).days }} day{% if (member.membership_expiry - today).days != 1 %}s{% endif %} left</p>
+      </div>
+    </div>
+    {% endfor %}
   </div>
   {% else %}
-  <div class="activity">
-    <div class="activity-info"><strong>No activity yet</strong><p>Check-ins, payments, and new members will appear here.</p></div>
+  <div class="status-item empty">
+    <div class="status-body">
+      <strong>No expired or expiring memberships</strong>
+      <p>Everything looks current for this owner.</p>
+    </div>
   </div>
-  {% endfor %}
+  {% endif %}
 </section>
 {% endblock %}
 

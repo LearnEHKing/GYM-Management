@@ -427,55 +427,91 @@
 }
 
 /* =========================================
-           RECENT ACTIVITY
+           MEMBERSHIP STATUS
         ========================================= */
 
-.activity-section {
+.status-section {
   margin-bottom: 20px;
 }
 
-.activity {
+.status-list {
   display: flex;
-
-  align-items: center;
-
-  gap: 13px;
-
-  padding: 13px 2px;
-
-  border-bottom: 1px solid var(--line);
+  flex-direction: column;
+  gap: 10px;
 }
 
-.activity-icon {
-  width: 38px;
-  height: 38px;
-
-  border-radius: 12px;
-
-  background: var(--activity);
-
+.status-item {
   display: flex;
-
-  justify-content: center;
   align-items: center;
+  gap: 12px;
+
+  padding: 14px 12px;
+
+  background: linear-gradient(145deg, rgba(16, 18, 22, 0.96), rgba(12, 14, 18, 0.96));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
 }
 
-.activity-info {
+.status-item.expired {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(145deg, rgba(42, 16, 16, 0.94), rgba(20, 12, 12, 0.96));
+}
+
+.status-item.warning {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(145deg, rgba(39, 30, 13, 0.94), rgba(18, 16, 10, 0.96));
+}
+
+.status-item.empty {
+  background: rgba(16, 18, 22, 0.7);
+}
+
+.status-badge {
+  min-width: 82px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-badge.expired {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.status-badge.warning {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+
+.status-body {
   flex: 1;
+  min-width: 0;
 }
 
-.activity-info strong {
-  font-size: 13px;
-  font-weight: 500;
+.status-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--white);
+  margin-bottom: 3px;
 }
 
-.activity-info p {
+.status-body small {
+  display: block;
   color: var(--muted);
-
   font-size: 11px;
+  margin-bottom: 2px;
+}
 
-  margin-top: 4px;
+.status-body p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
 }
 
 
