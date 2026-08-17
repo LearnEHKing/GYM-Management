@@ -146,35 +146,19 @@
     <h2>Recent Activity</h2>
   </div>
 
+  {% for activity in activities %}
   <div class="activity">
-    <div class="activity-icon green">✓</div>
-
+    <div class="activity-icon {{ activity.kind }}">{{ activity.icon }}</div>
     <div class="activity-info">
-      <strong> Rahul checked in </strong>
-
-      <p>Just now</p>
+      <strong>{{ activity.title }}</strong>
+      <p>{{ activity.when }}</p>
     </div>
   </div>
-
+  {% else %}
   <div class="activity">
-    <div class="activity-icon blue">₹</div>
-
-    <div class="activity-info">
-      <strong> Amit paid ₹1,500 </strong>
-
-      <p>18 minutes ago</p>
-    </div>
+    <div class="activity-info"><strong>No activity yet</strong><p>Check-ins, payments, and new members will appear here.</p></div>
   </div>
-
-  <div class="activity">
-    <div class="activity-icon green">+</div>
-
-    <div class="activity-info">
-      <strong> 3 new members </strong>
-
-      <p>Today</p>
-    </div>
-  </div>
+  {% endfor %}
 </section>
 {% endblock %}
 
