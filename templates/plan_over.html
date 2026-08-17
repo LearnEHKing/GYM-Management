@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Subscription Expired</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #050608;
+      --card: #11151c;
+      --border: #232933;
+
+      --text: #f5f7fa;
+      --muted: #9ca3af;
+
+      --red: #ef4444;
+      --green: #22c55e;
+      --blue: #3b82f6;
+
+      --shadow: 0 15px 35px rgba(0, 0, 0, .35);
+    }
+
+    body.light {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --border: #d8dde6;
+
+      --text: #111827;
+      --muted: #6b7280;
+
+      --shadow: 0 10px 25px rgba(0, 0, 0, .08);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+      min-height: 100vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
+
+      transition: .25s;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+
+      background: var(--card);
+      border: 1px solid var(--border);
+
+      border-radius: 22px;
+
+      padding: 28px;
+
+      text-align: center;
+
+      box-shadow: var(--shadow);
+    }
+
+    .icon {
+      width: 90px;
+      height: 90px;
+
+      border-radius: 50%;
+
+      background: rgba(239, 68, 68, .15);
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      font-size: 46px;
+
+      margin: auto;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      font-size: 27px;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .info {
+      background: rgba(59, 130, 246, .08);
+      border: 1px solid rgba(59, 130, 246, .18);
+
+      border-radius: 16px;
+
+      padding: 18px;
+
+      text-align: left;
+
+      margin-bottom: 28px;
+    }
+
+    .info h3 {
+      margin-bottom: 10px;
+      font-size: 17px;
+    }
+
+    .info p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .button {
+      display: block;
+      width: 100%;
+
+      text-decoration: none;
+
+      background: var(--green);
+      color: white;
+
+      padding: 15px;
+
+      border-radius: 14px;
+
+      font-weight: 700;
+
+      margin-bottom: 14px;
+    }
+
+    .secondary {
+      display: block;
+      text-decoration: none;
+
+      color: var(--blue);
+
+      font-weight: 600;
+    }
+
+    .footer {
+      margin-top: 30px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .info hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 18px 0;
+    }
+
+    .contact {
+      margin-top: 8px;
+      margin-bottom: 14px;
+    }
+
+    .contact-box {
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    body.light .contact-box {
+      background: #f8fafc;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+
+    <div class="icon">
+      ⏳
+    </div>
+
+    <h1>Subscription Expired</h1>
+
+    <p class="subtitle">
+      Your Gym Manager subscription has expired.<br>
+      Access to the dashboard has been temporarily disabled until your subscription is renewed.
+    </p>
+    <div class="info">
+
+      <h3>What happens now?</h3>
+
+      <p>
+        ✓ Your gym data is safe and has <strong>not been deleted.</strong><br>
+        ✓ Member records, payments and settings are preserved.<br>
+        ✓ Renew your subscription to regain full access.
+      </p>
+
+      <hr>
+
+      <h3>Renew your subscription</h3>
+
+      <p class="contact">
+        Please contact <strong>Prashant Rawat</strong>.
+      </p>
+
+      <div class="contact-box">
+        <div>📧 <strong>Email</strong><br>learnehking@gmail.com</div>
+
+        <div style="margin-top:14px;">
+          📞 <strong>Phone</strong><br>+91 9817541939
+        </div>
+      </div>
+
+    </div>
+    <div class="footer">
+      Thank you for using <strong>Gym Manager</strong>.
+    </div>
+
+  </div>
+
+  <script>
+const savedTheme = localStorage.getItem("theme");
+
+if(savedTheme==="light"){
+    document.body.classList.add("light");
+}
+</script>
+
+</body>
+
+</html>

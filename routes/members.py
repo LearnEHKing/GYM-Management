@@ -2,11 +2,13 @@ from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, logout_user
 from sqlalchemy import func
 
 from models import Attendance, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership, recalculate_memberships
+
+import config
 
 members_bp = Blueprint("members", __name__)
 
@@ -35,6 +37,12 @@ def validate_member_form(member=None):
 @members_bp.route("/")
 def index():
     if current_user.is_authenticated:
+        if current_user.username == config.admin["username"]:
+            return redirect("/admin")
+        elif date.today() > current_user.payment_due_date:
+            logout_user()
+            return redirect(url_for("members.plan_over"))
+
         today = date.today()
         month_start = today.replace(day=1)
         total_members = Member.query.filter_by(owner_id=current_user.id).count()
@@ -66,6 +74,9 @@ def index():
         )
     return render_template("index.html")
 
+@members_bp.route("/plan_over")
+def plan_over():
+    return render_template("plan_over.html")
 
 @members_bp.route("/add_member", methods=["GET", "POST"])
 @login_required
