@@ -13,7 +13,7 @@
 
     <!-- MEMBERS -->
 
-    <a href="{{ url_for('members') }}" class="nav-item {% if active_page == 'members' %}active{% endif %}">
+    <a href="{{ url_for('members.members') }}" class="nav-item {% if active_page == 'members' %}active{% endif %}">
       <div class="nav-icon">♙</div>
 
       <span> Members </span>
@@ -21,7 +21,7 @@
 
     <!-- SETTINGS -->
 
-    <a href="{{ url_for('settings') }}" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+    <a href="{{ url_for('settings.settings') }}" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
       <div class="nav-icon">⚙</div>
 
       <span> Settings </span>

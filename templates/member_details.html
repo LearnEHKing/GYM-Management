@@ -37,8 +37,8 @@
 
       <header class="page-header">
 
-        <a href="{{url_for('members')}}" class="back-btn">←</a>
-        <a href="{{ url_for('add_membership', member_id=member.id) }}" class="payment-btn">
+        <a href="{{url_for('members.members')}}" class="back-btn">←</a>
+        <a href="{{ url_for('members.add_membership', member_id=member.id) }}" class="payment-btn">
           💳 New Payment
         </a>
       </header>
@@ -265,7 +265,7 @@
 
         </div>
 
-        <a href="{{ url_for('delete_membership', membership_id=payment.id) }}" class="secondary-btn">
+          <a href="{{ url_for('members.delete_membership', membership_id=payment.id) }}" class="secondary-btn">
           Edit
         </a>
 
