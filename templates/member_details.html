@@ -45,7 +45,7 @@
 
     </div>
 
-    <form method="POST">
+    <div>
 
       <!-- ==========================
              CURRENT PAYMENT
@@ -61,10 +61,14 @@
 
           <h2>Membership Information</h2>
 
-          {% if member.membership_expiry >= today %}
-          <span class="status active">Active</span>
+          {% if member.active %}
+          <button type="button" class="status active status-toggle" data-status-dialog>
+            Active
+          </button>
           {% else %}
-          <span class="status expired">Expired</span>
+          <button type="button" class="status inactive status-toggle" data-status-dialog>
+            Inactive
+          </button>
           {% endif %}
         </div>
 
@@ -265,11 +269,34 @@
 
         </div>
 
-          <a href="{{ url_for('members.delete_membership', membership_id=payment.id) }}" class="secondary-btn">
+          <button type="button" class="secondary-btn" data-payment-dialog="payment-dialog-{{ payment.id }}">
           Edit
-        </a>
+          </button>
 
       </div>
+
+      <dialog class="status-dialog" id="payment-dialog-{{ payment.id }}">
+        <form method="post" action="{{ url_for('members.edit_membership', membership_id=payment.id) }}" class="status-dialog-card">
+          <h2>Edit payment history</h2>
+          <label class="dialog-label" for="plan-{{ payment.id }}">Change membership plan</label>
+          <select id="plan-{{ payment.id }}" name="plan_id" class="dialog-input">
+            <option value="">Keep current: {{ payment.plan_name }}</option>
+            {% for plan in plans %}
+            <option value="{{ plan.id }}">{{ plan.name }} — ₹{{ plan.fee }} / {{ plan.duration_months }} month{% if plan.duration_months != 1 %}s{% endif %}</option>
+            {% endfor %}
+          </select>
+          <label class="dialog-label" for="remarks-{{ payment.id }}">Remarks</label>
+          <textarea id="remarks-{{ payment.id }}" name="remarks" class="dialog-input" rows="4">{{ payment.remarks or '' }}</textarea>
+          <div class="status-dialog-actions">
+            <button type="button" class="secondary-btn" data-close-dialog>Cancel</button>
+            <button type="submit" class="save-btn">Save changes</button>
+          </div>
+          <button type="submit" class="danger-btn" formmethod="post"
+            formaction="{{ url_for('members.delete_membership', membership_id=payment.id) }}">
+            Delete this history
+          </button>
+        </form>
+      </dialog>
 
       {% endfor %}
 
@@ -315,26 +342,27 @@
 
       </section>
 
+    </div>
 
-
-
-      <!-- ==========================
-             SAVE
-        =========================== -->
-
-      <section class="save-section">
-
-        <button type="submit" class="save-btn">
-
-          Save Changes
-
-        </button>
-
-      </section>
-
-
-
-    </form>
+    <dialog class="status-dialog" id="status-dialog">
+      <form method="dialog" class="status-dialog-card">
+        <h2>{% if member.active %}Mark member inactive?{% else %}Mark member active?{% endif %}</h2>
+        <p>
+          {% if member.active %}
+          Mark <strong>{{ member.name }}</strong> as inactive?
+          {% else %}
+          Mark <strong>{{ member.name }}</strong> as active?
+          {% endif %}
+        </p>
+        <div class="status-dialog-actions">
+          <button type="submit" class="secondary-btn">Cancel</button>
+          <button type="submit" class="save-btn {% if member.active %}confirm-inactive{% else %}confirm-active{% endif %}" formmethod="post"
+            formaction="{{ url_for('members.toggle_member_active_status', member_id=member.id) }}">
+            {% if member.active %}Yes, mark inactive{% else %}Yes, mark active{% endif %}
+          </button>
+        </div>
+      </form>
+    </dialog>
 
 
 
@@ -342,6 +370,17 @@
   </div>
 
   <script>
+    const statusDialog = document.getElementById("status-dialog");
+    document.querySelector("[data-status-dialog]").addEventListener("click", () => {
+      statusDialog.showModal();
+    });
+    document.querySelectorAll("[data-payment-dialog]").forEach((button) => {
+      button.addEventListener("click", () => document.getElementById(button.dataset.paymentDialog).showModal());
+    });
+    document.querySelectorAll("[data-close-dialog]").forEach((button) => {
+      button.addEventListener("click", () => button.closest("dialog").close());
+    });
+
     document.querySelectorAll(".toast").forEach((toast) => {
 
         setTimeout(() => {

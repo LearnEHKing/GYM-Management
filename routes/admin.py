@@ -34,14 +34,17 @@ def create_owner():
         plan_names = request.form.getlist("plan_name[]")
         plan_durations = request.form.getlist("plan_duration[]")
         plan_fees = request.form.getlist("plan_fee[]")
+        trial_days = int(request.form["trial_days"])
         join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
         due_value = request.form.get("payment_due_date", "")
         due_date = datetime.strptime(due_value, "%Y-%m-%d").date() if due_value else None
-        if not all((username, password, name, phone, plan_names, plan_durations, plan_fees)) or len(password) < 8:
+        if (not all((username, password, name, phone, plan_names, plan_durations, plan_fees))
+                or len(password) < 8 or trial_days < 0):
             raise ValueError
         if GymOwner.query.filter_by(username=username).first():
             raise ValueError
-        owner = GymOwner(username=username, password_hash=generate_password_hash(password), name=name, phone=phone, join_date=join_date, payment_due_date=due_date)
+        owner = GymOwner(username=username, password_hash=generate_password_hash(password), name=name, phone=phone,
+                         join_date=join_date, payment_due_date=due_date, trial_days=trial_days)
         db.session.add(owner)
         db.session.flush()
         for plan_name, duration, fee in zip(plan_names, plan_durations, plan_fees):
@@ -65,6 +68,9 @@ def edit_owner(owner_id):
         if not username or duplicate:
             raise ValueError
         owner.username, owner.name, owner.phone = username, request.form["name"].strip(), request.form["phone"].strip()
+        owner.trial_days = int(request.form["trial_days"])
+        if owner.trial_days < 0:
+            raise ValueError
         owner.join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
         due_value = request.form.get("payment_due_date", "")
         owner.payment_due_date = datetime.strptime(due_value, "%Y-%m-%d").date() if due_value else None

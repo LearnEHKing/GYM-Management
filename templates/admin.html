@@ -23,6 +23,8 @@
         <label>Phone<input name="phone" required maxlength="15" inputmode="tel"></label>
         <label>Password<input name="password" required minlength="8" type="password"
             autocomplete="new-password"></label>
+        <label>Trial days<input name="trial_days" type="number" min="0" value="0" required
+            inputmode="numeric"></label>
 
         <div class="wide">
           <h3>Membership Plans</h3>
@@ -79,7 +81,7 @@
             <th>Gym</th>
             <th>Username</th>
             <th>Phone</th>
-            <th>Plan</th>
+            <th>Trial</th>
             <th>Due date</th>
             <th>Action</th>
           </tr>
@@ -88,7 +90,7 @@
             <td><strong>{{ owner.name }}</strong><small>Joined {{ owner.join_date.strftime('%d %b %Y') }}</small></td>
             <td>{{ owner.username }}</td>
             <td>{{ owner.phone }}</td>
-            <td><span class="pill">{{ owner.plan }}</span></td>
+            <td><span class="pill">{{ owner.trial_days }} day{% if owner.trial_days != 1 %}s{% endif %}</span></td>
             <td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td>
             <td><button class="text-button" type="button"
                 onclick="document.getElementById('edit-owner-{{ owner.id }}').showModal()">Edit</button></td>
@@ -138,7 +140,7 @@
     <div class="form-grid"><label>Gym name<input name="name" value="{{ owner.name }}" required
           maxlength="100"></label><label>Username<input name="username" value="{{ owner.username }}" required
           maxlength="50"></label><label>Phone<input name="phone" value="{{ owner.phone }}" required
-          maxlength="15"></label><label>Plan<input name="plan" value="{{ owner.plan }}" required></label><label>Join
+          maxlength="15"></label><label>Trial days<input name="trial_days" type="number" min="0" value="{{ owner.trial_days }}" required></label><label>Join
         date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
           required></label><label>Payment due date<input name="payment_due_date" type="date"
           value="{{ owner.payment_due_date.isoformat() if owner.payment_due_date else '' }}"></label><label

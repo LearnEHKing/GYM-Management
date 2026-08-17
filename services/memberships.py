@@ -21,3 +21,29 @@ def new_membership(member, plan, amount_paid, payment_date, remarks=""):
     member.membership_expiry = expiry_date
     member.active = expiry_date >= date.today()
     return membership
+
+
+def recalculate_memberships(member):
+    """Rebuild membership dates after a historic plan is edited or removed."""
+    memberships = (Membership.query.filter_by(member_id=member.id)
+                   .order_by(Membership.payment_date, Membership.id).all())
+    previous_expiry = None
+    for membership in memberships:
+        membership.start_date = (previous_expiry + relativedelta(days=1)
+                                 if previous_expiry and previous_expiry >= membership.payment_date
+                                 else membership.payment_date)
+        membership.expiry_date = (membership.start_date
+                                  + relativedelta(months=membership.duration_months)
+                                  - relativedelta(days=1))
+        previous_expiry = membership.expiry_date
+
+    if memberships:
+        current = max(memberships, key=lambda item: (item.expiry_date, item.id))
+        member.current_plan_id = current.plan_id
+        member.membership_start = current.start_date
+        member.membership_expiry = current.expiry_date
+    else:
+        member.current_plan_id = None
+        member.membership_start = None
+        member.membership_expiry = None
+        member.active = False

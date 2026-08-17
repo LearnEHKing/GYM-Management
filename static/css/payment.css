@@ -364,6 +364,21 @@ a{
 
 }
 
+/* Native select menus need explicit option colours in dark mode. */
+.form-group select{
+
+    color-scheme:dark;
+
+}
+
+.form-group select option{
+
+    background:#0f131b;
+
+    color:#f5f7fa;
+
+}
+
 body.light .form-group input,
 body.light .form-group select,
 body.light .form-group textarea{
@@ -780,5 +795,19 @@ body.light .secondary-btn{
         transform:translateY(-10px);
 
     }
+
+}
+
+body.light .form-group select{
+
+    color-scheme:light;
+
+}
+
+body.light .form-group select option{
+
+    background:#ffffff;
+
+    color:#111827;
 
 }

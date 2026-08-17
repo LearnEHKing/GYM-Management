@@ -91,7 +91,8 @@
 
     <section class="payment-layout">
 
-      <form method="POST" class="glass payment-form" novalidate>
+      <form method="POST" class="glass payment-form" novalidate
+        data-current-expiry="{{ member.membership_expiry.isoformat() if member.membership_expiry else '' }}">
 
         <h2>Payment Information</h2>
 
@@ -123,22 +124,6 @@
           {% if errors.plan_id %}
           <small class="field-error">
             {{ errors.plan_id }}
-          </small>
-          {% endif %}
-
-        </div>
-
-        <div class="form-group">
-
-          <label for="amount_paid">
-            Amount Paid
-          </label>
-
-          <input type="number" id="amount_paid" name="amount_paid" min="0" step="1" placeholder="Enter amount">
-
-          {% if errors.amount_paid %}
-          <small class="field-error">
-            {{ errors.amount_paid }}
           </small>
           {% endif %}
 
@@ -213,30 +198,9 @@
         </div>
 
         <div class="summary-row">
-          <span>Plan Fee</span>
+          <span>Amount to collect</span>
           <strong id="summary-fee">
             ₹0
-          </strong>
-        </div>
-
-        <div class="summary-row">
-          <span>Amount Paid</span>
-          <strong id="summary-paid">
-            ₹0
-          </strong>
-        </div>
-
-        <div class="summary-row">
-          <span>Remaining</span>
-          <strong id="summary-remaining">
-            ₹0
-          </strong>
-        </div>
-
-        <div class="summary-row">
-          <span>Status</span>
-          <strong id="summary-status">
-            -
           </strong>
         </div>
 
@@ -268,15 +232,11 @@
     // --------------------------
 
     const planSelect = document.getElementById("plan_id");
-    const amountInput = document.getElementById("amount_paid");
     const paymentDate = document.getElementById("payment_date");
 
     const summaryPlan = document.getElementById("summary-plan");
     const summaryDuration = document.getElementById("summary-duration");
     const summaryFee = document.getElementById("summary-fee");
-    const summaryPaid = document.getElementById("summary-paid");
-    const summaryRemaining = document.getElementById("summary-remaining");
-    const summaryStatus = document.getElementById("summary-status");
     const summaryExpiry = document.getElementById("summary-expiry");
 
     // --------------------------
@@ -292,20 +252,54 @@
     // Expiry Calculator
     // --------------------------
 
-    function calculateExpiry(months) {
+    const currentExpiry = document.querySelector(".payment-form").dataset.currentExpiry;
 
-        if (!paymentDate.value || months <= 0)
-            return "-";
+    function parseDate(value) {
+        const [year, month, day] = value.split("-").map(Number);
+        return new Date(year, month - 1, day);
+    }
 
-        const date = new Date(paymentDate.value);
+    function addDays(date, days) {
+        const result = new Date(date);
+        result.setDate(result.getDate() + days);
+        return result;
+    }
 
-        date.setMonth(date.getMonth() + months);
+    // Match Python's relativedelta(months=...) for month-end dates.
+    function addMonths(date, months) {
+        const result = new Date(date);
+        const day = result.getDate();
+        result.setDate(1);
+        result.setMonth(result.getMonth() + months);
+        const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+        result.setDate(Math.min(day, lastDay));
+        return result;
+    }
 
+    function formatDate(date) {
         return date.toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "short",
             year: "numeric"
         });
+    }
+
+    function calculateExpiry(months) {
+
+        if (!paymentDate.value || months <= 0)
+            return "-";
+
+        const selectedPaymentDate = parseDate(paymentDate.value);
+        const savedExpiry = currentExpiry ? parseDate(currentExpiry) : null;
+
+        // Renewals begin on the day after an existing active membership ends.
+        const startDate = savedExpiry && savedExpiry >= selectedPaymentDate
+            ? addDays(savedExpiry, 1)
+            : selectedPaymentDate;
+
+        const expiryDate = addDays(addMonths(startDate, months), -1);
+
+        return formatDate(expiryDate);
     }
 
     // --------------------------
@@ -321,9 +315,6 @@
             summaryPlan.textContent = "-";
             summaryDuration.textContent = "-";
             summaryFee.textContent = "₹0";
-            summaryPaid.textContent = "₹0";
-            summaryRemaining.textContent = "₹0";
-            summaryStatus.textContent = "-";
             summaryExpiry.textContent = "-";
 
             return;
@@ -335,18 +326,6 @@
 
         const duration = Number(option.dataset.duration);
 
-        const paid = Number(amountInput.value || 0);
-
-        let remaining = fee - paid;
-
-        if (remaining < 0)
-            remaining = 0;
-
-        let status = "Partial";
-
-        if (paid >= fee)
-            status = "Paid";
-
         summaryPlan.textContent = planName;
 
         summaryDuration.textContent =
@@ -356,20 +335,7 @@
 
         summaryFee.textContent = "₹" + fee;
 
-        summaryPaid.textContent = "₹" + paid;
-
-        summaryRemaining.textContent = "₹" + remaining;
-
-        summaryStatus.textContent = status;
-
         summaryExpiry.textContent = calculateExpiry(duration);
-        summaryStatus.className = "";
-
-        if (status === "Paid") {
-            summaryStatus.classList.add("paid");
-        } else {
-            summaryStatus.classList.add("partial");
-        }
     }
 
     // --------------------------
@@ -377,8 +343,6 @@
     // --------------------------
 
     planSelect.addEventListener("change", updateSummary);
-
-    amountInput.addEventListener("input", updateSummary);
 
     paymentDate.addEventListener("change", updateSummary);
 
