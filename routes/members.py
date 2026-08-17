@@ -239,39 +239,69 @@ def edit_member_attendance(member_id):
 @login_required
 def reports():
     today = date.today()
-    week_start = today - relativedelta(days=6)
+    try:
+        selected_days = int(request.args.get("days", 30))
+    except (TypeError, ValueError):
+        selected_days = 30
+    if selected_days not in (7, 30, 90, 180):
+        selected_days = 30
+    report_start = today - relativedelta(days=selected_days - 1)
     attendance_rows = db.session.query(
         Attendance.attendance_date, func.count(Attendance.id)
     ).join(Member).filter(
         Member.owner_id == current_user.id,
-        Attendance.attendance_date >= week_start,
+        Attendance.attendance_date >= report_start,
         Attendance.attendance_date <= today,
     ).group_by(Attendance.attendance_date).all()
     attendance_counts = {record_date: count for record_date, count in attendance_rows}
     attendance_labels = []
     attendance_values = []
-    for offset in range(6, -1, -1):
+    for offset in range(selected_days - 1, -1, -1):
         day = today - relativedelta(days=offset)
         attendance_labels.append(day.strftime("%d %b"))
         attendance_values.append(attendance_counts.get(day, 0))
 
-    revenue_labels, revenue_values = [], []
-    for offset in range(5, -1, -1):
-        month = (today.replace(day=1) - relativedelta(months=offset))
-        next_month = month + relativedelta(months=1)
-        revenue = db.session.query(func.sum(Membership.amount_paid)).join(Member).filter(
-            Member.owner_id == current_user.id,
-            Membership.payment_date >= month,
-            Membership.payment_date < next_month,
-        ).scalar() or 0
-        revenue_labels.append(month.strftime("%b"))
-        revenue_values.append(revenue)
+    revenue_rows = db.session.query(
+        Membership.payment_date, func.sum(Membership.amount_paid)
+    ).join(Member).filter(
+        Member.owner_id == current_user.id,
+        Membership.payment_date >= report_start,
+        Membership.payment_date <= today,
+    ).group_by(Membership.payment_date).all()
+    revenue_counts = {record_date: int(amount) for record_date, amount in revenue_rows}
+    revenue_values = [revenue_counts.get(today - relativedelta(days=offset), 0) for offset in range(selected_days - 1, -1, -1)]
+    total_attendance = sum(attendance_values)
+    active_members = Member.query.filter_by(owner_id=current_user.id, active=True).count()
+    new_members = Member.query.filter(
+        Member.owner_id == current_user.id,
+        Member.join_date >= report_start,
+        Member.join_date <= today,
+    ).count()
+    expiring_soon = Member.query.filter(
+        Member.owner_id == current_user.id,
+        Member.active.is_(True),
+        Member.membership_expiry >= today,
+        Member.membership_expiry <= today + relativedelta(days=7),
+    ).count()
+    top_attendees = db.session.query(
+        Member.name, func.count(Attendance.id).label("visits")
+    ).join(Attendance).filter(
+        Member.owner_id == current_user.id,
+        Attendance.attendance_date >= report_start,
+        Attendance.attendance_date <= today,
+    ).group_by(Member.id, Member.name).order_by(func.count(Attendance.id).desc(), Member.name).limit(5).all()
+    peak_index = max(range(len(attendance_values)), key=attendance_values.__getitem__)
 
     return render_template(
         "reports.html", active_page="reports",
+        selected_days=selected_days, report_start=report_start, today=today,
         attendance_labels=attendance_labels, attendance_values=attendance_values,
-        revenue_labels=revenue_labels, revenue_values=revenue_values,
-        active_members=Member.query.filter_by(owner_id=current_user.id, active=True).count(),
+        revenue_values=revenue_values, total_revenue=sum(revenue_values),
+        active_members=active_members, new_members=new_members, expiring_soon=expiring_soon,
+        total_attendance=total_attendance,
+        average_attendance=round(total_attendance / selected_days, 1),
+        peak_day=attendance_labels[peak_index], peak_count=attendance_values[peak_index],
+        top_attendees=top_attendees,
         today_attendance=attendance_values[-1],
     )
 
