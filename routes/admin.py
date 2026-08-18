@@ -47,7 +47,7 @@ def create_owner():
         plan_durations = request.form.getlist("plan_duration[]")
         plan_fees = request.form.getlist("plan_fee[]")
         trial_days = int(request.form["trial_days"])
-        send_reminder = bool(request.form["send_reminder"])
+        send_reminder = request.form["send_reminder"] == "True"
         join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
         due_value = request.form.get("payment_due_date", "")
         due_date = datetime.strptime(due_value, "%Y-%m-%d").date() if due_value else None
@@ -88,7 +88,7 @@ def edit_owner(owner_id):
         due_value = request.form.get("payment_due_date", "")
         owner.payment_due_date = datetime.strptime(due_value, "%Y-%m-%d").date() if due_value else None
         password = request.form.get("password", "")
-        owner.send_reminder = bool(request.form["send_reminder"])
+        owner.send_reminder = request.form["send_reminder"] == "True"
         if password:
             if len(password) < 8:
                 raise ValueError

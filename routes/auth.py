@@ -15,7 +15,7 @@ def login():
     if request.method == "POST":
         owner = GymOwner.query.filter_by(username=request.form["username"]).first()
         if owner and check_password_hash(owner.password_hash, request.form["password"]):
-            login_user(owner)
+            login_user(owner,remember=True)
             return redirect(url_for("members.index"))
         error = "Invalid username or password."
     return render_template("login.html", error=error)

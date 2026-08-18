@@ -25,8 +25,14 @@
             autocomplete="new-password"></label>
         <label>Trial days<input name="trial_days" type="number" min="0" value="0" required
             inputmode="numeric"></label>
-        <label>Send automatic Membership expiry reminder?<input name="send_reminder" type="bool" value="False" required
-            inputmode="bool"></label>
+        <label for="send_reminder">Membership expiry reminders</label>
+
+        <label class="switch">
+            <input id="send_reminder" name="send_reminder" type="checkbox" value="True">
+            <span class="slider"></span>
+        </label>
+    
+        <small>Automatically notify members when their membership expires.</small>
 
         <div class="wide">
           <h3>Membership Plans</h3>
@@ -151,8 +157,10 @@
       <label>Phone<input name="phone" value="{{ owner.phone }}" required
           maxlength="15"></label>
       <label>Trial days<input name="trial_days" type="number" min="0" value="{{ owner.trial_days }}" required></label>
-      <label>Send automatic Membership expiry reminder?<input name="send_reminder" type="bool" value="False" required
-            inputmode="bool"></label>
+      <label class="switch">
+            <input id="send_reminder" name="send_reminder" type="checkbox" value="True">
+            <span class="slider"></span>
+      </label>
       <label>Join date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
           required></label>
       <label>Payment due date<input name="payment_due_date" type="date"

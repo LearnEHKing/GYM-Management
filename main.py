@@ -1,15 +1,19 @@
 from flask import Flask
 from flask_login import LoginManager
+from datetime import timedelta
 
 from scheduler import init_scheduler
 from models import GymOwner, db
+from config import app_secret_key
 
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = "ppp"
+    app.secret_key = app_secret_key
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gym.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+    app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
     db.init_app(app)
 
     init_scheduler(app)

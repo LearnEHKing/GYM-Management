@@ -2,6 +2,7 @@ admin = {
     "username":"admin",
     "membership_reminder_timedelta":2,
 }
+app_secret_key= "pe82uebdiw8wu"
 
 reminder_message = (
     "👋 Hi {},\n\n"
