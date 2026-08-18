@@ -118,7 +118,7 @@ class Member(db.Model):
 
     membership_start = db.Column(db.Date)
     membership_expiry = db.Column(db.Date)
-
+    reminder_sent = db.Column(db.Boolean, default=False)
     memberships = db.relationship(
         "Membership",
         backref="member",

@@ -194,6 +194,7 @@ def check_in_member(member_id):
     if existing:
         flash(f"{member.name} is already checked in today.", "info")
     else:
+        member.active=True
         db.session.add(Attendance(member_id=member.id, attendance_date=today, check_in=datetime.now()))
         db.session.commit()
         flash(f"Attendance marked for {member.name}.", "success")

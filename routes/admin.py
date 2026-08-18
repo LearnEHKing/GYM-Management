@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
 
 import config
+import backup
 from models import GymOwner, MembershipPlan, OwnerPayment, db
 
 admin_bp = Blueprint("admin", __name__)
@@ -21,6 +22,17 @@ def admin():
     require_admin()
     return render_template("admin.html", active_page="admin", owners=GymOwner.query.order_by(GymOwner.join_date.desc()).all(), owner_payments=OwnerPayment.query.order_by(OwnerPayment.payment_date.desc()).all(), today=date.today())
 
+@admin_bp.route("/admin/create_backup", methods=["GET"])
+@login_required
+def create_backup():
+    require_admin()
+    try :
+        backup.create_backup()
+        flash("New backup created.","success")
+    except Expection as e:
+        print(e)
+        flash("ERROR : Couldn't create backup.","error")
+    return redirect(url_for("admin.admin"))
 
 @admin_bp.route("/admin/owners", methods=["POST"])
 @login_required

@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_login import LoginManager
 
+from scheduler import init_scheduler
 from models import GymOwner, db
 
 
@@ -11,6 +12,8 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
+    init_scheduler(app)
+    
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"

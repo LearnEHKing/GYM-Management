@@ -51,7 +51,9 @@
             required></label><label>Payment due date<input name="payment_due_date" type="date"></label>
       </div><button type="submit">Create owner</button>
     </form>
-
+    <br>
+    <a href="{{url_for('admin.create_backup')}}" class="primary-btn">Create New Backup of the Database</a>
+    <br>
     <form class="panel form-panel" action="{{ url_for('admin.create_owner_payment') }}" method="post">
       <h2>Record owner payment</h2>
       <div class="form-grid"><label>Gym owner<select name="owner_id" required>
