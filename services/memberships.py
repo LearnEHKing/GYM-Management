@@ -19,7 +19,6 @@ def new_membership(member, plan, amount_paid, payment_date, remarks=""):
     member.current_plan_id = plan.id
     member.membership_start = start_date
     member.membership_expiry = expiry_date
-    member.reminder_sent = False
     return membership
 
 
@@ -42,9 +41,7 @@ def recalculate_memberships(member):
         member.current_plan_id = current.plan_id
         member.membership_start = current.start_date
         member.membership_expiry = current.expiry_date
-        member.reminder_sent = False
     else:
         member.current_plan_id = None
         member.membership_start = None
         member.membership_expiry = None
-        member.reminder_sent = False

@@ -22,6 +22,9 @@ class GymOwner(UserMixin, db.Model):
     # Number of free trial days for new members
     trial_days = db.Column(db.Integer, nullable=False, default=0)
 
+    #If gym owner wants to send automatic whatsapp payment reminder.
+    send_reminder = db.Column(db.Boolean, nullable=False, default=False)
+  
     owner_payments = db.relationship(
         "OwnerPayment",
         backref="owner",
@@ -117,7 +120,6 @@ class Member(db.Model):
 
     membership_start = db.Column(db.Date)
     membership_expiry = db.Column(db.Date)
-    reminder_sent = db.Column(db.Boolean, default=False)
     memberships = db.relationship(
         "Membership",
         backref="member",

@@ -25,6 +25,8 @@
             autocomplete="new-password"></label>
         <label>Trial days<input name="trial_days" type="number" min="0" value="0" required
             inputmode="numeric"></label>
+        <label>Send automatic Membership expiry reminder?<input name="send_reminder" type="bool" value="False" required
+            inputmode="bool"></label>
 
         <div class="wide">
           <h3>Membership Plans</h3>
@@ -40,7 +42,7 @@
 
               <button type="button" onclick="removePlan(this)">✕</button>
             </div>
-
+            <br>
           </div>
 
           <button type="button" id="add-plan-btn">
@@ -84,6 +86,7 @@
             <th>Username</th>
             <th>Phone</th>
             <th>Trial</th>
+            <th>Send Reminder</th>
             <th>Due date</th>
             <th>Action</th>
           </tr>
@@ -93,6 +96,7 @@
             <td>{{ owner.username }}</td>
             <td>{{ owner.phone }}</td>
             <td><span class="pill">{{ owner.trial_days }} day{% if owner.trial_days != 1 %}s{% endif %}</span></td>
+            <td>{{owner.send_reminder}}</td>
             <td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td>
             <td><button class="text-button" type="button"
                 onclick="document.getElementById('edit-owner-{{ owner.id }}').showModal()">Edit</button></td>
@@ -139,15 +143,25 @@
       <h2>Edit {{ owner.name }}</h2><button type="button" class="close"
         onclick="this.closest('dialog').close()">×</button>
     </div>
-    <div class="form-grid"><label>Gym name<input name="name" value="{{ owner.name }}" required
-          maxlength="100"></label><label>Username<input name="username" value="{{ owner.username }}" required
-          maxlength="50"></label><label>Phone<input name="phone" value="{{ owner.phone }}" required
-          maxlength="15"></label><label>Trial days<input name="trial_days" type="number" min="0" value="{{ owner.trial_days }}" required></label><label>Join
-        date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
-          required></label><label>Payment due date<input name="payment_due_date" type="date"
-          value="{{ owner.payment_due_date.isoformat() if owner.payment_due_date else '' }}"></label><label
-        class="wide">New password <small>(leave blank to keep the current password)</small><input name="password"
-          type="password" minlength="8" autocomplete="new-password"></label></div><button type="submit">Save
+    <div class="form-grid">
+      <label>Gym name<input name="name" value="{{ owner.name }}" required
+          maxlength="100"></label>
+      <label>Username<input name="username" value="{{ owner.username }}" required
+          maxlength="50"></label>
+      <label>Phone<input name="phone" value="{{ owner.phone }}" required
+          maxlength="15"></label>
+      <label>Trial days<input name="trial_days" type="number" min="0" value="{{ owner.trial_days }}" required></label>
+      <label>Send automatic Membership expiry reminder?<input name="send_reminder" type="bool" value="False" required
+            inputmode="bool"></label>
+      <label>Join date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
+          required></label>
+      <label>Payment due date<input name="payment_due_date" type="date"
+          value="{{ owner.payment_due_date.isoformat() if owner.payment_due_date else '' }}"></label>
+      <label class="wide">New password <small>(leave blank to keep the current password)</small>
+        <input name="password"
+          type="password" minlength="8" autocomplete="new-password"></label>
+    </div>
+    <button type="submit">Save
       changes</button>
   </form>
 </dialog>{% endfor %}
@@ -183,6 +197,7 @@ document.getElementById("add-plan-btn").addEventListener("click", () => {
             required>
 
         <button type="button" onclick="removePlan(this)">✕</button>
+        <br>
     `;
 
     container.appendChild(row);

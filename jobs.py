@@ -12,7 +12,7 @@ def send_payment_reminders():
 
     members = Member.query.filter(
         Member.membership_expiry == target,
-        Member.reminder_sent == False
+        Member.owner.has(GymOwner.send_reminder == True)
     ).all()
     print("\n\nMembers length:{}\n\n".format(len(members)))
     for member in members:
@@ -25,10 +25,9 @@ def send_payment_reminders():
         )
         try :
             send_whatsapp(member.phone, message)
-            member.reminder_sent = True
         except Exception as e:
             print("Failed to send message. ERROR : {}".format(e))
-          
+      
     db.session.commit()
 
 def send_owner_payment_reminders():

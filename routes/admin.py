@@ -47,6 +47,7 @@ def create_owner():
         plan_durations = request.form.getlist("plan_duration[]")
         plan_fees = request.form.getlist("plan_fee[]")
         trial_days = int(request.form["trial_days"])
+        send_reminder = bool(request.form["send_reminder"])
         join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
         due_value = request.form.get("payment_due_date", "")
         due_date = datetime.strptime(due_value, "%Y-%m-%d").date() if due_value else None
@@ -56,7 +57,7 @@ def create_owner():
         if GymOwner.query.filter_by(username=username).first():
             raise ValueError
         owner = GymOwner(username=username, password_hash=generate_password_hash(password), name=name, phone=phone,
-                         join_date=join_date, payment_due_date=due_date, trial_days=trial_days)
+                         join_date=join_date, payment_due_date=due_date, trial_days=trial_days,send_reminder=send_reminder)
         db.session.add(owner)
         db.session.flush()
         for plan_name, duration, fee in zip(plan_names, plan_durations, plan_fees):
@@ -87,6 +88,7 @@ def edit_owner(owner_id):
         due_value = request.form.get("payment_due_date", "")
         owner.payment_due_date = datetime.strptime(due_value, "%Y-%m-%d").date() if due_value else None
         password = request.form.get("password", "")
+        owner.send_reminder = bool(request.form["send_reminder"])
         if password:
             if len(password) < 8:
                 raise ValueError

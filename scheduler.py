@@ -34,24 +34,24 @@ def init_scheduler(flask_app):
     )
     # -------------------------
     # send_payment_reminders
-    # Every day at 4:00 AM
+    # Every day at 8:00 AM
     # -------------------------
     scheduler.add_job(
         func=job_send_payment_reminders,
         trigger="cron",
-        hour=4,
+        hour=8,
         minute=00,
         id="payment_reminders",
         replace_existing=True,
     )
     # -------------------------
     # send_owner_payment_reminders
-    # Every day at 3:00 AM
+    # Every day at 9:00 AM
     # -------------------------
     scheduler.add_job(
         func=job_send_owner_payment_reminders,
         trigger="cron",
-        hour=3,
+        hour=9,
         minute=00,
         id="owner_payment_reminders",
         replace_existing=True,
