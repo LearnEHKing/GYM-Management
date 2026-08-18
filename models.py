@@ -106,9 +106,8 @@ class Member(db.Model):
     join_date = db.Column(db.Date, nullable=False)
 
     notes = db.Column(db.Text)
-
-    active = db.Column(db.Boolean, default=True)
-
+    membership_active = db.Column(db.Boolean, default=True, nullable=False)
+    deactivated_on = db.Column(db.Date, nullable=True)
     current_plan_id = db.Column(
         db.Integer,
         db.ForeignKey("membership_plan.id")

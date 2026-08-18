@@ -38,9 +38,15 @@
       <header class="page-header">
 
         <a href="{{url_for('members.members')}}" class="back-btn">←</a>
+        {% if member.membership_active %}
         <a href="{{ url_for('members.add_membership', member_id=member.id) }}" class="payment-btn">
           💳 New Payment
         </a>
+        {% else %}
+        <button type="button" class="payment-btn" data-status-dialog>
+          + Rejoin
+        </button>
+        {% endif %}
       </header>
 
     </div>
@@ -61,17 +67,10 @@
 
           <h2>Membership Information</h2>
 
-          {% if member.active %}
-          <button type="button" class="status active status-toggle" data-status-dialog>
-            Active
-          </button>
-          {% else %}
-          <button type="button" class="status inactive status-toggle" data-status-dialog>
-            Inactive
-          </button>
-          {% endif %}
         </div>
-
+        {% if not member.membership_active %}
+        <p class="warning-text">This member has been removed from the gym.</p>
+        {% endif %}
         <div class="membership-grid">
 
           <div class="item">
@@ -148,6 +147,17 @@
 
           </div>
 
+        </div>
+        <div class="membership-action">
+          {% if member.membership_active %}
+          <button type="button" class="status inactive status-toggle" data-status-dialog>
+            🗑 Remove Member
+          </button>
+          {% else %}
+          <button type="button" class="status active status-toggle" data-status-dialog>
+            + Rejoin
+          </button>
+          {% endif %}
         </div>
       </section>
 
@@ -261,32 +271,35 @@
           <strong>{{ payment.plan_name }}</strong><br>
 
           <small>
-  {{ payment.payment_date.strftime("%d %b %Y") }}
-  • ₹{{ payment.amount_paid }}
+            {{ payment.payment_date.strftime("%d %b %Y") }}
+            • ₹{{ payment.amount_paid }}
 
-  
+
           </small>
 
         </div>
 
-          <button type="button" class="secondary-btn" data-payment-dialog="payment-dialog-{{ payment.id }}">
+        <button type="button" class="secondary-btn" data-payment-dialog="payment-dialog-{{ payment.id }}">
           Edit
-          </button>
+        </button>
 
       </div>
 
       <dialog class="status-dialog" id="payment-dialog-{{ payment.id }}">
-        <form method="post" action="{{ url_for('members.edit_membership', membership_id=payment.id) }}" class="status-dialog-card">
+        <form method="post" action="{{ url_for('members.edit_membership', membership_id=payment.id) }}"
+          class="status-dialog-card">
           <h2>Edit payment history</h2>
           <label class="dialog-label" for="plan-{{ payment.id }}">Change membership plan</label>
           <select id="plan-{{ payment.id }}" name="plan_id" class="dialog-input">
             <option value="">Keep current: {{ payment.plan_name }}</option>
             {% for plan in plans %}
-            <option value="{{ plan.id }}">{{ plan.name }} — ₹{{ plan.fee }} / {{ plan.duration_months }} month{% if plan.duration_months != 1 %}s{% endif %}</option>
+            <option value="{{ plan.id }}">{{ plan.name }} — ₹{{ plan.fee }} / {{ plan.duration_months }} month{% if
+              plan.duration_months != 1 %}s{% endif %}</option>
             {% endfor %}
           </select>
           <label class="dialog-label" for="remarks-{{ payment.id }}">Remarks</label>
-          <textarea id="remarks-{{ payment.id }}" name="remarks" class="dialog-input" rows="4">{{ payment.remarks or '' }}</textarea>
+          <textarea id="remarks-{{ payment.id }}" name="remarks" class="dialog-input" rows="4">{{ payment.remarks or ''
+            }}</textarea>
           <div class="status-dialog-actions">
             <button type="button" class="secondary-btn" data-close-dialog>Cancel</button>
             <button type="submit" class="save-btn">Save changes</button>
@@ -311,8 +324,8 @@
       <!-- ==========================
              ATTENDANCE
         =========================== -->
-
       <section class="card">
+        {% if member.membership_active %}
 
         <div class="section-title">
 
@@ -337,38 +350,50 @@
         <div class="attendance-calendar">
         </div>
 
-        <p class="attendance-help">Tap an available date to mark attendance. Green dates can be tapped to remove attendance.</p>
-        <form id="attendance-edit-form" method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}">
+        <p class="attendance-help">Tap an available date to mark attendance. Green dates can be tapped to remove
+          attendance.</p>
+        <form id="attendance-edit-form" method="post"
+          action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}">
           <input type="hidden" name="attendance_date" id="attendance-date-input">
           <input type="hidden" name="action" id="attendance-action-input">
         </form>
+        {% else %}
 
+        <p class="warning-text">Attendance is unavailable for this member because this member was removed from the gym.
+          Rejoin to use this feature again.</p>
+        {% endif %}
       </section>
+
 
     </div>
 
     <dialog class="status-dialog" id="status-dialog">
       <form method="dialog" class="status-dialog-card">
-        <h2>{% if member.active %}Mark member inactive?{% else %}Mark member active?{% endif %}</h2>
+        <h2>{% if member.membership_active %}Remove member{% else %}Rejoin member{% endif %}</h2>
         <p>
-          {% if member.active %}
-          Mark <strong>{{ member.name }}</strong> as inactive?
+          {% if member.membership_active %}
+          Remove <strong>{{ member.name }}</strong> from the gym?
           {% else %}
-          Mark <strong>{{ member.name }}</strong> as active?
+          Rejoin <strong>{{ member.name }}</strong>?
           {% endif %}
+          <br>
+          The member's attendance and payment history will be kept. You can rejoin them anytime.
         </p>
         <div class="status-dialog-actions">
           <button type="submit" class="secondary-btn">Cancel</button>
-          <button type="submit" class="save-btn {% if member.active %}confirm-inactive{% else %}confirm-active{% endif %}" formmethod="post"
-            formaction="{{ url_for('members.toggle_member_active_status', member_id=member.id) }}">
-            {% if member.active %}Yes, mark inactive{% else %}Yes, mark active{% endif %}
+          <button type="submit"
+            class="save-btn {% if member.membership_active %}confirm-inactive{% else %}confirm-active{% endif %}"
+            formmethod="post"
+            formaction="{{ url_for('members.toggle_membership_active_status', member_id=member.id) }}">
+            {% if member.membership_active %}Remove this member?{% else %}Rejoin this member?{% endif %}
           </button>
         </div>
       </form>
     </dialog>
 
     <dialog class="status-dialog" id="remove-attendance-dialog">
-      <form method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}" class="status-dialog-card">
+      <form method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}"
+        class="status-dialog-card">
         <input type="hidden" name="attendance_date" id="remove-attendance-date">
         <input type="hidden" name="action" value="remove">
         <h2>Remove attendance?</h2>
@@ -387,8 +412,11 @@
 
   <script>
     const statusDialog = document.getElementById("status-dialog");
-    document.querySelector("[data-status-dialog]").addEventListener("click", () => {
-      statusDialog.showModal();
+
+        document.querySelectorAll("[data-status-dialog]").forEach((button) => {
+        button.addEventListener("click", () => {
+        statusDialog.showModal();
+        });
     });
     document.querySelectorAll("[data-payment-dialog]").forEach((button) => {
       button.addEventListener("click", () => document.getElementById(button.dataset.paymentDialog).showModal());

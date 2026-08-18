@@ -6,23 +6,6 @@ import config
 
 from send_message import send_whatsapp
 
-def mark_inactive_members():
-    print("mark_inactive_members")
-    cutoff = date.today() - timedelta(days=7)
-
-    members = Member.query.all()
-    for member in members:
-        last_attendance = db.session.query(
-            func.max(Attendance.attendance_date)).filter(Attendance.member_id == member.id).scalar()
-        if last_attendance is None or last_attendance < cutoff:
-            member.active = False
-
-    db.session.commit()
-
-
-
-
-
 def send_payment_reminders():
     print("Sending reminders...")
     target = date.today() + timedelta(days=int(config.admin["membership_reminder_timedelta"]))

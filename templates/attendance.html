@@ -20,12 +20,12 @@
 <section class="member-list" aria-label="Member attendance list">
   {% for member in members %}
   {% set record = attendance_by_member.get(member.id) %}
-  <article class="attendance-member {% if not member.active %}inactive{% endif %}" data-member data-search-text="{{ (member.name ~ ' ' ~ member.phone ~ ' ' ~ member.address)|lower }}">
+  <article class="attendance-member {% if not member.membership_active %}inactive{% endif %}" data-member data-search-text="{{ (member.name ~ ' ' ~ member.phone ~ ' ' ~ member.address)|lower }}">
     <a class="member-profile" href="{{ url_for('members.member_details', member_id=member.id) }}">
       <span class="avatar">{{ member.name[0]|upper }}</span>
       <span class="member-copy">
         <strong>{{ member.name }}</strong>
-        <small>{% if not member.active %}Inactive · {% endif %}+91 {{ member.phone }}</small>
+        <small>{% if not member.membership_active %}Removed · {% endif %}+91 {{ member.phone }}</small>
       </span>
     </a>
     {% if record %}

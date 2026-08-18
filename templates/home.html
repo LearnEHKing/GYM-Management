@@ -149,25 +149,29 @@
   {% if expired_members or expiring_members %}
   <div class="status-list">
     {% for member in expired_members %}
+    {% if member.membership_active %}
     <div class="status-item expired">
       <div class="status-badge expired">Expired</div>
-      <div class="status-body">
+      <a class="status-body" href="{{url_for('members.member_details',member_id=member.id)}}">
         <strong>{{ member.name }}</strong>
         <small>Expired on {{ member.membership_expiry.strftime('%d %b %Y') if member.membership_expiry else '—' }}</small>
         <p>{{ (today - member.membership_expiry).days }} day{% if (today - member.membership_expiry).days != 1 %}s{% endif %} overdue</p>
-      </div>
+      </a>
     </div>
+    {% endif %}
     {% endfor %}
 
     {% for member in expiring_members %}
+    {% if member.membership_active %}
     <div class="status-item warning">
       <div class="status-badge warning">Expiring</div>
-      <div class="status-body">
+      <a class="status-body" href="{{url_for('members.member_details',member_id=member.id)}}">
         <strong>{{ member.name }}</strong>
         <small>Expires on {{ member.membership_expiry.strftime('%d %b %Y') if member.membership_expiry else '—' }}</small>
         <p>{{ (member.membership_expiry - today).days }} day{% if (member.membership_expiry - today).days != 1 %}s{% endif %} left</p>
-      </div>
+      </a>
     </div>
+    {% endif %}
     {% endfor %}
   </div>
   {% else %}

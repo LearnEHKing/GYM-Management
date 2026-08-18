@@ -61,7 +61,7 @@ def index():
         ).order_by(Member.membership_expiry.asc(), Member.name.asc()).all()
         expiring_soon = Member.query.filter(
             Member.owner_id == current_user.id,
-            Member.active.is_(True),
+            Member.membership_active.is_(True),
             Member.membership_expiry >= today,
             Member.membership_expiry <= today + relativedelta(days=7),
         ).order_by(Member.membership_expiry.asc(), Member.name.asc()).all()
@@ -98,7 +98,7 @@ def add_member():
                 member.membership_start = join_date
                 # A one-day trial starts and ends on the joining date.
                 member.membership_expiry = join_date + relativedelta(days=max(current_user.trial_days - 1, 0))
-                member.active = True
+                member.membership_active = True
                 db.session.add(Membership(member_id=member.id, plan_id=None, plan_name="Trial", duration_months=0, fee=0, amount_paid=0, payment_date=join_date, start_date=member.membership_start, expiry_date=member.membership_expiry, remarks="Trial membership"))
                 db.session.commit()
                 flash("Member added successfully!", "success")
@@ -158,7 +158,7 @@ def attendance():
         # Active members who still need a check-in are always first.  Within that
         # group, yesterday's matching hour is first, then the neighbouring hours.
         attendance_record = today_attendance.get(member.id)
-        if not member.active:
+        if not member.membership_active:
             status_rank = 2
         elif attendance_record is None:
             status_rank = 0
@@ -180,7 +180,7 @@ def attendance():
         members=ordered_members,
         attendance_by_member=today_attendance,
         today=today,
-        active_unchecked=sum(m.active and m.id not in today_attendance for m in members),
+        active_unchecked=sum(m.membership_active and m.id not in today_attendance for m in members),
         active_page="attendance",
     )
 
@@ -189,15 +189,17 @@ def attendance():
 @login_required
 def check_in_member(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    today = date.today()
-    existing = Attendance.query.filter_by(member_id=member.id, attendance_date=today).first()
-    if existing:
-        flash(f"{member.name} is already checked in today.", "info")
+    if member.membership_active:
+        today = date.today()
+        existing = Attendance.query.filter_by(member_id=member.id, attendance_date=today).first()
+        if existing:
+            flash(f"{member.name} is already checked in today.", "info")
+        else:
+            db.session.add(Attendance(member_id=member.id, attendance_date=today, check_in=datetime.now()))
+            db.session.commit()
+            flash(f"Attendance marked for {member.name}.", "success")
     else:
-        member.active=True
-        db.session.add(Attendance(member_id=member.id, attendance_date=today, check_in=datetime.now()))
-        db.session.commit()
-        flash(f"Attendance marked for {member.name}.", "success")
+        flash(f"Can't mark attencance for removed member.", "error")
     return redirect(url_for("members.attendance"))
 
 
@@ -205,13 +207,16 @@ def check_in_member(member_id):
 @login_required
 def remove_check_in(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    record = Attendance.query.filter_by(member_id=member.id, attendance_date=date.today()).first()
-    if not record:
-        flash(f"{member.name} has no attendance record for today.", "info")
+    if member.membership_active:
+        record = Attendance.query.filter_by(member_id=member.id, attendance_date=date.today()).first()
+        if not record:
+            flash(f"{member.name} has no attendance record for today.", "info")
+        else:
+            db.session.delete(record)
+            db.session.commit()
+            flash(f"Attendance removed for {member.name}.", "success")
     else:
-        db.session.delete(record)
-        db.session.commit()
-        flash(f"Attendance removed for {member.name}.", "success")
+        flash(f"Can't mark attencance for removed member.", "error")
     return redirect(url_for("members.attendance"))
 
 
@@ -220,36 +225,39 @@ def remove_check_in(member_id):
 def edit_member_attendance(member_id):
     """Mark or remove one valid attendance date from a member profile."""
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    action = request.form.get("action")
-    try:
-        attendance_date = datetime.strptime(request.form.get("attendance_date", ""), "%Y-%m-%d").date()
-    except ValueError:
-        flash("Please choose a valid attendance date.", "error")
-        return redirect(url_for("members.member_details", member_id=member.id))
-
-    # Never accept future check-ins or dates from before the member existed.
-    if attendance_date < member.join_date or attendance_date > date.today():
-        flash("Attendance can only be edited between the joining date and today.", "error")
-        return redirect(url_for("members.member_details", member_id=member.id))
-
-    record = Attendance.query.filter_by(member_id=member.id, attendance_date=attendance_date).first()
-    if action == "mark":
-        if record:
-            flash("Attendance is already marked for that date.", "info")
+    if member.membership_active:
+        action = request.form.get("action")
+        try:
+            attendance_date = datetime.strptime(request.form.get("attendance_date", ""), "%Y-%m-%d").date()
+        except ValueError:
+            flash("Please choose a valid attendance date.", "error")
+            return redirect(url_for("members.member_details", member_id=member.id))
+    
+        # Never accept future check-ins or dates from before the member existed.
+        if attendance_date < member.join_date or attendance_date > date.today():
+            flash("Attendance can only be edited between the joining date and today.", "error")
+            return redirect(url_for("members.member_details", member_id=member.id))
+    
+        record = Attendance.query.filter_by(member_id=member.id, attendance_date=attendance_date).first()
+        if action == "mark":
+            if record:
+                flash("Attendance is already marked for that date.", "info")
+            else:
+                check_in = datetime.combine(attendance_date, datetime.now().time())
+                db.session.add(Attendance(member_id=member.id, attendance_date=attendance_date, check_in=check_in))
+                db.session.commit()
+                flash("Attendance marked successfully.", "success")
+        elif action == "remove":
+            if record:
+                db.session.delete(record)
+                db.session.commit()
+                flash("Attendance removed successfully.", "success")
+            else:
+                flash("There is no attendance record for that date.", "info")
         else:
-            check_in = datetime.combine(attendance_date, datetime.now().time())
-            db.session.add(Attendance(member_id=member.id, attendance_date=attendance_date, check_in=check_in))
-            db.session.commit()
-            flash("Attendance marked successfully.", "success")
-    elif action == "remove":
-        if record:
-            db.session.delete(record)
-            db.session.commit()
-            flash("Attendance removed successfully.", "success")
-        else:
-            flash("There is no attendance record for that date.", "info")
+            abort(400)
     else:
-        abort(400)
+        flash(f"Can't mark attencance for removed member.", "error")
     return redirect(url_for("members.member_details", member_id=member.id))
 
 
@@ -297,7 +305,7 @@ def reports():
     ).count()
     expiring_soon = Member.query.filter(
         Member.owner_id == current_user.id,
-        Member.active.is_(True),
+        Member.membership_active.is_(True),
         Member.membership_expiry >= today,
         Member.membership_expiry <= today + relativedelta(days=7),
     ).count()
@@ -327,7 +335,11 @@ def reports():
 @members_bp.route("/members")
 @login_required
 def members():
-    return render_template("members.html", members=current_user.members, active_page="members")
+    members = Member.query.filter_by(owner_id=current_user.id).order_by(
+        Member.membership_active.desc(),
+        Member.name
+    ).all()
+    return render_template("members.html", members=members, active_page="members")
 
 
 @members_bp.route("/members/<int:member_id>")
@@ -369,19 +381,26 @@ def member_details(member_id):
     )
 
 
-@members_bp.route("/members/<int:member_id>/active-status", methods=["POST"])
+@members_bp.route("/members/<int:member_id>/account_active-status", methods=["POST"])
 @login_required
-def toggle_member_active_status(member_id):
-    member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    member.active = not member.active
+def toggle_membership_active_status(member_id):
+    member = Member.query.get_or_404(member_id)
+    if member.membership_active:
+        member.membership_active = False
+    else:
+        member.membership_active = True
+    
+        if member.membership_expiry is None or member.membership_expiry < date.today():
+            member.membership_expiry = date.today()
+      
     try:
         db.session.commit()
-        status = "active" if member.active else "inactive"
-        flash(f"{member.name} is now marked as {status}.", "success")
+        status = "active" if member.membership_active else "inactive"
+        flash(f"{member.name}'s account is now marked as {status}.", "success")
     except Exception as error:
         print(error)
         db.session.rollback()
-        flash("Could not update the member status.", "error")
+        flash("Could not update the account membership status.", "error")
     return redirect(url_for("members.member_details", member_id=member.id))
 
 

@@ -570,3 +570,21 @@ body.light .payment-btn{
     animation:fadeOut .3s forwards;
 
 }
+
+.warning-text{
+  color:#ff4f4fcd ;
+}
+
+.membership-action{
+    display:flex;
+    justify-content:center;
+    margin-top:24px;
+}
+
+.membership-action .status{
+    min-width:220px;
+    padding:14px 28px;
+    font-size:1.2rem;
+    font-weight:600;
+    border-radius:100px;
+}

@@ -93,7 +93,7 @@ def seed_demo_gym():
                 address=f"{random.randint(1, 99)}, {random.choice(AREAS)}",
                 join_date=joined,
                 notes=random.choice(["", "Morning batch", "Strength training", "Weight-loss goal"]),
-                active=True,
+                membership_active=True,
             )
             db.session.add(member)
             db.session.flush()
@@ -121,13 +121,13 @@ def seed_demo_gym():
             
             elif index >= member_count - 6:
                 member.membership_expiry = today - relativedelta(days=random.randint(1, 25))
-                member.active = False
+                member.membership_active = False
     
             # Attendance spans 90 days and has a realistic, varied frequency.
             attendance_start = max(joined, today - relativedelta(days=89))
             day = attendance_start
             while day <= today:
-                if random.random() < (0.44 if member.active else 0.12):
+                if random.random() < (0.44 if member.membership_active else 0.12):
                     db.session.add(Attendance(member_id=member.id, attendance_date=day, check_in=make_check_in(day)))
                 day += relativedelta(days=1)
 
