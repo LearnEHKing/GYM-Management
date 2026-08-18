@@ -297,7 +297,7 @@ def reports():
     revenue_counts = {record_date: int(amount) for record_date, amount in revenue_rows}
     revenue_values = [revenue_counts.get(today - relativedelta(days=offset), 0) for offset in range(selected_days - 1, -1, -1)]
     total_attendance = sum(attendance_values)
-    active_members = Member.query.filter_by(owner_id=current_user.id, active=True).count()
+    active_members = Member.query.filter_by(owner_id=current_user.id, membership_active=True).count()
     new_members = Member.query.filter(
         Member.owner_id == current_user.id,
         Member.join_date >= report_start,
