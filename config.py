@@ -5,6 +5,9 @@ app_secret_key= "pe82uebdiw8wu"
 
 membership_reminder_days = [7, 2, 0]
 
+# Maximum number of automatic WhatsApp messages sent in a calendar day.  Set to
+# 0 to hold all automatic messages until the limit is increased.  Messages over
+# this limit remain queued and are tried again on the next day.
 daily_message_limit = 249
 
 # GYM-Manager subscriptions for gym owners. Edit this catalog to add or change

@@ -19,6 +19,10 @@ def init_scheduler(flask_app):
     Call this once from main.py.
     """
     global app
+    if scheduler.running:
+        # Application factories can be called more than once (for example by
+        # a test runner).  The existing jobs already use the active app.
+        return
     app = flask_app
     # -----------------5-------
     # Daily database backup
@@ -42,8 +46,8 @@ def init_scheduler(flask_app):
     scheduler.add_job(
         func=job_send_payment_reminders,
         trigger="cron",
-        hour=13,
-        minute=29,
+        hour=8,
+        minute=0,
         id="payment_reminders",
         replace_existing=True,
         misfire_grace_time=3000,  # 50 minutes

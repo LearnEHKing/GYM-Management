@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 import sqlite3
 
 def create_backup():
-    DB_FILE = Path("instance/gym.db")   # Change this if needed
-    BACKUP_DIR = Path("backups")
+    project_dir = Path(__file__).resolve().parent
+    DB_FILE = project_dir / "instance" / "gym.db"
+    BACKUP_DIR = project_dir / "backups"
     
     BACKUP_DIR.mkdir(exist_ok=True)
     

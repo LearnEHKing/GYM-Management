@@ -29,7 +29,7 @@ def create_backup():
     try :
         backup.create_backup()
         flash("New backup created.","success")
-    except Expection as e:
+    except Exception as e:
         print(e)
         flash("ERROR : Couldn't create backup.","error")
     return redirect(url_for("admin.admin"))

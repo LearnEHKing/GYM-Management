@@ -231,3 +231,25 @@ class Attendance(db.Model):
             name="uq_member_attendance"
         ),
     )
+
+
+class AutomaticMessage(db.Model):
+    """A durable outbox for automatic WhatsApp messages.
+
+    Keeping the message body in the database means a reminder deferred by the
+    daily quota survives application restarts and can be delivered later.
+    """
+
+    __tablename__ = "automatic_message"
+
+    id = db.Column(db.Integer, primary_key=True)
+    kind = db.Column(db.String(50), nullable=False)
+    phone = db.Column(db.String(15), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    # Identifies the event that produced this message and prevents duplicate
+    # reminders when a scheduled job is run more than once.
+    dedupe_key = db.Column(db.String(200), nullable=False, unique=True, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    sent_at = db.Column(db.DateTime, index=True)
+    retry_count = db.Column(db.Integer, nullable=False, default=0)
+    last_error = db.Column(db.Text)

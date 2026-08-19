@@ -7,6 +7,7 @@ from sqlalchemy import func
 
 from models import Attendance, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership, recalculate_memberships
+from services.automatic_messages import enqueue_automatic_message, send_queued_automatic_messages
 from send_message import send_whatsapp
 
 import config
@@ -116,12 +117,18 @@ def add_member():
                 should_send_limit_warning = (new_member_count > warning_threshold and current_user.member_limit_warning_plan != current_user.owner_plan)
                 if should_send_limit_warning:
                     current_user.member_limit_warning_plan = current_user.owner_plan
+                    enqueue_automatic_message(
+                        "member_limit_warning",
+                        current_user.phone,
+                        config.member_limit_warning_message.format(
+                            current_user.name, owner_plan["member_allowed"],
+                            current_user.owner_plan.title(), new_member_count,
+                        ),
+                        f"member_limit_warning:{current_user.id}:{current_user.owner_plan}",
+                    )
                 db.session.commit()
                 if should_send_limit_warning:
-                    try:
-                        send_whatsapp(current_user.phone, config.member_limit_warning_message.format(current_user.name, owner_plan["member_allowed"], current_user.owner_plan.title(), new_member_count))
-                    except Exception as error:
-                        print(f"Failed to send member limit warning: {error}")
+                    send_queued_automatic_messages(send_whatsapp)
                 flash("Member added successfully!", "success")
                 return redirect(url_for("members.member_details", member_id=member.id))
             except Exception as error:
@@ -160,6 +167,10 @@ def attendance():
     now = datetime.now()
 
     members = Member.query.filter_by(owner_id=current_user.id).all()
+    eligible_member_ids = {
+        member.id for member in members
+        if member.membership_active and member.membership_expiry and member.membership_expiry >= today
+    }
     today_attendance = {
         record.member_id: record
         for record in Attendance.query.join(Member).filter(
@@ -179,7 +190,7 @@ def attendance():
         # Active members who still need a check-in are always first.  Within that
         # group, yesterday's matching hour is first, then the neighbouring hours.
         attendance_record = today_attendance.get(member.id)
-        if not member.membership_active:
+        if member.id not in eligible_member_ids:
             status_rank = 2
         elif attendance_record is None:
             status_rank = 0
@@ -201,7 +212,8 @@ def attendance():
         members=ordered_members,
         attendance_by_member=today_attendance,
         today=today,
-        active_unchecked=sum(m.membership_active and m.id not in today_attendance for m in members),
+        eligible_member_ids=eligible_member_ids,
+        active_unchecked=sum(m.id in eligible_member_ids and m.id not in today_attendance for m in members),
         active_page="attendance",
     )
 
@@ -210,7 +222,7 @@ def attendance():
 @login_required
 def check_in_member(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    if member.membership_active:
+    if member.membership_active and member.membership_expiry and member.membership_expiry >= date.today():
         today = date.today()
         existing = Attendance.query.filter_by(member_id=member.id, attendance_date=today).first()
         if existing:
@@ -220,7 +232,7 @@ def check_in_member(member_id):
             db.session.commit()
             flash(f"Attendance marked for {member.name}.", "success")
     else:
-        flash(f"Can't mark attencance for removed member.", "error")
+        flash("Attendance can only be marked for a current membership.", "error")
     return redirect(url_for("members.attendance"))
 
 
@@ -444,7 +456,7 @@ def member_details(member_id):
 @members_bp.route("/members/<int:member_id>/account_active-status", methods=["POST"])
 @login_required
 def toggle_membership_active_status(member_id):
-    member = Member.query.get_or_404(member_id)
+    member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
     if member.membership_active:
         member.membership_active = False
     else:
