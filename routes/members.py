@@ -17,6 +17,7 @@ def validate_member_form(member=None):
     name = request.form["name"].strip()
     phone = request.form["phone"].strip()
     address = request.form["address"].strip()
+    send_membership_reminder = request.form["send_membership_reminder"]==True
     notes = request.form["notes"].strip()
     errors = {}
     if len(name) < 3:
@@ -31,7 +32,7 @@ def validate_member_form(member=None):
         errors["phone"] = "Phone number must contain exactly 10 digits."
     if len(address) < 3:
         errors["address"] = "Please enter a valid address."
-    return name, phone, address, notes, errors
+    return name, phone, send_membership_reminder, address, notes, errors
 
 
 @members_bp.route("/")
@@ -83,7 +84,7 @@ def plan_over():
 def add_member():
     errors, server_error = {}, False
     if request.method == "POST":
-        name, phone, address, notes, errors = validate_member_form()
+        name, phone, send_membership_reminder, address, notes, errors = validate_member_form()
         try:
             join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
             if join_date > date.today():
@@ -92,7 +93,7 @@ def add_member():
             errors["join_date"] = "Invalid joining date."
         if not errors:
             try:
-                member = Member(owner_id=current_user.id, name=name, phone=phone, address=address, join_date=join_date, notes=notes)
+                member = Member(owner_id=current_user.id, name=name, phone=phone, send_membership_reminder=send_membership_reminder,address=address, join_date=join_date, notes=notes)
                 db.session.add(member)
                 db.session.flush()
                 member.membership_start = join_date
@@ -116,10 +117,10 @@ def edit_member(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
     errors, server_error = {}, False
     if request.method == "POST":
-        name, phone, address, notes, errors = validate_member_form(member)
+        name, phone, send_membership_reminder, address, notes, errors = validate_member_form(member)
         if not errors:
             try:
-                member.name, member.phone, member.address, member.notes = name, phone, address, notes
+                member.name, member.phone, member.send_membership_reminder, member.address, member.notes = name, phone, send_membership_reminder, address, notes
                 db.session.commit()
                 flash("Member updated successfully!", "success")
                 return redirect(url_for("members.member_details", member_id=member.id))
