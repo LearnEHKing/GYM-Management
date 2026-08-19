@@ -8,10 +8,13 @@ from send_message import send_whatsapp
 
 def send_payment_reminders():
     print("Sending reminders...")
-    target = date.today() + timedelta(days=int(config.admin["membership_reminder_timedelta"]))
-
+    target_dates = [
+        date.today() + timedelta(days=int(days))
+        for days in config.membership_reminder_days
+    ]
     members = Member.query.filter(
-        Member.membership_expiry == target,
+        Member.membership_expiry.in_(target_dates),
+        Member.send_membership_reminder == True,
         Member.owner.has(GymOwner.send_reminder == True)
     ).all()
     print("\n\nMembers length:{}\n\n".format(len(members)))
@@ -19,7 +22,7 @@ def send_payment_reminders():
         message = config.reminder_message.format(
             member.name,
             member.owner.name,
-            config.admin["membership_reminder_timedelta"],
+            member.membership_expiry-date.today(),
             member.owner.phone,
             member.owner.name
         )

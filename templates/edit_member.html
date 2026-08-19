@@ -54,7 +54,14 @@
           <span class="field-error"> {{ errors.phone }} </span>
           {% endif %}
         </div>
-
+        <div class="switch-row">
+                <p>Send WhatsApp reminders.</p>
+            <label class="switch">
+                <input id="send_reminder" name="send_reminder" type="checkbox" value="True" {{"checked" if member.send_membership_reminder else "" }} >
+                <span class="slider"></span>
+            </label>
+        </div>
+        <br>
         <div class="input-group">
           <label for="address">Address</label>
 

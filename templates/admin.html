@@ -28,7 +28,7 @@
         <label for="send_reminder">Membership expiry reminders</label>
 
         <label class="switch">
-            <input id="send_reminder" name="send_reminder" type="checkbox" value="True">
+            <input id="send_reminder" name="send_reminder" type="checkbox" value="True" checked>
             <span class="slider"></span>
         </label>
     
@@ -158,7 +158,7 @@
           maxlength="15"></label>
       <label>Trial days<input name="trial_days" type="number" min="0" value="{{ owner.trial_days }}" required></label>
       <label class="switch">
-            <input id="send_reminder" name="send_reminder" type="checkbox" value="True">
+            <input id="send_reminder" name="send_reminder" type="checkbox" value="True" {{"checked" if owner.send_reminder else "" }}>
             <span class="slider"></span>
       </label>
       <label>Join date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"

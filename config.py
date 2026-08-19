@@ -1,8 +1,11 @@
 admin = {
     "username":"admin",
-    "membership_reminder_timedelta":2,
 }
 app_secret_key= "pe82uebdiw8wu"
+
+membership_reminder_days = [7, 2, 0]
+
+daily_message_limit = 249
 
 reminder_message = (
     "👋 Hi {},\n\n"

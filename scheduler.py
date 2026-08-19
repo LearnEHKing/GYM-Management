@@ -20,7 +20,7 @@ def init_scheduler(flask_app):
     """
     global app
     app = flask_app
-    # -------------------------
+    # -----------------5-------
     # Daily database backup
     # Every day at 1:00 AM
     # -------------------------
@@ -31,6 +31,9 @@ def init_scheduler(flask_app):
         minute=00,
         id="daily_backup",
         replace_existing=True,
+        misfire_grace_time=3000,  # 50 minutes
+        coalesce=True,
+        max_instances=1,
     )
     # -------------------------
     # send_payment_reminders
@@ -39,10 +42,13 @@ def init_scheduler(flask_app):
     scheduler.add_job(
         func=job_send_payment_reminders,
         trigger="cron",
-        hour=8,
-        minute=00,
+        hour=13,
+        minute=29,
         id="payment_reminders",
         replace_existing=True,
+        misfire_grace_time=3000,  # 50 minutes
+        coalesce=True,
+        max_instances=1,
     )
     # -------------------------
     # send_owner_payment_reminders
@@ -55,6 +61,9 @@ def init_scheduler(flask_app):
         minute=00,
         id="owner_payment_reminders",
         replace_existing=True,
+        misfire_grace_time=3000,  # 50 minutes
+        coalesce=True,
+        max_instances=1,
     )
 
     scheduler.start()

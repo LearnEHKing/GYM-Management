@@ -110,7 +110,7 @@ class Member(db.Model):
 
     notes = db.Column(db.Text)
     membership_active = db.Column(db.Boolean, default=True, nullable=False)
-    deactivated_on = db.Column(db.Date, nullable=True)
+    send_membership_reminder = db.Column(db.Boolean, default=True)
     current_plan_id = db.Column(
         db.Integer,
         db.ForeignKey("membership_plan.id")
