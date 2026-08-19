@@ -160,6 +160,11 @@
             <strong>{{ member.phone }}</strong>
           </div>
 
+          <div class="detail">
+            <span>WhatsApp Notifications</span>
+            <strong>{{ "On" if member.send_membership_reminder else "Off" }}</strong>
+          </div>
+
           <div class="detail full-width">
             <span>Address</span>
             <strong>{{ member.address }}</strong>

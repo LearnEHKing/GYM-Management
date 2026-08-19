@@ -17,7 +17,8 @@ def validate_member_form(member=None):
     name = request.form["name"].strip()
     phone = request.form["phone"].strip()
     address = request.form["address"].strip()
-    send_membership_reminder = request.form["send_membership_reminder"]==True
+    # HTML form values are strings, and unchecked checkboxes are omitted entirely.
+    send_membership_reminder = request.form.get("send_membership_reminder") == "True"
     notes = request.form["notes"].strip()
     errors = {}
     if len(name) < 3:
