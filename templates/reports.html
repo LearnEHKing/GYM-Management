@@ -1,31 +1,95 @@
 {% extends "components/base.html" %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">{% endblock %}
 {% block title %}Reports{% endblock %}
 {% block body %}
-<header class="reports-header"><p>{{ report_start.strftime('%d %b') }} – {{ today.strftime('%d %b %Y') }}</p><h1>Reports</h1></header>
-<form class="range-picker" method="get" aria-label="Report duration"><label for="days">Duration</label><select id="days" name="days" onchange="this.form.submit()">{% for days in [7, 30, 90, 180] %}<option value="{{ days }}" {% if selected_days == days %}selected{% endif %}>Last {{ days }} days</option>{% endfor %}</select></form>
-<section class="report-summary"><div><span>Total revenue</span><strong>₹{{ total_revenue }}</strong></div><div><span>Total visits</span><strong>{{ total_attendance }}</strong></div><div><span>Average daily visits</span><strong>{{ average_attendance }}</strong></div><div><span>Active members</span><strong>{{ active_members }}</strong></div><div><span>New members</span><strong>{{ new_members }}</strong></div><div><span>Expiring in 7 days</span><strong>{{ expiring_soon }}</strong></div></section>
-<section class="chart-section"><div class="chart-title"><h2>Daily attendance</h2><span>Peak: {{ peak_count }} on {{ peak_day }}</span></div><canvas id="attendanceChart" aria-label="Attendance chart" role="img"></canvas></section>
-<section class="chart-section"><div class="chart-title"><h2>Daily revenue</h2><span>Payments received</span></div><canvas id="revenueChart" aria-label="Revenue chart" role="img"></canvas></section>
-<section class="top-members"><div class="chart-title"><h2>Top attendees</h2><span>Selected period</span></div>{% for member in top_attendees %}<div class="top-member"><span>{{ loop.index }}. {{ member.name }}</span><strong>{{ member.visits }} visits</strong></div>{% else %}<p>No attendance recorded in this period.</p>{% endfor %}</section>
+<header class="reports-header">
+  <p>{{ report_start.strftime('%d %b') }} – {{ today.strftime('%d %b %Y') }}</p>
+  <h1>Reports</h1>
+</header>
+<form class="range-picker" method="get" aria-label="Report duration"><label for="days">Duration</label><select id="days"
+    name="days" onchange="this.form.submit()">{% for days in [7, 30, 90, 180] %}<option value="{{ days }}" {% if
+      selected_days==days %}selected{% endif %}>Last {{ days }} days</option>{% endfor %}</select></form>
+<section class="report-summary">
+  <div><span>Total revenue</span><strong>₹{{ total_revenue }}</strong></div>
+  <div><span>Total visits</span><strong>{{ total_attendance }}</strong></div>
+  <div><span>Average daily visits</span><strong>{{ average_attendance }}</strong></div>
+  <div><span>Active members</span><strong>{{ active_members }}</strong></div>
+  <div><span>New members</span><strong>{{ new_members }}</strong></div>
+  <div><span>Expiring in 7 days</span><strong>{{ expiring_soon }}</strong></div>
+  <div>
+    <span>Busiest time</span>
+    <strong>{{ busy_time }}</strong>
+  </div>
+
+  <div>
+    <span>Visitors at busiest time</span>
+    <strong>{{ busy_average }}/day</strong>
+    <small>{{ busy_total }} total</small>
+  </div>
+</section>
+<section class="chart-section">
+  <div class="chart-title">
+    <h2>Daily attendance</h2><span>Peak: {{ peak_count }} on {{ peak_day }}</span>
+  </div><canvas id="attendanceChart" aria-label="Attendance chart" role="img"></canvas>
+</section>
+<section class="chart-section">
+  <div class="chart-title">
+    <h2>Daily revenue</h2><span>Payments received</span>
+  </div><canvas id="revenueChart" aria-label="Revenue chart" role="img"></canvas>
+</section>
+
+
+<section class="chart-section">
+  <div class="chart-title">
+    <h2>Busiest time</h2>
+    <span>Average visitors per hour</span>
+  </div>
+  <canvas id="busyChart"></canvas>
+</section>
+<section class="top-members">
+  <div class="chart-title">
+    <h2>Top attendees</h2><span>Selected period</span>
+  </div>{% for member in top_attendees %}<div class="top-member"><span>{{ loop.index }}. {{ member.name
+      }}</span><strong>{{ member.visits }} visits</strong></div>{% else %}<p>No attendance recorded in this period.</p>
+  {% endfor %}
+</section>
 {% endblock %}
 {% block script %}
 const charts = [
-  { canvas: document.getElementById('attendanceChart'), labels: {{ attendance_labels|tojson }}, values: {{ attendance_values|tojson }}, prefix: '', color: '#3b82f6' },
-  { canvas: document.getElementById('revenueChart'), labels: {{ attendance_labels|tojson }}, values: {{ revenue_values|tojson }}, prefix: '₹', color: '#22c55e' },
+{ canvas: document.getElementById('attendanceChart'), labels: {{ attendance_labels|tojson }}, values: {{
+attendance_values|tojson }}, prefix: '', color: '#3b82f6' },
+{ canvas: document.getElementById('revenueChart'), labels: {{ attendance_labels|tojson }}, values: {{
+revenue_values|tojson }}, prefix: '₹', color: '#22c55e' },
+{
+    canvas: document.getElementById('busyChart'),
+    labels: {{ busy_labels|tojson }},
+    values: {{ busy_values|tojson }},
+    prefix: '',
+    color: '#f59e0b'
+},
 ];
 function drawChart({canvas, labels, values, prefix, color}) {
-  const ratio = window.devicePixelRatio || 1, width = canvas.clientWidth, height = 210;
-  canvas.width = width * ratio; canvas.height = height * ratio;
-  const ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio);
-  const text = getComputedStyle(document.body).getPropertyValue('--muted').trim(), line = getComputedStyle(document.body).getPropertyValue('--line').trim();
-  const max = Math.max(...values, 1), left = 46, right = 12, top = 20, bottom = 34, plotWidth = width - left - right, plotHeight = height - top - bottom;
-  const labelStep = labels.length > 14 ? Math.ceil(labels.length / 6) : Math.ceil(labels.length / 7);
-  ctx.font = '11px system-ui'; ctx.fillStyle = text; ctx.strokeStyle = line; ctx.lineWidth = 1;
-  for (let i = 0; i < 4; i++) { const y = top + plotHeight * i / 3, value = Math.round(max - max * i / 3); ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke(); ctx.fillText(prefix + value, 2, y + 4); }
-  const step = labels.length > 1 ? plotWidth / (labels.length - 1) : 0;
-  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); values.forEach((value, index) => { const x = left + step * index, y = top + plotHeight - value / max * plotHeight; index ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
-  values.forEach((value, index) => { const x = left + step * index, y = top + plotHeight - value / max * plotHeight; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); if (index % labelStep === 0 || index === labels.length - 1) { ctx.fillStyle = text; ctx.textAlign = 'center'; ctx.fillText(labels[index], x, height - 10); } }); ctx.textAlign = 'start';
-}
-function drawAllCharts(){ charts.forEach(drawChart); } drawAllCharts(); window.addEventListener('resize', drawAllCharts);
-{% endblock %}
+const ratio = window.devicePixelRatio || 1, width = canvas.clientWidth, height = 210;
+canvas.width = width * ratio; canvas.height = height * ratio;
+const ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio);
+const text = getComputedStyle(document.body).getPropertyValue('--muted').trim(), line =
+getComputedStyle(document.body).getPropertyValue('--line').trim();
+const max = Math.max(...values, 1), left = 46, right = 12, top = 20, bottom = 34, plotWidth = width - left - right,
+plotHeight = height - top - bottom;
+const labelStep = labels.length > 14 ? Math.ceil(labels.length / 6) : Math.ceil(labels.length / 7);
+ctx.font = '11px system-ui'; ctx.fillStyle = text; ctx.strokeStyle = line; ctx.lineWidth = 1;
+for (let i = 0; i < 4; i++) { const y=top + plotHeight * i / 3, value=Math.round(max - max * i / 3); ctx.beginPath();
+  ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke(); ctx.fillText(prefix + value, 2, y + 4); } const
+  step=labels.length> 1 ? plotWidth / (labels.length - 1) : 0;
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); values.forEach((value, index) => { const x = left + step
+  * index, y = top + plotHeight - value / max * plotHeight; index ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  values.forEach((value, index) => { const x = left + step * index, y = top + plotHeight - value / max * plotHeight;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); if (index % labelStep === 0 ||
+  index === labels.length - 1) { ctx.fillStyle = text; ctx.textAlign = 'center'; ctx.fillText(labels[index], x, height -
+  10); } }); ctx.textAlign = 'start';
+  }
+  function drawAllCharts(){ charts.forEach(drawChart); } drawAllCharts(); window.addEventListener('resize',
+  drawAllCharts);
+  {% endblock %}

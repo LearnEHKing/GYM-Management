@@ -37,16 +37,10 @@
 
       <header class="page-header">
 
-        <a href="{{url_for('members.members')}}" class="back-btn">←</a>
-        {% if member.membership_active %}
-        <a href="{{ url_for('members.add_membership', member_id=member.id) }}" class="payment-btn">
-          💳 New Payment
-        </a>
-        {% else %}
-        <button type="button" class="payment-btn" data-status-dialog>
-          + Rejoin
-        </button>
-        {% endif %}
+        <a href="{{ url_for('members.members') }}" class="back-btn">←</a>
+
+        <span class="sticky-member-name">{{ member.name }}</span>
+
       </header>
 
     </div>
@@ -59,13 +53,18 @@
       <section class="membership-card">
         <div class="member-title">
 
-          <h1>{{member.name}}</h1>
+          <h1>{{ member.name }}</h1>
+
+          <a href="tel:{{ member.phone }}" class="call-btn">
+            📞 Call
+          </a>
 
         </div>
-        <br>
-        <div class="card-header">
 
+        <div class="card-header">
           <h2>Membership Information</h2>
+
+
 
         </div>
         {% if not member.membership_active %}
@@ -84,21 +83,6 @@
             <span class="label">Membership Fee</span>
             <span class="value">
               ₹{{ member.latest_membership.fee if member.latest_membership else 0 }}
-            </span>
-          </div>
-
-          <div class="item">
-            <span class="label">Amount Paid</span>
-            <span class="value">
-              ₹{{ member.latest_membership.amount_paid if member.latest_membership else 0 }}
-            </span>
-          </div>
-
-          <div class="item">
-            <span class="label">Pending</span>
-            <span class="value">
-              ₹{{ (member.latest_membership.fee - member.latest_membership.amount_paid) if member.latest_membership else
-              0 }}
             </span>
           </div>
 
@@ -149,15 +133,17 @@
 
         </div>
         <div class="membership-action">
+
           {% if member.membership_active %}
-          <button type="button" class="status inactive status-toggle" data-status-dialog>
-            🗑 Remove Member
-          </button>
+          <a href="{{ url_for('members.add_membership', member_id=member.id) }}" class="payment-btn">
+            New Payment
+          </a>
           {% else %}
-          <button type="button" class="status active status-toggle" data-status-dialog>
+          <button type="button" class="payment-btn" data-status-dialog>
             + Rejoin
           </button>
           {% endif %}
+
         </div>
       </section>
 
@@ -168,10 +154,6 @@
 
         <div class="section-title">
           <h2>Member Details</h2>
-
-          <a href="/members/{{member.id}}/edit" class="secondary-btn">
-            Edit
-          </a>
         </div>
 
         <div class="details-grid">
@@ -197,6 +179,18 @@
           </div>
 
 
+        </div>
+
+        <div class="membership-action">
+          <a href="/members/{{ member.id }}/edit" class="secondary-btn">
+            Edit
+          </a>
+
+          {% if member.membership_active %}
+          <button type="button" class="status inactive status-toggle" data-status-dialog>
+            🗑 Remove Member
+          </button>
+          {% endif %}
         </div>
 
       </section>

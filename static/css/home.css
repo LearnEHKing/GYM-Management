@@ -18,11 +18,22 @@
 }
 
 .header h1 {
-  font-size: 22px;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1.1;
 
-  letter-spacing: 0.5px;
+    background: linear-gradient(
+        90deg,
+        var(--white),
+        var(--blue)
+    );
 
-  font-weight: 700;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    text-shadow:
+        0 0 20px rgba(59, 130, 246, 0.25);
 }
 
 #themeBtn {

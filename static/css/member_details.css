@@ -380,6 +380,18 @@ body.light .sticky-top{
     background:rgba(255,255,255,.60);
 }
 
+.sticky-member-name{
+    margin : auto;
+    font-size:1.15rem;
+    font-weight:700;
+    color:var(--text);
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+
+    flex:1;
+}
 
 /* ==========================
    Header
@@ -388,20 +400,70 @@ body.light .sticky-top{
 .page-header{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:12px;
 
     margin-bottom:4px;
 }
 
 .member-title{
-    flex:1;
-    text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
 }
 
 .member-title h1{
     margin:0;
-    font-size:1.25rem;
+    font-size:1.75rem;
     font-weight:700;
+    line-height:1.2;
+}
+
+.card-header h2{
+    margin:0;
+    font-size:1.05rem;
+    font-weight:600;
+    opacity:.9;
+}
+
+.call-btn{
+    display:flex;
+    align-items:center;
+    gap:5px;
+
+    padding:8px 13px;
+    border-radius:999px;
+
+    text-decoration:none;
+    white-space:nowrap;
+
+    font-size:.88rem;
+    font-weight:600;
+
+    color:var(--text);
+
+    background:rgba(255,255,255,.08);
+    border:1px solid var(--border);
+
+    transition:.15s;
+}
+
+.call-btn:hover{
+    background:rgba(255,255,255,.12);
+}
+
+.call-btn:active{
+    transform:scale(.96);
+}
+
+body.light .call-btn{
+    background:rgba(0,0,0,.04);
+    border:1px solid var(--border);
+}
+
+body.light .call-btn:hover{
+    background:rgba(0,0,0,.07);
 }
 
 
@@ -451,7 +513,7 @@ body.light .back-btn{
     gap:8px;
 
     width:max-content;
-    margin:0 auto;
+    margin: auto;
 
     padding:8px 22px;
 
@@ -577,14 +639,24 @@ body.light .payment-btn{
 
 .membership-action{
     display:flex;
-    justify-content:center;
+    gap:12px;
     margin-top:24px;
 }
 
+.membership-action .secondary-btn,
 .membership-action .status{
-    min-width:220px;
-    padding:14px 28px;
-    font-size:1.2rem;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:12px 18px;
+    border-radius:14px;
+    font-size:1rem;
     font-weight:600;
-    border-radius:100px;
+}
+
+.membership-action .status{
+    border:none;
+    cursor:pointer;
 }

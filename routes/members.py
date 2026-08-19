@@ -296,6 +296,40 @@ def reports():
     ).group_by(Membership.payment_date).all()
     revenue_counts = {record_date: int(amount) for record_date, amount in revenue_rows}
     revenue_values = [revenue_counts.get(today - relativedelta(days=offset), 0) for offset in range(selected_days - 1, -1, -1)]
+
+    # Average visitors by hour
+    hour_rows = db.session.query(
+        func.strftime("%H", Attendance.check_in),
+        func.count(Attendance.id)
+    ).join(Member).filter(
+        Member.owner_id == current_user.id,
+        Attendance.attendance_date >= report_start,
+        Attendance.attendance_date <= today,
+    ).group_by(
+        func.strftime("%H", Attendance.check_in)
+    ).all()
+
+    hour_counts = {int(hour): count for hour, count in hour_rows}
+
+    busy_labels = [
+        datetime.strptime(str(hour), "%H").strftime("%I %p")
+        for hour in range(24)
+    ]
+
+    busy_values = [
+        round(hour_counts.get(hour, 0) / selected_days, 1)
+        for hour in range(24)
+    ]
+
+    peak_hour = max(hour_counts, key=hour_counts.get, default=0)
+    busy_total = hour_counts.get(peak_hour, 0)
+    busy_average = round(busy_total / selected_days, 1)
+    busy_time = (
+        f"{peak_hour:02d}:00 - {(peak_hour + 1) % 24:02d}:00"
+    )
+
+
+  
     total_attendance = sum(attendance_values)
     active_members = Member.query.filter_by(owner_id=current_user.id, membership_active=True).count()
     new_members = Member.query.filter(
@@ -329,6 +363,11 @@ def reports():
         peak_day=attendance_labels[peak_index], peak_count=attendance_values[peak_index],
         top_attendees=top_attendees,
         today_attendance=attendance_values[-1],
+        busy_labels=busy_labels,
+        busy_values=busy_values,
+        busy_time=busy_time,
+        busy_total=busy_total,
+        busy_average=busy_average,
     )
 
 
