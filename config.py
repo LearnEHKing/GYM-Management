@@ -7,6 +7,26 @@ membership_reminder_days = [7, 2, 0]
 
 daily_message_limit = 249
 
+# GYM-Manager subscriptions for gym owners. Edit this catalog to add or change
+# the plans available when recording an owner payment.
+plan = {
+    "starter": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 50, "fee": 499},
+    "growth": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 150, "fee": 999},
+    "pro": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 500, "fee": 1499},
+}
+
+# Send the capacity message once when a new member takes the count above this
+# many places below the limit.
+plan_delta_members_before_warning = 5
+
+member_limit_warning_message = (
+    "👋 Hi {},\n\n"
+    "⚠️ Your gym is getting close to its member limit. You can add up to "
+    "*{} members* on your current {} plan, and you currently have *{}*.\n\n"
+    "Please update your plan in order to keep adding more members.\n\n"
+    "🤖 Sent automatically by GYM-Manager"
+)
+
 reminder_message = (
     "👋 Hi {},\n\n"
     "⏰ Just a friendly reminder that your membership at *{}💪* "

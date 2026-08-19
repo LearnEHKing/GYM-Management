@@ -56,7 +56,7 @@
           </button>
         </div>
         <label>Join date<input name="join_date" type="date" value="{{ today.isoformat() }}"
-            required></label><label>Payment due date<input name="payment_due_date" type="date"></label>
+            required></label><small>Set the owner's subscription and due date when recording their first payment.</small>
       </div><button type="submit">Create owner</button>
     </form>
     <br>
@@ -67,7 +67,9 @@
       <div class="form-grid"><label>Gym owner<select name="owner_id" required>
             <option value="" disabled selected>Select an owner</option>{% for owner in owners %}<option
               value="{{ owner.id }}">{{ owner.name }} — {{ owner.username }}</option>{% endfor %}
-          </select></label><label>Amount<input name="amount" type="number" min="1" required
+          </select></label><label>Plan<select name="plan_name" id="owner-payment-plan" required>
+            <option value="" disabled selected>Select a plan</option>{% for plan_name, details in owner_plans.items() %}<option value="{{ plan_name }}" data-fee="{{ details.fee }}">{{ plan_name|title }} — {{ details.member_allowed }} members / {{ details.days }} days / ₹{{ details.fee }}</option>{% endfor %}
+          </select></label><label>Amount<input id="owner-payment-amount" type="number" readonly required
             inputmode="numeric"></label><label>Status<select name="status">
             <option>Paid</option>
             <option>Partial</option>
@@ -125,6 +127,7 @@
           <tr>
             <th>Gym</th>
             <th>Amount</th>
+            <th>Plan</th>
             <th>Status</th>
             <th>Date</th>
             <th>Remarks</th>
@@ -133,6 +136,7 @@
         <tbody>{% for payment in owner_payments %}<tr>
             <td><strong>{{ payment.owner.name }}</strong><small>{{ payment.owner.username }}</small></td>
             <td>₹{{ '{:,.0f}'.format(payment.amount) }}</td>
+            <td>{{ payment.plan_name|title if payment.plan_name else '—' }}</td>
             <td><span class="status {{ payment.status|lower }}">{{ payment.status }}</span></td>
             <td>{{ payment.payment_date.strftime('%d %b %Y') }}</td>
             <td>{{ payment.remarks or '—' }}</td>
@@ -163,8 +167,7 @@
       </label>
       <label>Join date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
           required></label>
-      <label>Payment due date<input name="payment_due_date" type="date"
-          value="{{ owner.payment_due_date.isoformat() if owner.payment_due_date else '' }}"></label>
+      <label>Current subscription<input value="{{ owner.owner_plan|title if owner.owner_plan else 'No plan selected' }}{% if owner.payment_due_date %} — due {{ owner.payment_due_date.strftime('%d %b %Y') }}{% endif %}" readonly></label>
       <label class="wide">New password <small>(leave blank to keep the current password)</small>
         <input name="password"
           type="password" minlength="8" autocomplete="new-password"></label>
@@ -216,5 +219,11 @@ function removePlan(button) {
         button.parentElement.remove();
     }
 }
+
+const ownerPaymentPlan = document.getElementById("owner-payment-plan");
+const ownerPaymentAmount = document.getElementById("owner-payment-amount");
+ownerPaymentPlan?.addEventListener("change", () => {
+    ownerPaymentAmount.value = ownerPaymentPlan.selectedOptions[0].dataset.fee;
+});
 
 {% endblock %}

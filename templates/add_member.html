@@ -30,6 +30,13 @@
     </div>
     {% endif %}
 
+    {% if errors.plan %}
+    <div class="server-error">
+      <div class="error-icon">⚠</div>
+      <div class="error-content"><strong>Member limit reached</strong><p>{{ errors.plan }}</p></div>
+    </div>
+    {% endif %}
+
     <form action="/add_member" method="POST">
       <section class="card">
         <h2>👤 Basic Information</h2>

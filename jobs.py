@@ -36,22 +36,20 @@ def send_payment_reminders():
 def send_owner_payment_reminders():
     print("Sending owner subscription reminders...")
 
-    reminder_days = (15, 7, 1)
-
-    for days_left in reminder_days:
-        target = date.today() + timedelta(days=days_left)
-
-        owners = GymOwner.query.filter(
-            GymOwner.payment_due_date == target
-        ).all()
-
-        for owner in owners:
+    owners = GymOwner.query.filter(GymOwner.payment_due_date.is_not(None)).all()
+    for owner in owners:
+        selected_plan = config.plan.get(owner.owner_plan)
+        if not selected_plan:
+            continue
+        days_left = (owner.payment_due_date - date.today()).days
+        if days_left not in {int(days) for days in selected_plan["whatsapp_reminder_days"]}:
+            continue
+        try:
             message = config.owner_reminder_message.format(
                 owner.name,
                 days_left,
                 owner.payment_due_date.strftime("%d %b %Y")
             )
-            try :
-                send_whatsapp(owner.phone, message)
-            except Exception as e:
-                print("Failed to send message. ERROR : {}".format(e))
+            send_whatsapp(owner.phone, message)
+        except Exception as e:
+            print("Failed to send message. ERROR : {}".format(e))

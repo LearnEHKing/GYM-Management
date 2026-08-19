@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_login import LoginManager
 from datetime import timedelta
+from sqlalchemy import text
 
 from scheduler import init_scheduler
 from models import GymOwner, db
@@ -15,6 +16,19 @@ def create_app():
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
     app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
     db.init_app(app)
+
+    # ``create_all`` does not add columns to existing SQLite databases.
+    with app.app_context():
+        db.create_all()
+        owner_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(gym_owner)"))}
+        if "owner_plan" not in owner_columns:
+            db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN owner_plan VARCHAR(50)"))
+        if "member_limit_warning_plan" not in owner_columns:
+            db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN member_limit_warning_plan VARCHAR(50)"))
+        payment_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(owner_payment)"))}
+        if "plan_name" not in payment_columns:
+            db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))
+        db.session.commit()
 
     init_scheduler(app)
     

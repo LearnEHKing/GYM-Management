@@ -18,6 +18,10 @@ class GymOwner(UserMixin, db.Model):
 
     join_date = db.Column(db.Date, default=date.today)
     payment_due_date = db.Column(db.Date)
+    # Key of the platform subscription in config.plan.
+    owner_plan = db.Column(db.String(50))
+    # Plan for which the capacity warning has already been sent.
+    member_limit_warning_plan = db.Column(db.String(50))
 
     # Number of free trial days for new members
     trial_days = db.Column(db.Integer, nullable=False, default=0)
@@ -61,6 +65,8 @@ class OwnerPayment(db.Model):
 
     amount = db.Column(db.Integer, nullable=False)
     payment_date = db.Column(db.Date, default=date.today, nullable=False)
+    # Snapshot of the selected platform subscription at payment time.
+    plan_name = db.Column(db.String(50))
     remarks = db.Column(db.Text)
 
 

@@ -7,6 +7,7 @@ from sqlalchemy import func
 
 from models import Attendance, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership, recalculate_memberships
+from send_message import send_whatsapp
 
 import config
 
@@ -41,7 +42,7 @@ def index():
     if current_user.is_authenticated:
         if current_user.username == config.admin["username"]:
             return redirect("/admin")
-        elif date.today() > current_user.payment_due_date:
+        elif current_user.payment_due_date and date.today() > current_user.payment_due_date:
             logout_user()
             return redirect(url_for("members.plan_over"))
 
@@ -93,6 +94,14 @@ def add_member():
         except ValueError:
             errors["join_date"] = "Invalid joining date."
         if not errors:
+            owner_plan = config.plan.get(current_user.owner_plan)
+            if owner_plan is None:
+                errors["plan"] = "Your gym does not have an active GYM-Manager plan. Please contact the administrator."
+            else:
+                member_count = Member.query.filter_by(owner_id=current_user.id).count()
+                if member_count >= int(owner_plan["member_allowed"]):
+                    errors["plan"] = "You have reached your plan's member limit. Please update your plan to add more members."
+        if not errors:
             try:
                 member = Member(owner_id=current_user.id, name=name, phone=phone, send_membership_reminder=send_membership_reminder,address=address, join_date=join_date, notes=notes)
                 db.session.add(member)
@@ -102,7 +111,17 @@ def add_member():
                 member.membership_expiry = join_date + relativedelta(days=max(current_user.trial_days - 1, 0))
                 member.membership_active = True
                 db.session.add(Membership(member_id=member.id, plan_id=None, plan_name="Trial", duration_months=0, fee=0, amount_paid=0, payment_date=join_date, start_date=member.membership_start, expiry_date=member.membership_expiry, remarks="Trial membership"))
+                new_member_count = member_count + 1
+                warning_threshold = int(owner_plan["member_allowed"]) - int(config.plan_delta_members_before_warning)
+                should_send_limit_warning = (new_member_count > warning_threshold and current_user.member_limit_warning_plan != current_user.owner_plan)
+                if should_send_limit_warning:
+                    current_user.member_limit_warning_plan = current_user.owner_plan
                 db.session.commit()
+                if should_send_limit_warning:
+                    try:
+                        send_whatsapp(current_user.phone, config.member_limit_warning_message.format(current_user.name, owner_plan["member_allowed"], current_user.owner_plan.title(), new_member_count))
+                    except Exception as error:
+                        print(f"Failed to send member limit warning: {error}")
                 flash("Member added successfully!", "success")
                 return redirect(url_for("members.member_details", member_id=member.id))
             except Exception as error:
