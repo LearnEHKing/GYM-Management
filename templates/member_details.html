@@ -1,19 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "components/base.html" %}
+{% block head%}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/member_details.css') }}">
+{% endblock %}
+{% block title %}Member Details{% endblock %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,
-                   initial-scale=1.0,
-                   maximum-scale=1.0,
-                   user-scalable=no">
 
-  <title>Member Details</title>
-
-  <link rel="stylesheet" href="{{url_for('static', filename='css/member_details.css')}}">
-</head>
-
-<body>
+{% block body %}</>
 
   <div class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -403,8 +395,8 @@
 
 
   </div>
-
-  <script>
+{% endblock %}
+{% block script %}
     const statusDialog = document.getElementById("status-dialog");
 
         document.querySelectorAll("[data-status-dialog]").forEach((button) => {
@@ -600,9 +592,4 @@ calendar.appendChild(grid);
 
 });
 
-  
-</script>
-
-</body>
-
-</html>
+  {% endblock %}
