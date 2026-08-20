@@ -6,6 +6,7 @@ from backup import create_backup
 from jobs import (
     send_payment_reminders,
     send_owner_payment_reminders,
+    remove_inactive_members,
     
 )
 
@@ -69,6 +70,17 @@ def init_scheduler(flask_app):
         coalesce=True,
         max_instances=1,
     )
+    scheduler.add_job(
+        func=job_remove_inactive_members,
+        trigger="cron",
+        hour=0,
+        minute=30,
+        id="inactive_member_removal",
+        replace_existing=True,
+        misfire_grace_time=3000,
+        coalesce=True,
+        max_instances=1,
+    )
 
     scheduler.start()
 
@@ -87,6 +99,11 @@ def job_send_payment_reminders():
 def job_send_owner_payment_reminders():
     with app.app_context():
         send_owner_payment_reminders()
+
+
+def job_remove_inactive_members():
+    with app.app_context():
+        remove_inactive_members()
 
 def shutdown_scheduler():
     """Stops the scheduler gracefully."""

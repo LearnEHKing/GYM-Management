@@ -44,14 +44,16 @@ def update_profile():
 def update_member_defaults():
     try:
         trial_days = int(request.form.get("trial_days", 0))
-        if trial_days < 0 or trial_days > 365:
+        inactive_member_removal_days = int(request.form.get("inactive_member_removal_days", 30))
+        if trial_days < 0 or trial_days > 365 or inactive_member_removal_days < 1 or inactive_member_removal_days > 3650:
             raise ValueError
         current_user.trial_days = trial_days
+        current_user.inactive_member_removal_days = inactive_member_removal_days
         current_user.send_reminder = request.form.get("send_reminder") == "on"
         db.session.commit()
         flash("Member defaults updated.", "success")
     except ValueError:
-        flash("Trial days must be between 0 and 365.", "error")
+        flash("Trial days must be between 0 and 365, and the inactivity limit between 1 and 3650 days.", "error")
     return redirect(url_for("settings.settings"))
 
 

@@ -97,7 +97,7 @@ def settings():
         return redirect(url_for("admin.settings"))
     return render_template("admin_settings.html", active_page="admin_settings", config=config)
 
-@admin_bp.route("/admin/create_backup", methods=["GET"])
+@admin_bp.route("/admin/create_backup", methods=["POST"])
 @login_required
 def create_backup():
     require_admin()

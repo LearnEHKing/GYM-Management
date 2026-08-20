@@ -1,5 +1,6 @@
 from datetime import date, timedelta
-from models import Member, GymOwner, db
+from sqlalchemy import func
+from models import Attendance, Member, GymOwner, db
 import config
 from send_message import send_whatsapp
 from services.automatic_messages import (
@@ -62,3 +63,24 @@ def send_owner_payment_reminders():
     db.session.commit()
     sent = send_queued_automatic_messages(send_whatsapp)
     print(f"Sent {sent} automatic WhatsApp message(s).")
+
+
+def remove_inactive_members():
+    """Mark members as removed after their owner's configured absence period."""
+    today = date.today()
+    removed_count = 0
+
+    for owner in GymOwner.query.all():
+        threshold = max(int(owner.inactive_member_removal_days or 30), 1)
+        for member in Member.query.filter_by(owner_id=owner.id, membership_active=True).all():
+            last_attendance_date = db.session.query(func.max(Attendance.attendance_date)).filter_by(
+                member_id=member.id
+            ).scalar()
+            last_active_date = last_attendance_date or member.join_date
+            if (today - last_active_date).days >= threshold:
+                member.membership_active = False
+                removed_count += 1
+
+    if removed_count:
+        db.session.commit()
+    print(f"Automatically removed {removed_count} inactive member(s).")

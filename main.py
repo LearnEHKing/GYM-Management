@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_login import LoginManager
 from datetime import timedelta
 from sqlalchemy import text
@@ -6,6 +6,7 @@ from sqlalchemy import text
 from scheduler import init_scheduler
 from models import GymOwner, db
 from config import app_secret_key
+from security import csrf_token, validate_csrf_request
 
 
 def create_app():
@@ -17,6 +18,13 @@ def create_app():
     app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
     db.init_app(app)
 
+    app.jinja_env.globals["csrf_token"] = csrf_token
+
+    @app.before_request
+    def protect_unsafe_requests():
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            validate_csrf_request()
+
     # ``create_all`` does not add columns to existing SQLite databases.
     with app.app_context():
         db.create_all()
@@ -25,6 +33,10 @@ def create_app():
             db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN owner_plan VARCHAR(50)"))
         if "member_limit_warning_plan" not in owner_columns:
             db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN member_limit_warning_plan VARCHAR(50)"))
+        if "inactive_member_removal_days" not in owner_columns:
+            db.session.execute(
+                text("ALTER TABLE gym_owner ADD COLUMN inactive_member_removal_days INTEGER NOT NULL DEFAULT 30")
+            )
         payment_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(owner_payment)"))}
         if "plan_name" not in payment_columns:
             db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))

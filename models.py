@@ -26,6 +26,9 @@ class GymOwner(UserMixin, db.Model):
     # Number of free trial days for new members
     trial_days = db.Column(db.Integer, nullable=False, default=0)
 
+    # Remove active members after this many consecutive days without a visit.
+    inactive_member_removal_days = db.Column(db.Integer, nullable=False, default=30)
+
     #If gym owner wants to send automatic whatsapp payment reminder.
     send_reminder = db.Column(db.Boolean, nullable=False, default=False)
   

@@ -483,6 +483,23 @@ def toggle_membership_active_status(member_id):
     return redirect(url_for("members.member_details", member_id=member.id))
 
 
+@members_bp.route("/members/<int:member_id>/delete", methods=["POST"])
+@login_required
+def permanently_delete_member(member_id):
+    member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
+    member_name = member.name
+    try:
+        # The model relationships cascade to attendance and membership history.
+        db.session.delete(member)
+        db.session.commit()
+        flash(f"{member_name} and all of their information were permanently deleted.", "success")
+    except Exception as error:
+        print(error)
+        db.session.rollback()
+        flash("Could not permanently delete this member.", "error")
+    return redirect(url_for("members.members"))
+
+
 @members_bp.route("/membership/<int:membership_id>", methods=["POST"])
 @login_required
 def edit_membership(membership_id):
