@@ -1,229 +1,37 @@
 {% extends "components/base.html" %}
-{% block title %}Admin | Gym Management{% endblock %}
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block title %}Gyms | Admin{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
 {% block body %}
 <main class="admin-page">
   <section class="admin-hero">
-    <div>
-      <p class="eyebrow">Platform administration</p>
-      <h1>Gym owner management</h1>
-      <p>Create profiles, update subscriptions, and record payments.</p>
-    </div>
-    <div class="admin-stat"><strong>{{ owners|length }}</strong><span>Gym owners</span></div>
+    <div><p class="eyebrow">Platform administration</p><h1>Gym overview</h1><p>Monitor every gym and open a profile to manage it.</p></div>
+    <a class="hero-action" href="{{ url_for('admin.add_gym') }}">+ Add gym</a>
   </section>
-  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<p
-    class="flash {{ category }}">{{ message }}</p>{% endfor %}{% endwith %}
-  <section class="admin-grid">
-    <form class="panel form-panel" action="{{ url_for('admin.create_owner') }}" method="post">
-      <h2>Create gym owner</h2>
-      <div class="form-grid">
-        <label>Gym name<input name="name" required maxlength="100"></label>
-        <label>Username<input name="username" required maxlength="50" autocomplete="username"></label>
-        <label>Phone<input name="phone" required maxlength="15" inputmode="tel"></label>
-        <label>Password<input name="password" required minlength="8" type="password"
-            autocomplete="new-password"></label>
-        <label>Trial days<input name="trial_days" type="number" min="0" value="0" required
-            inputmode="numeric"></label>
-        <label for="send_reminder">Membership expiry reminders</label>
-
-        <label class="switch">
-            <input id="send_reminder" name="send_reminder" type="checkbox" value="True" checked>
-            <span class="slider"></span>
-        </label>
-    
-        <small>Automatically notify members when their membership expires.</small>
-
-        <div class="wide">
-          <h3>Membership Plans</h3>
-
-          <div id="plans-container">
-
-            <div class="plan-row">
-              <input type="text" name="plan_name[]" placeholder="Plan name (Monthly)" required>
-
-              <input type="number" name="plan_duration[]" placeholder="Months" min="1" required>
-
-              <input type="number" name="plan_fee[]" placeholder="Fee (₹)" min="1" required>
-
-              <button type="button" onclick="removePlan(this)">✕</button>
-            </div>
-            <br>
-          </div>
-
-          <button type="button" id="add-plan-btn">
-            + Add another plan
-          </button>
-        </div>
-        <label>Join date<input name="join_date" type="date" value="{{ today.isoformat() }}"
-            required></label><small>Set the owner's subscription and due date when recording their first payment.</small>
-      </div><button type="submit">Create owner</button>
-    </form>
-    <br>
-    <a href="{{url_for('admin.create_backup')}}" class="primary-btn">Create New Backup of the Database</a>
-    <br>
-    <form class="panel form-panel" action="{{ url_for('admin.create_owner_payment') }}" method="post">
-      <h2>Record owner payment</h2>
-      <div class="form-grid"><label>Gym owner<select name="owner_id" required>
-            <option value="" disabled selected>Select an owner</option>{% for owner in owners %}<option
-              value="{{ owner.id }}">{{ owner.name }} — {{ owner.username }}</option>{% endfor %}
-          </select></label><label>Plan<select name="plan_name" id="owner-payment-plan" required>
-            <option value="" disabled selected>Select a plan</option>{% for plan_name, details in owner_plans.items() %}<option value="{{ plan_name }}" data-fee="{{ details.fee }}">{{ plan_name|title }} — {{ details.member_allowed }} members / {{ details.days }} days / ₹{{ details.fee }}</option>{% endfor %}
-          </select></label><label>Amount<input id="owner-payment-amount" type="number" readonly required
-            inputmode="numeric"></label><label>Status<select name="status">
-            <option>Paid</option>
-            <option>Partial</option>
-            <option>Pending</option>
-          </select></label><label>Payment date<input name="payment_date" type="date" value="{{ today.isoformat() }}"
-            required></label><label class="wide">Remarks<input name="remarks" maxlength="500"
-            placeholder="Optional note or receipt number"></label></div><button type="submit">Record payment</button>
-    </form>
+  <section class="stats-grid">
+    <article class="metric"><span>Total gyms</span><strong>{{ owners|length }}</strong></article>
+    <article class="metric"><span>Active subscriptions</span><strong>{{ active_subscriptions }}</strong></article>
+    <article class="metric"><span>Total members</span><strong>{{ total_members }}</strong></article>
+    <article class="metric"><span>This month's revenue</span><strong>₹{{ '{:,.0f}'.format(monthly_revenue) }}</strong></article>
   </section>
   <section class="panel table-panel">
-    <div class="panel-title">
-      <div>
-        <p class="eyebrow">Directory</p>
-        <h2>All gym owners</h2>
-      </div><span>{{ owners|length }} total</span>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Gym</th>
-            <th>Username</th>
-            <th>Phone</th>
-            <th>Trial</th>
-            <th>Send Reminder</th>
-            <th>Due date</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>{% for owner in owners %}<tr>
-            <td><strong>{{ owner.name }}</strong><small>Joined {{ owner.join_date.strftime('%d %b %Y') }}</small></td>
-            <td>{{ owner.username }}</td>
-            <td>{{ owner.phone }}</td>
-            <td><span class="pill">{{ owner.trial_days }} day{% if owner.trial_days != 1 %}s{% endif %}</span></td>
-            <td>{{owner.send_reminder}}</td>
-            <td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td>
-            <td><button class="text-button" type="button"
-                onclick="document.getElementById('edit-owner-{{ owner.id }}').showModal()">Edit</button></td>
-          </tr>{% else %}<tr>
-            <td colspan="6" class="empty">No gym-owner profiles yet.</td>
-          </tr>{% endfor %}</tbody>
-      </table>
-    </div>
-  </section>
-  <section class="panel table-panel">
-    <div class="panel-title">
-      <div>
-        <p class="eyebrow">Ledger</p>
-        <h2>Owner payments</h2>
-      </div><span>{{ owner_payments|length }} records</span>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Gym</th>
-            <th>Amount</th>
-            <th>Plan</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>{% for payment in owner_payments %}<tr>
-            <td><strong>{{ payment.owner.name }}</strong><small>{{ payment.owner.username }}</small></td>
-            <td>₹{{ '{:,.0f}'.format(payment.amount) }}</td>
-            <td>{{ payment.plan_name|title if payment.plan_name else '—' }}</td>
-            <td><span class="status {{ payment.status|lower }}">{{ payment.status }}</span></td>
-            <td>{{ payment.payment_date.strftime('%d %b %Y') }}</td>
-            <td>{{ payment.remarks or '—' }}</td>
-          </tr>{% else %}<tr>
-            <td colspan="5" class="empty">No owner payments recorded.</td>
-          </tr>{% endfor %}</tbody>
-      </table>
-    </div>
+    <div class="panel-title"><div><p class="eyebrow">Directory</p><h2>All gyms</h2></div><span id="gym-count">{{ owners|length }} total</span></div>
+    <label class="search-box"><span>⌕</span><input id="gym-search" type="search" placeholder="Search by gym, username, or phone" autofocus></label>
+    <div class="table-scroll"><table><thead><tr><th>Gym</th><th>Contact</th><th>Subscription</th><th>Due date</th><th></th></tr></thead>
+      <tbody id="gym-list">{% for owner in owners %}<tr class="gym-row" data-search="{{ owner.name|lower }} {{ owner.username|lower }} {{ owner.phone }}">
+        <td><a class="gym-link" href="{{ url_for('admin.gym_details', gym_id=owner.id) }}"><strong>{{ owner.name }}</strong><small>Joined {{ owner.join_date.strftime('%d %b %Y') }}</small></a></td>
+        <td>{{ owner.phone }}<small>@{{ owner.username }}</small></td>
+        <td><span class="pill {{ 'good' if owner.payment_due_date and owner.payment_due_date >= today else 'warning' }}">{{ owner.owner_plan|title if owner.owner_plan else 'No plan' }}</span></td>
+        <td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td><td><a class="text-button" href="{{ url_for('admin.gym_details', gym_id=owner.id) }}">Open →</a></td>
+      </tr>{% else %}<tr><td colspan="5" class="empty">No gyms yet. Add your first gym to get started.</td></tr>{% endfor %}</tbody>
+    </table></div>
   </section>
 </main>
-{% for owner in owners %}<dialog id="edit-owner-{{ owner.id }}">
-  <form class="edit-form" action="{{ url_for('admin.edit_owner', owner_id=owner.id) }}" method="post">
-    <div class="dialog-title">
-      <h2>Edit {{ owner.name }}</h2><button type="button" class="close"
-        onclick="this.closest('dialog').close()">×</button>
-    </div>
-    <div class="form-grid">
-      <label>Gym name<input name="name" value="{{ owner.name }}" required
-          maxlength="100"></label>
-      <label>Username<input name="username" value="{{ owner.username }}" required
-          maxlength="50"></label>
-      <label>Phone<input name="phone" value="{{ owner.phone }}" required
-          maxlength="15"></label>
-      <label>Trial days<input name="trial_days" type="number" min="0" value="{{ owner.trial_days }}" required></label>
-      <label class="switch">
-            <input id="send_reminder" name="send_reminder" type="checkbox" value="True" {{"checked" if owner.send_reminder else "" }}>
-            <span class="slider"></span>
-      </label>
-      <label>Join date<input name="join_date" type="date" value="{{ owner.join_date.isoformat() }}"
-          required></label>
-      <label>Current subscription<input value="{{ owner.owner_plan|title if owner.owner_plan else 'No plan selected' }}{% if owner.payment_due_date %} — due {{ owner.payment_due_date.strftime('%d %b %Y') }}{% endif %}" readonly></label>
-      <label class="wide">New password <small>(leave blank to keep the current password)</small>
-        <input name="password"
-          type="password" minlength="8" autocomplete="new-password"></label>
-    </div>
-    <button type="submit">Save
-      changes</button>
-  </form>
-</dialog>{% endfor %}
 {% endblock %}
 {% block script %}
-
-const container = document.getElementById("plans-container");
-
-document.getElementById("add-plan-btn").addEventListener("click", () => {
-    const row = document.createElement("div");
-
-    row.className = "plan-row";
-
-    row.innerHTML = `
-        <input
-            type="text"
-            name="plan_name[]"
-            placeholder="Plan name"
-            required>
-
-        <input
-            type="number"
-            name="plan_duration[]"
-            placeholder="Months"
-            min="1"
-            required>
-
-        <input
-            type="number"
-            name="plan_fee[]"
-            placeholder="Fee (₹)"
-            min="1"
-            required>
-
-        <button type="button" onclick="removePlan(this)">✕</button>
-        <br>
-    `;
-
-    container.appendChild(row);
+const gymSearch = document.getElementById('gym-search');
+gymSearch?.addEventListener('input', () => {
+  const term = gymSearch.value.toLowerCase().trim(); let visible = 0;
+  document.querySelectorAll('.gym-row').forEach(row => { const show = row.dataset.search.includes(term); row.hidden = !show; if (show) visible++; });
+  document.getElementById('gym-count').textContent = `${visible} shown`;
 });
-
-function removePlan(button) {
-    if (container.children.length > 1) {
-        button.parentElement.remove();
-    }
-}
-
-const ownerPaymentPlan = document.getElementById("owner-payment-plan");
-const ownerPaymentAmount = document.getElementById("owner-payment-amount");
-ownerPaymentPlan?.addEventListener("change", () => {
-    ownerPaymentAmount.value = ownerPaymentPlan.selectedOptions[0].dataset.fee;
-});
-
 {% endblock %}

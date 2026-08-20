@@ -1,0 +1,20 @@
+{% extends "components/base.html" %}
+{% block title %}Add gym | Admin{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block body %}<main class="admin-page narrow-page">
+  <a class="back-link" href="{{ url_for('admin.admin') }}">← All gyms</a>
+  <section class="panel form-panel"><p class="eyebrow">New account</p><h1>Add a gym</h1><p class="panel-copy">Create the gym owner login and the membership plans they can offer their members.</p>
+    <form action="{{ url_for('admin.create_owner') }}" method="post"><div class="form-grid">
+      <label>Gym name<input name="name" required maxlength="100"></label><label>Owner username<input name="username" required maxlength="50" autocomplete="username"></label>
+      <label>Phone<input name="phone" required maxlength="15" inputmode="tel"></label><label>Password<input name="password" required minlength="8" type="password" autocomplete="new-password"></label>
+      <label>Trial days<input name="trial_days" type="number" min="0" value="0" required></label><label>Join date<input name="join_date" type="date" value="{{ today.isoformat() }}" required></label>
+      <label class="check-row wide"><input name="send_reminder" type="checkbox" value="True" checked> Send membership-expiry reminders to this gym's members</label>
+      <div class="wide"><div class="section-label"><h3>Membership plans</h3><button type="button" class="secondary-btn" id="add-plan">+ Add plan</button></div><div id="plans-container"><div class="plan-row"><input name="plan_name[]" placeholder="Plan name" required><input name="plan_duration[]" type="number" min="1" placeholder="Months" required><input name="plan_fee[]" type="number" min="1" placeholder="Fee (₹)" required><button type="button" class="icon-btn remove-plan" aria-label="Remove plan">×</button></div></div></div>
+    </div><button type="submit">Create gym</button></form>
+  </section>
+</main>{% endblock %}
+{% block script %}
+const container = document.getElementById('plans-container');
+document.getElementById('add-plan').addEventListener('click', () => { const row=document.createElement('div'); row.className='plan-row'; row.innerHTML='<input name="plan_name[]" placeholder="Plan name" required><input name="plan_duration[]" type="number" min="1" placeholder="Months" required><input name="plan_fee[]" type="number" min="1" placeholder="Fee (₹)" required><button type="button" class="icon-btn remove-plan" aria-label="Remove plan">×</button>'; container.append(row); });
+container.addEventListener('click', e => { if (e.target.closest('.remove-plan') && container.children.length > 1) e.target.closest('.plan-row').remove(); });
+{% endblock %}

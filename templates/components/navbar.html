@@ -3,6 +3,12 @@
 ========================================= -->
 
   <nav class="bottom-nav">
+    {% if active_page in ['admin_gyms', 'admin_add_gym', 'admin_payments'] %}
+    <a href="{{ url_for('admin.admin') }}" class="nav-item {% if active_page == 'admin_gyms' %}active{% endif %}"><div class="nav-icon">⌂</div><span>Gyms</span></a>
+    <a href="{{ url_for('admin.add_gym') }}" class="nav-item {% if active_page == 'admin_add_gym' %}active{% endif %}"><div class="nav-icon">＋</div><span>Add gym</span></a>
+    <a href="{{ url_for('admin.payments') }}" class="nav-item {% if active_page == 'admin_payments' %}active{% endif %}"><div class="nav-icon">₹</div><span>Payments</span></a>
+    <a href="{{ url_for('admin.create_backup') }}" class="nav-item"><div class="nav-icon">▣</div><span>Backup</span></a>
+    {% else %}
     <!-- HOME -->
 
     <a href="/" class="nav-item {% if active_page == 'home' %}active{% endif %}">
@@ -31,4 +37,5 @@
 
       <span> Settings </span>
     </a>
+    {% endif %}
   </nav>
