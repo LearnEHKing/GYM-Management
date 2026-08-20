@@ -31,6 +31,7 @@
     {% endif %}
 
     <form action="/members/{{ member.id }}/edit" method="POST">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
       <section class="card">
         <h2>👤 Basic Information</h2>
         <div class="input-group">
@@ -97,6 +98,7 @@
 
   <dialog class="delete-member-dialog" id="delete-member-dialog">
     <form method="post" action="{{ url_for('members.permanently_delete_member', member_id=member.id) }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <h2>Permanently delete member?</h2>
       <p>Delete <strong>{{ member.name }}</strong> and all their attendance, payment history, and personal information? This cannot be undone.</p>
       <div class="delete-member-dialog-actions">

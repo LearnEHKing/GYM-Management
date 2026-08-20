@@ -1,23 +1,28 @@
-from pathlib import Path
+import os
+import subprocess
 from datetime import datetime, timedelta
-import sqlite3
+from pathlib import Path
 
 def create_backup():
     project_dir = Path(__file__).resolve().parent
-    DB_FILE = project_dir / "instance" / "gym.db"
-    BACKUP_DIR = project_dir / "backups"
-    
-    BACKUP_DIR.mkdir(exist_ok=True)
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("DATABASE_URL must be set to create a PostgreSQL backup.")
+
+    backup_dir = project_dir / "backups"
+    backup_dir.mkdir(exist_ok=True)
+
+    pg_dump_url = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     
     # --------------------------
     # Create backup
     # --------------------------
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    backup_file = BACKUP_DIR / f"gym_backup_{timestamp}.db"
-    
-    with sqlite3.connect(DB_FILE) as source:
-        with sqlite3.connect(backup_file) as destination:
-            source.backup(destination)
+    backup_file = backup_dir / f"gym_backup_{timestamp}.dump"
+    subprocess.run(
+        ["pg_dump", "--format=custom", "--file", str(backup_file), pg_dump_url],
+        check=True,
+    )
     
     print(f"Created backup: {backup_file}")
     
@@ -27,7 +32,7 @@ def create_backup():
     cutoff = datetime.now() - timedelta(days=30)
     
     backups = sorted(
-        BACKUP_DIR.glob("gym_backup_*.db"),
+        backup_dir.glob("gym_backup_*.dump"),
         key=lambda f: f.stat().st_mtime,
         reverse=True
     )

@@ -36,6 +36,7 @@
     </div>
     <dialog class="confirm-dialog" id="remove-{{ member.id }}">
       <form method="post" action="{{ url_for('members.remove_check_in', member_id=member.id) }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <h2>Remove attendance?</h2>
         <p>Are you sure you want to unmark <strong>{{ member.name }}</strong> for today?</p>
         <div class="dialog-actions">
@@ -46,6 +47,7 @@
     </dialog>
     {% elif attendance_enabled %}
     <form method="post" action="{{ url_for('members.check_in_member', member_id=member.id) }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="attendance-toggle" type="submit" aria-label="Mark {{ member.name }} present">✓</button>
     </form>
     {% else %}

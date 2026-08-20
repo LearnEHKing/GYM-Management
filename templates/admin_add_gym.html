@@ -4,7 +4,7 @@
 {% block body %}<main class="admin-page narrow-page">
   <a class="back-link" href="{{ url_for('admin.admin') }}">← All gyms</a>
   <section class="panel form-panel"><p class="eyebrow">New account</p><h1>Add a gym</h1><p class="panel-copy">Create the gym owner login and the membership plans they can offer their members.</p>
-    <form action="{{ url_for('admin.create_owner') }}" method="post"><div class="form-grid">
+    <form action="{{ url_for('admin.create_owner') }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><div class="form-grid">
       <label>Gym name<input name="name" required maxlength="100"></label><label>Owner username<input name="username" required maxlength="50" autocomplete="username"></label>
       <label>Phone<input name="phone" required maxlength="15" inputmode="tel"></label><label>Password<input name="password" required minlength="8" type="password" autocomplete="new-password"></label>
       <label>Trial days<input name="trial_days" type="number" min="0" value="0" required></label><label>Join date<input name="join_date" type="date" value="{{ today.isoformat() }}" required></label>

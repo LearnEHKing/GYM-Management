@@ -5,13 +5,14 @@ Run:
     python fake_data.py
 
 Logins:
-    demo_gym1 / demo12345
-    demo_gym2 / demo12345
+    demo_gym1 / value of DEMO_PASSWORD
+    demo_gym2 / value of DEMO_PASSWORD
     ...
-    demo_gym8 / demo12345
+    demo_gym8 / value of DEMO_PASSWORD
 """
 
 from datetime import date, datetime, time
+import os
 import random
 
 from dateutil.relativedelta import relativedelta
@@ -22,7 +23,9 @@ from models import Attendance, GymOwner, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership
 
 
-DEMO_PASSWORD = "demo12345"
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD")
+if not DEMO_PASSWORD:
+    raise RuntimeError("DEMO_PASSWORD must be set when creating demo data.")
 
 GYMS = [
     ("demo_gym1", "Iron House Demo 1", 15),

@@ -38,6 +38,7 @@
     {% endif %}
 
     <form action="/add_member" method="POST">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
       <section class="card">
         <h2>👤 Basic Information</h2>
         <div class="input-group">

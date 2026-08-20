@@ -93,6 +93,7 @@
 
       <form method="POST" class="glass payment-form" novalidate
         data-current-expiry="{{ member.membership_expiry.isoformat() if member.membership_expiry else '' }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         <h2>Payment Information</h2>
 

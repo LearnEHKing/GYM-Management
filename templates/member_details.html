@@ -279,6 +279,7 @@
       <dialog class="status-dialog" id="payment-dialog-{{ payment.id }}">
         <form method="post" action="{{ url_for('members.edit_membership', membership_id=payment.id) }}"
           class="status-dialog-card">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <h2>Edit payment history</h2>
           <label class="dialog-label" for="plan-{{ payment.id }}">Change membership plan</label>
           <select id="plan-{{ payment.id }}" name="plan_id" class="dialog-input">
@@ -345,6 +346,7 @@
           attendance.</p>
         <form id="attendance-edit-form" method="post"
           action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="attendance_date" id="attendance-date-input">
           <input type="hidden" name="action" id="attendance-action-input">
         </form>
@@ -360,6 +362,7 @@
 
     <dialog class="status-dialog" id="status-dialog">
       <form method="dialog" class="status-dialog-card">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <h2>{% if member.membership_active %}Remove member{% else %}Rejoin member{% endif %}</h2>
         <p>
           {% if member.membership_active %}
@@ -385,6 +388,7 @@
     <dialog class="status-dialog" id="remove-attendance-dialog">
       <form method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}"
         class="status-dialog-card">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="attendance_date" id="remove-attendance-date">
         <input type="hidden" name="action" value="remove">
         <h2>Remove attendance?</h2>

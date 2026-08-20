@@ -1,11 +1,18 @@
 import json
+import os
 from pathlib import Path
 
 
+def required_env(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"{name} must be set in the environment.")
+    return value
+
+
 admin = {
-    "username":"admin",
+    "username": required_env("ADMIN_USERNAME"),
 }
-app_secret_key= "pe82uebdiw8wu"
 
 membership_reminder_days = [7, 2, 0]
 
