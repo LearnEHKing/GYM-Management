@@ -188,9 +188,6 @@
             🗑 Remove Member
           </button>
           {% endif %}
-          <button type="button" class="danger-btn" data-delete-member-dialog>
-            Permanently delete
-          </button>
         </div>
 
       </section>
@@ -385,17 +382,6 @@
       </form>
     </dialog>
 
-    <dialog class="status-dialog" id="delete-member-dialog">
-      <form method="post" action="{{ url_for('members.permanently_delete_member', member_id=member.id) }}" class="status-dialog-card">
-        <h2>Permanently delete member?</h2>
-        <p>Delete <strong>{{ member.name }}</strong> and all their attendance, payment history, and personal information? This cannot be undone.</p>
-        <div class="status-dialog-actions">
-          <button type="button" class="secondary-btn" data-close-delete-member-dialog>Cancel</button>
-          <button type="submit" class="danger-btn dialog-danger">Yes, permanently delete</button>
-        </div>
-      </form>
-    </dialog>
-
     <dialog class="status-dialog" id="remove-attendance-dialog">
       <form method="post" action="{{ url_for('members.edit_member_attendance', member_id=member.id) }}"
         class="status-dialog-card">
@@ -432,13 +418,6 @@
     document.querySelector("[data-close-attendance-dialog]").addEventListener("click", () => {
       document.getElementById("remove-attendance-dialog").close();
     });
-    document.querySelector("[data-delete-member-dialog]").addEventListener("click", () => {
-      document.getElementById("delete-member-dialog").showModal();
-    });
-    document.querySelector("[data-close-delete-member-dialog]").addEventListener("click", () => {
-      document.getElementById("delete-member-dialog").close();
-    });
-
     document.querySelectorAll(".toast").forEach((toast) => {
 
         setTimeout(() => {

@@ -88,9 +88,23 @@
         <a href="/members/{{ member.id }}" class="button-secondary">
     Cancel
         </a>
+        <button type="button" class="delete-member-button" data-delete-member-dialog>
+          Permanently delete
+        </button>
       </div>
     </form>
   </div>
+
+  <dialog class="delete-member-dialog" id="delete-member-dialog">
+    <form method="post" action="{{ url_for('members.permanently_delete_member', member_id=member.id) }}">
+      <h2>Permanently delete member?</h2>
+      <p>Delete <strong>{{ member.name }}</strong> and all their attendance, payment history, and personal information? This cannot be undone.</p>
+      <div class="delete-member-dialog-actions">
+        <button type="button" class="button-secondary" data-close-delete-member-dialog>Cancel</button>
+        <button type="submit" class="delete-member-confirm">Yes, permanently delete</button>
+      </div>
+    </form>
+  </dialog>
 
   {% with messages = get_flashed_messages(with_categories=true) %} {% for
   category, message in messages %} {% if category == "success" %}
@@ -115,6 +129,14 @@
       }
 
       const toast = document.getElementById("successToast");
+
+      document.querySelector("[data-delete-member-dialog]").addEventListener("click", () => {
+        document.getElementById("delete-member-dialog").showModal();
+      });
+
+      document.querySelector("[data-close-delete-member-dialog]").addEventListener("click", () => {
+        document.getElementById("delete-member-dialog").close();
+      });
 
       if (toast) {
         setTimeout(() => {
