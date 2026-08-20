@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import MembershipPlan, db
 
@@ -9,10 +10,68 @@ settings_bp = Blueprint("settings", __name__)
 @settings_bp.route("/settings")
 @login_required
 def settings():
+    return render_template("settings.html", active_page="settings")
+
+
+@settings_bp.route("/settings/membership-plans")
+@login_required
+def membership_plans():
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id).order_by(
         MembershipPlan.active.desc(), MembershipPlan.duration_months, MembershipPlan.name
     ).all()
-    return render_template("settings.html", active_page="settings", plans=plans)
+    return render_template("membership_plans.html", active_page="settings", plans=plans)
+
+
+@settings_bp.route("/settings/profile", methods=["POST"])
+@login_required
+def update_profile():
+    name = request.form.get("name", "").strip()
+    phone = request.form.get("phone", "").strip()
+    if not name or not phone:
+        flash("Gym name and phone number are required.", "error")
+    elif len(phone) < 10 or not phone.replace("+", "").replace(" ", "").replace("-", "").isdigit():
+        flash("Enter a valid phone number.", "error")
+    else:
+        current_user.name = name[:100]
+        current_user.phone = phone[:15]
+        db.session.commit()
+        flash("Gym profile updated.", "success")
+    return redirect(url_for("settings.settings"))
+
+
+@settings_bp.route("/settings/member-defaults", methods=["POST"])
+@login_required
+def update_member_defaults():
+    try:
+        trial_days = int(request.form.get("trial_days", 0))
+        if trial_days < 0 or trial_days > 365:
+            raise ValueError
+        current_user.trial_days = trial_days
+        current_user.send_reminder = request.form.get("send_reminder") == "on"
+        db.session.commit()
+        flash("Member defaults updated.", "success")
+    except ValueError:
+        flash("Trial days must be between 0 and 365.", "error")
+    return redirect(url_for("settings.settings"))
+
+
+@settings_bp.route("/settings/password", methods=["POST"])
+@login_required
+def update_password():
+    current_password = request.form.get("current_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+    if not check_password_hash(current_user.password_hash, current_password):
+        flash("Your current password is incorrect.", "error")
+    elif len(new_password) < 8:
+        flash("Your new password must contain at least 8 characters.", "error")
+    elif new_password != confirm_password:
+        flash("New password and confirmation do not match.", "error")
+    else:
+        current_user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash("Password updated.", "success")
+    return redirect(url_for("settings.settings"))
 
 
 @settings_bp.route("/settings/plans", methods=["POST"])
@@ -33,7 +92,7 @@ def create_plan():
     except Exception:
         db.session.rollback()
         flash("Could not save the plan. Plan names must be unique.", "error")
-    return redirect(url_for("settings.settings"))
+    return redirect(url_for("settings.membership_plans"))
 
 
 @settings_bp.route("/settings/plans/<int:plan_id>", methods=["POST"])
@@ -59,7 +118,7 @@ def edit_plan(plan_id):
     except (KeyError, ValueError):
         db.session.rollback()
         flash("Enter a unique plan name, valid duration, and fee.", "error")
-    return redirect(url_for("settings.settings"))
+    return redirect(url_for("settings.membership_plans"))
 
 
 @settings_bp.route("/settings/plans/<int:plan_id>/status", methods=["POST"])
@@ -69,4 +128,4 @@ def toggle_plan_status(plan_id):
     plan.active = not plan.active
     db.session.commit()
     flash(f"{plan.name} is now {'active' if plan.active else 'inactive'}.", "success")
-    return redirect(url_for("settings.settings"))
+    return redirect(url_for("settings.membership_plans"))
