@@ -1,5 +1,3 @@
-import os
-
 from flask import Flask, request
 from flask_login import LoginManager
 from datetime import timedelta
@@ -14,8 +12,7 @@ from security import csrf_token, validate_csrf_request
 def create_app():
     app = Flask(__name__)
     app.secret_key = required_env("APP_SECRET_KEY")
-    database_url = required_env("DATABASE_URL")
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gym.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
     app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
@@ -30,19 +27,18 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        db.session.execute(text(
-            "ALTER TABLE gym_owner ADD COLUMN IF NOT EXISTS owner_plan VARCHAR(50)"
-        ))
-        db.session.execute(text(
-            "ALTER TABLE gym_owner ADD COLUMN IF NOT EXISTS member_limit_warning_plan VARCHAR(50)"
-        ))
-        db.session.execute(text(
-            "ALTER TABLE gym_owner ADD COLUMN IF NOT EXISTS inactive_member_removal_days "
-            "INTEGER NOT NULL DEFAULT 30"
-        ))
-        db.session.execute(text(
-            "ALTER TABLE owner_payment ADD COLUMN IF NOT EXISTS plan_name VARCHAR(50)"
-        ))
+        owner_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(gym_owner)"))}
+        if "owner_plan" not in owner_columns:
+            db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN owner_plan VARCHAR(50)"))
+        if "member_limit_warning_plan" not in owner_columns:
+            db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN member_limit_warning_plan VARCHAR(50)"))
+        if "inactive_member_removal_days" not in owner_columns:
+            db.session.execute(
+                text("ALTER TABLE gym_owner ADD COLUMN inactive_member_removal_days INTEGER NOT NULL DEFAULT 30")
+            )
+        payment_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(owner_payment)"))}
+        if "plan_name" not in payment_columns:
+            db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))
         db.session.commit()
 
     init_scheduler(app)
@@ -73,4 +69,4 @@ app = create_app()
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run()

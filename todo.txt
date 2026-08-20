@@ -1,0 +1,124 @@
+todo:
+
+- Read DATABASE_URL from the environment and replace strftime with PostgreSQL-compatible extraction
+- Add a centralized before_request subscription guard or decorator to every owner route.
+- High | Data Integrity
+admin.py:134 uses zip() on plan arrays without checking equal lengths.
+Scenario: A malformed request silently creates only part of the gym’s plan catalog.
+Fix: Require equal list lengths and validate every name, duration, fee, and maximum length.
+- High | Membership Correctness
+models.py:121 defines “latest” by payment date, while memberships.py:22 defines current membership by maximum expiry date.
+Scenario: Historic edits make the displayed plan disagree with the active expiry and current plan.
+Fix: Establish one canonical current-membership query and use it everywhere.
+- Most member routes are scoped correctly, but members.py:429 first loads a member globally and then checks ownership manually.
+Scenario: Future route changes accidentally expose data through an unscoped lookup.
+Fix: Always query with id and owner_id together, preferably through a shared tenant-scoped helper.
+- High | Session Security
+main.py:14 does not configure secure, HTTP-only, SameSite, or persistent-session settings.
+Scenario: Sessions are sent over HTTP or exposed more broadly than intended behind a reverse proxy.
+Fix: app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    REMEMBER_COOKIE_SECURE=True,
+    REMEMBER_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_SAMESITE="Lax",
+)
+- reverse-proxy rate limiting.
+- High | Backup/Database
+backup.py:17 is SQLite-specific and cannot back up PostgreSQL. It also lacks encryption, checksums, restore testing, failure alerts, and storage monitoring.
+Fix: Use PostgreSQL-native/object-storage backups and perform scheduled restore drills.
+- High | CSRF/Reliability
+admin_gym_details.html:10 relies on JavaScript in base.html:79 to inject CSRF fields. Forms fail when JavaScript is disabled or fails to load.
+Fix: Render hidden CSRF inputs directly in every unsafe form.
+- Broad except Exception blocks in members.py:144, settings.py:94, and admin.py:107 print errors and hide root causes.
+Fix: Catch expected exceptions, rollback centrally, use structured logging, and report unexpected failures to an error-monitoring service.
+- High | Transaction Safety
+members.py:125 commits membership creation and then immediately sends messages. External delivery is coupled to the request transaction.
+Fix: Commit only the outbox record in the request; let a worker deliver asynchronously.
+- Medium | Performance
+jobs.py:73 loads every owner, then every active member, then performs a separate attendance aggregate per member.
+Scenario: Daily inactive-member processing becomes increasingly slow and blocks the scheduler.
+Fix: Use one grouped query and batch updates.
+- Medium | Performance
+models.py:121 performs a query every time latest_membership is accessed. Templates access it repeatedly.
+Fix: Eager-load or calculate the latest membership once in the route.
+- Medium | UI Layout
+base.html:35 limits .app to roughly 500px, preventing the admin layout from using its desktop width.
+Fix: Use separate owner/admin shells or route-specific layout constraints.
+- Medium | Data Validation
+Phone validation differs between members.py:25, settings.py:30, and admin.py:124.
+Fix: Normalize and validate one canonical E.164 representation.
+- Medium | Data Loss UX
+Validation errors do not consistently repopulate all submitted fields, especially notes and payment values.
+Fix: Bind forms from submitted values after validation failure.
+
+To think :
+- Critical | Authorization
+Admin access is based on mutable username comparison in admin.py:15.
+Scenario: Renaming the configured admin account breaks administration, and identity is not represented by a durable role.
+Fix: Add is_platform_admin or an immutable role column and check that value.
+- cron
+- Critical | Messaging/Race Condition
+automatic_messages.py:43 selects pending rows, sends them, then marks them sent.
+Scenario: Two workers send the same message before either transaction commits.
+Fix: Claim rows transactionally using PostgreSQL row locks, leases, or a real queue.
+- High | Business Logic/Race Condition
+members.py:110 checks the member limit before insertion without locking.
+Scenario: Two simultaneous requests both see one remaining seat and create two members over capacity.
+Fix: Enforce capacity with a serialized transaction or atomic database counter.
+- High | Database/Race Condition
+members.py:236 checks for an attendance row before inserting.
+Scenario: Double-clicks or two staff users create a unique-constraint failure and a 500 response.
+Fix: Catch IntegrityError, rollback, and treat the duplicate as already checked in.
+- High | Financial Integrity
+admin.py:205 allows editing historical payments and recalculates the subscription from the latest date.
+Scenario: An old payment is changed to a future date, changing access and reports.
+Fix: Make ledger entries immutable; add reversal/adjustment records instead.
+- High | Backup/Privacy
+The filesystem contains gym.db and multiple files under backups, which may contain personal and payment data.
+Scenario: Source artifacts, workstation backups, or deployment packages expose customer records.
+Fix: Remove live data from source control/artifacts, encrypt backups, restrict permissions, and use off-site storage.
+- High | Configuration
+config.py:41 loads runtime JSON settings without schema or range validation on startup.
+Fix: Validate with a schema and reject invalid configuration before serving requests.
+- Medium | Trial Logic
+members.py:120 makes trial_days=0 produce a one-day membership because expiry is join_date + max(days - 1, 0).
+Fix: Define whether zero means no access or one day, then encode that rule explicitly.
+- Medium | Time Zones
+The project mixes date.today(), datetime.now(), and datetime.utcnow() across models.py:225, members.py:177, and automatic_messages.py:60.
+Scenario: Reminder dates and attendance days differ around midnight, DST, or server timezone changes.
+Fix: Store timezone-aware UTC timestamps and convert using the gym’s configured timezone.
+- Medium | Database Indexing
+Attendance has a uniqueness constraint but no explicit useful indexes for common owner/date reporting queries.
+Fix: Add indexes on (member_id, attendance_date), (attendance_date, member_id), and appropriate membership/payment date columns.
+- Medium | Cascades/Referential Integrity
+Foreign keys do not consistently specify ondelete, and the PostgreSQL foreign-key behavior is not tested.
+Fix: Define explicit delete behavior and validate it with migration/integration tests.
+- Medium | Operational Observability
+Scheduler and jobs use print() in scheduler.py:91 and jobs.py:13. There are no request IDs, metrics, health checks, alerts, or error reporting.
+Fix: Add structured logs, metrics, /health and /ready endpoints, and alerting.
+- Medium | HTTP Hardening
+No security headers are configured: CSP, HSTS, X-Content-Type-Options, Referrer-Policy, or frame protection.
+Fix: Configure headers through Flask middleware or a reverse proxy
+- Medium | Accessibility
+base.html:8 disables user zoom. Reports use canvases without equivalent tabular summaries. Several controls rely on symbols and color.
+Fix: Allow zoom, add accessible labels, keyboard states, reduced-motion support, and textual report data.
+
+
+LOW to think about :
+- Low/Medium | PWA
+manifest.json:11 references missing /static/icon-192.png and /static/icon-512.png files. base.html:22 also declares two manifests.
+Fix: Keep one manifest and correct icon paths.
+
+
+
+
+Not correct :
+- High | Payment Editing
+members.py:520 changes amount_paid to the full plan fee when editing a historical membership.
+Scenario: Partial payments or corrected accounting records are silently overwritten.
+Fix: Preserve original payment amounts and make adjustments explicit.
+- Medium | Password Security
+Passwords require only eight characters in settings.py:62. There is no MFA, session revocation after password change, password reset flow, or persistent lockout.
+Fix: Add stronger policy, MFA, session invalidation, and audited account recovery.
