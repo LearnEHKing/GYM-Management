@@ -136,7 +136,7 @@
             Payment Date
           </label>
 
-          <input type="date" id="payment_date" name="payment_date">
+          <input type="date" id="payment_date" name="payment_date" value="{{ request.form.get('payment_date', '') }}">
 
           {% if errors.payment_date %}
           <small class="field-error">
@@ -152,7 +152,7 @@
             Remarks
           </label>
 
-          <textarea id="remarks" name="remarks" rows="5" placeholder="Optional remarks"></textarea>
+          <textarea id="remarks" name="remarks" rows="5" placeholder="Optional remarks">{{ request.form.get('remarks', '') }}</textarea>
 
           {% if errors.remarks %}
           <small class="field-error">

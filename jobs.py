@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, update
 from models import Attendance, Member, GymOwner, db
 import config
 from send_message import send_whatsapp
@@ -68,18 +68,28 @@ def send_owner_payment_reminders():
 def remove_inactive_members():
     """Mark members as removed after their owner's configured absence period."""
     today = date.today()
-    removed_count = 0
-
-    for owner in GymOwner.query.all():
-        threshold = max(int(owner.inactive_member_removal_days or 30), 1)
-        for member in Member.query.filter_by(owner_id=owner.id, membership_active=True).all():
-            last_attendance_date = db.session.query(func.max(Attendance.attendance_date)).filter_by(
-                member_id=member.id
-            ).scalar()
-            last_active_date = last_attendance_date or member.join_date
-            if (today - last_active_date).days >= threshold:
-                member.membership_active = False
-                removed_count += 1
+    last_attendance = db.session.query(
+        Attendance.member_id,
+        func.max(Attendance.attendance_date).label("last_attendance_date"),
+    ).group_by(Attendance.member_id).subquery()
+    candidate_members = db.session.query(
+        Member, GymOwner.inactive_member_removal_days,
+        last_attendance.c.last_attendance_date,
+    ).outerjoin(
+        last_attendance, last_attendance.c.member_id == Member.id
+    ).join(GymOwner, GymOwner.id == Member.owner_id).filter(
+        Member.membership_active.is_(True),
+    ).all()
+    inactive_members = [
+        member for member, removal_days, last_attendance_date in candidate_members
+        if (today - (last_attendance_date or member.join_date)).days >= max(int(removal_days or 30), 1)
+    ]
+    inactive_ids = [member.id for member in inactive_members]
+    removed_count = len(inactive_ids)
+    if inactive_ids:
+        db.session.execute(
+            update(Member).where(Member.id.in_(inactive_ids)).values(membership_active=False)
+        )
 
     if removed_count:
         db.session.commit()

@@ -248,15 +248,5 @@
         <button class="login-button" type="submit">Login</button>
       </form>
     </main>
-    <script>
-      const loginForm = document.querySelector('.login-form');
-      if (loginForm && !loginForm.querySelector('input[name="_csrf_token"]')) {
-        const csrfInput = document.createElement("input");
-        csrfInput.type = "hidden";
-        csrfInput.name = "_csrf_token";
-        csrfInput.value = "{{ csrf_token() }}";
-        loginForm.appendChild(csrfInput);
-      }
-    </script>
   </body>
 </html>

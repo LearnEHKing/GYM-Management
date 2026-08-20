@@ -11,6 +11,9 @@ $env:ADMIN_USERNAME = "admin"
 $env:ADMIN_PASSWORD = "use-a-secret-manager-value"
 $env:DATABASE_URL = "postgresql+psycopg://user:password@db-host/gym"
 $env:TRUSTED_PROXY_HOPS = "1"
+$env:BACKUP_ENCRYPTION_KEY = "generate-a-Fernet-key-and-store-it-in-a-secret-manager"
+$env:BACKUP_RESTORE_DATABASE_URL = "postgresql://restore_user:password@restore-db/gym_restore"
+$env:BACKUP_MAX_STORAGE_BYTES = "10737418240"
 python main.py
 ```
 
@@ -37,5 +40,11 @@ The in-process login limiter protects each app process. For shared protection
 across workers, apply the Nginx configuration in `deploy/nginx.conf.example`,
 which limits `/login` to five requests per minute per client IP with a small
 burst allowance.
+
+Backups require the PostgreSQL `pg_dump` and `pg_restore` utilities. They are
+written as encrypted custom-format dumps with SHA-256 sidecars. The scheduler
+runs a weekly restore drill against the isolated `BACKUP_RESTORE_DATABASE_URL`;
+never point that value at the production database. Set `SENTRY_DSN` to report
+unexpected application failures to Sentry.
 
 Backups are SQLite files written to `backups/`.

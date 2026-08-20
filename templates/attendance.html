@@ -26,7 +26,7 @@
       <span class="avatar">{{ member.name[0]|upper }}</span>
       <span class="member-copy">
         <strong>{{ member.name }}</strong>
-        <small>{% if not member.membership_active %}Removed · {% endif %}+91 {{ member.phone }}</small>
+        <small>{% if not member.membership_active %}Removed · {% endif %}{{ member.phone }}</small>
       </span>
     </a>
     {% if record %}

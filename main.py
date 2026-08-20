@@ -10,7 +10,7 @@ from scheduler import init_scheduler
 from models import GymOwner, db
 from config import required_env
 from security import csrf_token, validate_csrf_request
- 
+
 
 def create_app():
     app = Flask(__name__)
@@ -69,6 +69,11 @@ def create_app():
         payment_columns = {column["name"] for column in inspector.get_columns("owner_payment")}
         if "plan_name" not in payment_columns:
             db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))
+        history_columns = {column["name"] for column in inspector.get_columns("edit_history")}
+        if "actor_name" not in history_columns:
+            db.session.execute(text("ALTER TABLE edit_history ADD COLUMN actor_name VARCHAR(100)"))
+        if "context_id" not in history_columns:
+            db.session.execute(text("ALTER TABLE edit_history ADD COLUMN context_id INTEGER"))
         db.session.commit()
 
     init_scheduler(app)

@@ -4,6 +4,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import EditHistory, MembershipPlan, db
 from services.edit_history import record_edit
+from observability import report_unexpected_error
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from services.phone import normalize_phone
 
 settings_bp = Blueprint("settings", __name__)
 
@@ -37,13 +40,17 @@ def membership_plans():
 def update_profile():
     name = request.form.get("name", "").strip()
     phone = request.form.get("phone", "").strip()
+    try:
+        phone = normalize_phone(phone)
+    except ValueError:
+        phone = ""
     if not name or not phone:
         flash("Gym name and phone number are required.", "error")
-    elif len(phone) < 10 or not phone.replace("+", "").replace(" ", "").replace("-", "").isdigit():
-        flash("Enter a valid phone number.", "error")
+    elif not phone:
+        flash("Enter a valid Indian mobile number.", "error")
     else:
         current_user.name = name[:100]
-        current_user.phone = phone[:15]
+        current_user.phone = phone
         db.session.commit()
         flash("Gym profile updated.", "success")
     return redirect(url_for("settings.settings"))
@@ -101,9 +108,13 @@ def create_plan():
             db.session.add(MembershipPlan(owner_id=current_user.id, name=name, duration_months=months, fee=fee))
             db.session.commit()
             flash("Membership plan added.", "success")
-    except Exception:
+    except (KeyError, TypeError, ValueError, IntegrityError):
         db.session.rollback()
         flash("Could not save the plan. Plan names must be unique.", "error")
+    except SQLAlchemyError as error:
+        db.session.rollback()
+        report_unexpected_error(error, "settings.create_plan")
+        flash("Could not save the plan right now.", "error")
     return redirect(url_for("settings.membership_plans"))
 
 

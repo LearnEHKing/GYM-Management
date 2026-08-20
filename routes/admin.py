@@ -9,6 +9,8 @@ import config
 import backup
 from models import EditHistory, GymOwner, Member, MembershipPlan, OwnerPayment, db
 from services.edit_history import record_edit
+from observability import report_unexpected_error
+from services.phone import normalize_phone
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -114,8 +116,9 @@ def create_backup():
     try :
         backup.create_backup()
         flash("New backup created.","success")
-    except Exception as e:
-        print(e)
+    except (OSError, RuntimeError) as error:
+        db.session.rollback()
+        report_unexpected_error(error, "admin.create_backup")
         flash("ERROR : Couldn't create backup.","error")
     return redirect(url_for("admin.settings") if request.args.get("return_to") == "settings" else url_for("admin.admin"))
 
@@ -123,11 +126,12 @@ def create_backup():
 @login_required
 def create_owner():
     require_admin()
+    owner = None
     try:
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         name = request.form.get("name", "").strip()
-        phone = request.form.get("phone", "").strip()
+        phone = normalize_phone(request.form.get("phone", ""))
         plan_names = request.form.getlist("plan_name[]")
         plan_durations = request.form.getlist("plan_duration[]")
         plan_fees = request.form.getlist("plan_fee[]")
@@ -160,7 +164,8 @@ def create_owner():
     except (KeyError, ValueError):
         db.session.rollback()
         flash("Enter all required owner details and a password of at least 8 characters.", "error")
-    return redirect(url_for("admin.gym_details", gym_id=owner.id) if 'owner' in locals() else url_for("admin.add_gym"))
+        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+    return redirect(url_for("admin.gym_details", gym_id=owner.id))
 
 
 @admin_bp.route("/admin/owners/<int:owner_id>", methods=["POST"])
@@ -173,7 +178,8 @@ def edit_owner(owner_id):
         duplicate = GymOwner.query.filter(GymOwner.username == username, GymOwner.id != owner.id).first()
         if not username or duplicate:
             raise ValueError
-        owner.username, owner.name, owner.phone = username, request.form["name"].strip(), request.form["phone"].strip()
+        owner.username, owner.name = username, request.form["name"].strip()
+        owner.phone = normalize_phone(request.form["phone"])
         owner.trial_days = int(request.form["trial_days"])
         if owner.trial_days < 0:
             raise ValueError

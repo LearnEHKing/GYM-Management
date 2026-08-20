@@ -79,7 +79,7 @@ class EditHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False, index=True)
     actor_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False)
-    actor_name = db.Column(db.String(100), nullable=False)
+    actor_name = db.Column(db.String(100))
     entity_type = db.Column(db.String(30), nullable=False, index=True)
     entity_id = db.Column(db.Integer, nullable=False, index=True)
     context_id = db.Column(db.Integer, index=True)

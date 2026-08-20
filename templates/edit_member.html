@@ -58,7 +58,7 @@
         <div class="switch-row">
                 <p>Send WhatsApp reminders.</p>
             <label class="switch">
-                <input id="send_membership_reminder" name="send_membership_reminder" type="checkbox" value="True" {{"checked" if member.send_membership_reminder else "" }} >
+                <input id="send_membership_reminder" name="send_membership_reminder" type="checkbox" value="True" {{"checked" if (request.form.get('send_membership_reminder') == 'True' if request.form else member.send_membership_reminder) else "" }} >
                 <span class="slider"></span>
             </label>
         </div>

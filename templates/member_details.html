@@ -67,14 +67,14 @@
           <div class="item">
             <span class="label">Current Plan</span>
             <span class="value">
-              {{ member.current_membership.plan_name if member.current_membership else "-" }}
+              {{ current_membership.plan_name if current_membership else "-" }}
             </span>
           </div>
 
           <div class="item">
             <span class="label">Membership Fee</span>
             <span class="value">
-              ₹{{ member.current_membership.fee if member.current_membership else 0 }}
+              ₹{{ current_membership.fee if current_membership else 0 }}
             </span>
           </div>
 
@@ -109,10 +109,10 @@
           <div class="item">
             <span class="label">Payment Status</span>
 
-            {% if member.current_membership %}
-            {% if member.current_membership.amount_paid >= member.current_membership.fee %}
+            {% if current_membership %}
+            {% if current_membership.amount_paid >= current_membership.fee %}
             <span class="value green">Paid</span>
-            {% elif member.current_membership.amount_paid == 0 %}
+            {% elif current_membership.amount_paid == 0 %}
             <span class="value red">Unpaid</span>
             {% else %}
             <span class="value orange">Partial</span>

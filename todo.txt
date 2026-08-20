@@ -25,7 +25,7 @@ Fix: app.config.update(
     REMEMBER_COOKIE_SAMESITE="Lax",
 ) 
 - reverse-proxy rate limiting. -->
-- High | Backup/Database
+<!-- - High | Backup/Database
 backup.py:17 is SQLite-specific and cannot back up PostgreSQL. It also lacks encryption, checksums, restore testing, failure alerts, and storage monitoring.
 Fix: Use PostgreSQL-native/object-storage backups and perform scheduled restore drills.
 - High | CSRF/Reliability
@@ -35,8 +35,8 @@ Fix: Render hidden CSRF inputs directly in every unsafe form.
 Fix: Catch expected exceptions, rollback centrally, use structured logging, and report unexpected failures to an error-monitoring service.
 - High | Transaction Safety
 members.py:125 commits membership creation and then immediately sends messages. External delivery is coupled to the request transaction.
-Fix: Commit only the outbox record in the request; let a worker deliver asynchronously.
-- Medium | Performance
+Fix: Commit only the outbox record in the request; let a worker deliver asynchronously. -->
+<!-- - Medium | Performance
 jobs.py:73 loads every owner, then every active member, then performs a separate attendance aggregate per member.
 Scenario: Daily inactive-member processing becomes increasingly slow and blocks the scheduler.
 Fix: Use one grouped query and batch updates.
@@ -51,7 +51,9 @@ Phone validation differs between members.py:25, settings.py:30, and admin.py:124
 Fix: Normalize and validate one canonical E.164 representation.
 - Medium | Data Loss UX
 Validation errors do not consistently repopulate all submitted fields, especially notes and payment values.
-Fix: Bind forms from submitted values after validation failure.
+Fix: Bind forms from submitted values after validation failure. -->
+
+
 
 To think :
 - Critical | Authorization

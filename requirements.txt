@@ -4,3 +4,5 @@ Flask-SQLAlchemy
 APScheduler
 python-dateutil
 Werkzeug
+cryptography
+sentry-sdk

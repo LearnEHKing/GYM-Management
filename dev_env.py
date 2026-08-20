@@ -20,6 +20,7 @@ DEFAULTS = {
     "ADMIN_USERNAME": "admin",
     "ADMIN_PASSWORD": "change-me-in-development",
     "DEMO_PASSWORD": "demo12345",
+    "DATABASE_URL": "sqlite:///gym.db",
 }
 
 

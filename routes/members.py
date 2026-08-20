@@ -8,8 +8,10 @@ from sqlalchemy import func
 from models import Attendance, EditHistory, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership, recalculate_memberships
 from services.edit_history import record_edit
-from services.automatic_messages import enqueue_automatic_message, send_queued_automatic_messages
-from send_message import send_whatsapp
+from services.automatic_messages import enqueue_automatic_message
+from observability import report_unexpected_error
+from services.phone import normalize_phone
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 import config
 
@@ -18,7 +20,10 @@ members_bp = Blueprint("members", __name__)
 
 def validate_member_form(member=None):
     name = request.form["name"].strip()
-    phone = request.form["phone"].strip()
+    try:
+        phone = normalize_phone(request.form["phone"])
+    except ValueError:
+        phone = request.form.get("phone", "").strip()
     address = request.form["address"].strip()
     # HTML form values are strings, and unchecked checkboxes are omitted entirely.
     send_membership_reminder = request.form.get("send_membership_reminder") == "True"
@@ -30,10 +35,8 @@ def validate_member_form(member=None):
         errors["name"] = "Name is too long."
     elif Member.query.filter_by(owner_id=current_user.id, name=name).first() not in (None, member):
         errors["name"] = "A member with this name already exists. Please add a surname or father's name."
-    if not phone.isdigit():
-        errors["phone"] = "Phone number must contain only digits."
-    elif len(phone) != 10:
-        errors["phone"] = "Phone number must contain exactly 10 digits."
+    if not phone.startswith("+91") or len(phone) != 13:
+        errors["phone"] = "Enter a valid Indian mobile number."
     if len(address) < 3:
         errors["address"] = "Please enter a valid address."
     return name, phone, send_membership_reminder, address, notes, errors
@@ -156,13 +159,14 @@ def add_member():
                         f"member_limit_warning:{current_user.id}:{current_user.owner_plan}",
                     )
                 db.session.commit()
-                if should_send_limit_warning:
-                    send_queued_automatic_messages(send_whatsapp)
                 flash("Member added successfully!", "success")
                 return redirect(url_for("members.member_details", member_id=member.id))
-            except Exception as error:
-                print(error)
+            except IntegrityError:
                 db.session.rollback()
+                errors["name"] = "A member with this name already exists."
+            except SQLAlchemyError as error:
+                db.session.rollback()
+                report_unexpected_error(error, "members.add_member")
                 server_error = True
     return render_template("add_member.html", errors=errors, server_error=server_error)
 
@@ -450,6 +454,7 @@ def member_details(member_id):
     total_paid = db.session.query(func.sum(Membership.amount_paid)).filter_by(member_id=member.id).scalar() or 0
     membership_months = (date.today().year - member.join_date.year) * 12 + date.today().month - member.join_date.month
     payments = Membership.query.filter_by(member_id=member.id).order_by(Membership.payment_date.desc()).all()
+    current_membership = max(payments, key=lambda item: (item.expiry_date, item.id), default=None)
     payment_history = EditHistory.query.filter_by(
         owner_id=current_user.id, entity_type="membership", context_id=member.id
     ).order_by(
@@ -486,6 +491,7 @@ def member_details(member_id):
         membership_months=membership_months, attendance_this_month=attendance_this_month,
         attendance_dates=[record.attendance_date.isoformat() for record in attendance_dates],
         last_visit=last_visit, today=date.today(), payments=payments, plans=plans,
+        current_membership=current_membership,
         history_by_payment=history_by_payment,
         deleted_payment_history=deleted_payment_history,
     )

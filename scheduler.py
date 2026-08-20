@@ -2,13 +2,14 @@
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from backup import create_backup
+from backup import create_backup, restore_drill
 from jobs import (
     send_payment_reminders,
     send_owner_payment_reminders,
     remove_inactive_members,
     
 )
+from observability import report_unexpected_error
 
 scheduler = BackgroundScheduler()
 app = None
@@ -81,6 +82,18 @@ def init_scheduler(flask_app):
         coalesce=True,
         max_instances=1,
     )
+    scheduler.add_job(
+        func=restore_drill_job,
+        trigger="cron",
+        day_of_week="sun",
+        hour=2,
+        minute=0,
+        id="weekly_restore_drill",
+        replace_existing=True,
+        misfire_grace_time=3000,
+        coalesce=True,
+        max_instances=1,
+    )
 
     scheduler.start()
 
@@ -104,6 +117,14 @@ def job_send_owner_payment_reminders():
 def job_remove_inactive_members():
     with app.app_context():
         remove_inactive_members()
+
+
+def restore_drill_job():
+    with app.app_context():
+        try:
+            restore_drill()
+        except (OSError, RuntimeError) as error:
+            report_unexpected_error(error, "scheduler.restore_drill")
 
 def shutdown_scheduler():
     """Stops the scheduler gracefully."""

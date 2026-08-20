@@ -92,7 +92,7 @@ body {
 
 .app {
   width: 100%;
-  max-width: 500px;
+  max-width: 1440px;
 
   margin: auto;
 
@@ -171,4 +171,8 @@ body {
     padding-left: 13px;
     padding-right: 13px;
   }
+}
+
+.app:has(.admin-page) {
+  max-width: none;
 }
