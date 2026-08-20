@@ -1,7 +1,10 @@
-from flask import Flask, request
-from flask_login import LoginManager
-from datetime import timedelta
-from sqlalchemy import text
+from datetime import date, timedelta
+import os
+
+from flask import Flask, redirect, request, url_for
+from flask_login import LoginManager, current_user
+from sqlalchemy import inspect, text
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from scheduler import init_scheduler
 from models import GymOwner, db
@@ -12,10 +15,28 @@ from security import csrf_token, validate_csrf_request
 def create_app():
     app = Flask(__name__)
     app.secret_key = required_env("APP_SECRET_KEY")
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gym.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = required_env("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
-    app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_SECURE=True,
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_DURATION=timedelta(days=30),
+        REMEMBER_COOKIE_REFRESH_EACH_REQUEST=True,
+    )
+    trusted_proxy_hops = int(os.environ.get("TRUSTED_PROXY_HOPS", "0"))
+    if trusted_proxy_hops < 0:
+        raise RuntimeError("TRUSTED_PROXY_HOPS must be zero or greater.")
+    if trusted_proxy_hops:
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=trusted_proxy_hops,
+            x_proto=trusted_proxy_hops,
+            x_host=trusted_proxy_hops,
+        )
     db.init_app(app)
 
     app.jinja_env.globals["csrf_token"] = csrf_token
@@ -25,9 +46,18 @@ def create_app():
         if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             validate_csrf_request()
 
+    @app.before_request
+    def require_active_subscription():
+        owner_endpoint = request.endpoint and request.endpoint.split(".", 1)[0]
+        if (current_user.is_authenticated and owner_endpoint in {"members", "settings"}
+                and request.endpoint not in {"members.index", "members.plan_over"}
+                and (not current_user.payment_due_date or current_user.payment_due_date < date.today())):
+            return redirect(url_for("members.plan_over"))
+
     with app.app_context():
         db.create_all()
-        owner_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(gym_owner)"))}
+        inspector = inspect(db.engine)
+        owner_columns = {column["name"] for column in inspector.get_columns("gym_owner")}
         if "owner_plan" not in owner_columns:
             db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN owner_plan VARCHAR(50)"))
         if "member_limit_warning_plan" not in owner_columns:
@@ -36,7 +66,7 @@ def create_app():
             db.session.execute(
                 text("ALTER TABLE gym_owner ADD COLUMN inactive_member_removal_days INTEGER NOT NULL DEFAULT 30")
             )
-        payment_columns = {column[1] for column in db.session.execute(text("PRAGMA table_info(owner_payment)"))}
+        payment_columns = {column["name"] for column in inspector.get_columns("owner_payment")}
         if "plan_name" not in payment_columns:
             db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))
         db.session.commit()

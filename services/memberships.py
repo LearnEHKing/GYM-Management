@@ -37,7 +37,7 @@ def recalculate_memberships(member):
         previous_expiry = membership.expiry_date
 
     if memberships:
-        current = max(memberships, key=lambda item: (item.expiry_date, item.id))
+        current = member.current_membership
         member.current_plan_id = current.plan_id
         member.membership_start = current.start_date
         member.membership_expiry = current.expiry_date

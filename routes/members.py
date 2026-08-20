@@ -5,8 +5,9 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required, logout_user
 from sqlalchemy import func
 
-from models import Attendance, Member, Membership, MembershipPlan, db
+from models import Attendance, EditHistory, Member, Membership, MembershipPlan, db
 from services.memberships import new_membership, recalculate_memberships
+from services.edit_history import record_edit
 from services.automatic_messages import enqueue_automatic_message, send_queued_automatic_messages
 from send_message import send_whatsapp
 
@@ -36,6 +37,24 @@ def validate_member_form(member=None):
     if len(address) < 3:
         errors["address"] = "Please enter a valid address."
     return name, phone, send_membership_reminder, address, notes, errors
+
+
+def get_owned_member(member_id):
+    return Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
+
+
+def membership_snapshot(membership):
+    return {
+        "plan_id": membership.plan_id,
+        "plan_name": membership.plan_name,
+        "duration_months": membership.duration_months,
+        "fee": membership.fee,
+        "amount_paid": membership.amount_paid,
+        "payment_date": membership.payment_date.isoformat(),
+        "start_date": membership.start_date.isoformat(),
+        "expiry_date": membership.expiry_date.isoformat(),
+        "remarks": membership.remarks,
+    }
 
 
 @members_bp.route("/")
@@ -340,15 +359,16 @@ def reports():
     revenue_values = [revenue_counts.get(today - relativedelta(days=offset), 0) for offset in range(selected_days - 1, -1, -1)]
 
     # Average visitors by hour
+    hour_expression = func.extract("hour", Attendance.check_in)
     hour_rows = db.session.query(
-        func.strftime("%H", Attendance.check_in),
+        hour_expression,
         func.count(Attendance.id)
     ).join(Member).filter(
         Member.owner_id == current_user.id,
         Attendance.attendance_date >= report_start,
         Attendance.attendance_date <= today,
     ).group_by(
-        func.strftime("%H", Attendance.check_in)
+        hour_expression
     ).all()
 
     hour_counts = {int(hour): count for hour, count in hour_rows}
@@ -426,12 +446,19 @@ def members():
 @members_bp.route("/members/<int:member_id>")
 @login_required
 def member_details(member_id):
-    member = Member.query.get_or_404(member_id)
-    if member.owner_id != current_user.id:
-        abort(403)
+    member = get_owned_member(member_id)
     total_paid = db.session.query(func.sum(Membership.amount_paid)).filter_by(member_id=member.id).scalar() or 0
     membership_months = (date.today().year - member.join_date.year) * 12 + date.today().month - member.join_date.month
     payments = Membership.query.filter_by(member_id=member.id).order_by(Membership.payment_date.desc()).all()
+    payment_history = EditHistory.query.filter_by(
+        owner_id=current_user.id, entity_type="membership", context_id=member.id
+    ).order_by(
+        EditHistory.created_at.desc(), EditHistory.id.desc()
+    ).all()
+    history_by_payment = {}
+    for entry in payment_history:
+        history_by_payment.setdefault(entry.entity_id, []).append(entry)
+    deleted_payment_history = [entry for entry in payment_history if entry.action == "deleted"]
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id, active=True).order_by(MembershipPlan.name).all()
     month_start = date.today().replace(day=1)
     attendance_this_month = Attendance.query.filter(
@@ -459,6 +486,8 @@ def member_details(member_id):
         membership_months=membership_months, attendance_this_month=attendance_this_month,
         attendance_dates=[record.attendance_date.isoformat() for record in attendance_dates],
         last_visit=last_visit, today=date.today(), payments=payments, plans=plans,
+        history_by_payment=history_by_payment,
+        deleted_payment_history=deleted_payment_history,
     )
 
 
@@ -506,6 +535,10 @@ def edit_membership(membership_id):
     membership = Membership.query.join(Member).filter(Membership.id == membership_id, Member.owner_id == current_user.id).first_or_404()
     member = membership.member
     try:
+        reason = request.form.get("edit_reason", "").strip()
+        if not 3 <= len(reason) <= 500:
+            raise ValueError("reason")
+        before_data = membership_snapshot(membership)
         plan_id = request.form.get("plan_id")
         if plan_id:
             plan = MembershipPlan.query.filter_by(id=plan_id, owner_id=current_user.id, active=True).first()
@@ -518,11 +551,13 @@ def edit_membership(membership_id):
             membership.amount_paid = plan.fee
         membership.remarks = request.form.get("remarks", "").strip()
         recalculate_memberships(member)
+        record_edit(member.owner_id, current_user.id, current_user.username, "membership", membership.id, "updated", reason,
+                before_data, membership_snapshot(membership), context_id=member.id)
         db.session.commit()
         flash("Payment history updated successfully.", "success")
     except ValueError:
         db.session.rollback()
-        flash("Choose a valid membership plan.", "error")
+        flash("Choose a valid membership plan and provide an edit reason (3 to 500 characters).", "error")
     except Exception as error:
         print(error)
         db.session.rollback()
@@ -533,9 +568,7 @@ def edit_membership(membership_id):
 @members_bp.route("/members/<int:member_id>/membership", methods=["GET", "POST"])
 @login_required
 def add_membership(member_id):
-    member = Member.query.get_or_404(member_id)
-    if member.owner_id != current_user.id:
-        abort(403)
+    member = get_owned_member(member_id)
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id, active=True).all()
     errors = {}
     if request.method == "POST":
@@ -567,11 +600,20 @@ def delete_membership(membership_id):
     membership = Membership.query.join(Member).filter(Membership.id == membership_id, Member.owner_id == current_user.id).first_or_404()
     member = membership.member
     try:
+        reason = request.form.get("edit_reason", "").strip()
+        if not 3 <= len(reason) <= 500:
+            raise ValueError
+        before_data = membership_snapshot(membership)
         db.session.delete(membership)
         db.session.flush()
         recalculate_memberships(member)
+        record_edit(member.owner_id, current_user.id, current_user.username, "membership", membership.id, "deleted", reason,
+                before_data, None, context_id=member.id)
         db.session.commit()
         flash("Membership deleted successfully.", "success")
+    except ValueError:
+        db.session.rollback()
+        flash("A deletion reason of 3 to 500 characters is required.", "error")
     except Exception as error:
         print(error)
         db.session.rollback()

@@ -67,14 +67,14 @@
           <div class="item">
             <span class="label">Current Plan</span>
             <span class="value">
-              {{ member.latest_membership.plan_name if member.latest_membership else "-" }}
+              {{ member.current_membership.plan_name if member.current_membership else "-" }}
             </span>
           </div>
 
           <div class="item">
             <span class="label">Membership Fee</span>
             <span class="value">
-              ₹{{ member.latest_membership.fee if member.latest_membership else 0 }}
+              ₹{{ member.current_membership.fee if member.current_membership else 0 }}
             </span>
           </div>
 
@@ -109,10 +109,10 @@
           <div class="item">
             <span class="label">Payment Status</span>
 
-            {% if member.latest_membership %}
-            {% if member.latest_membership.amount_paid >= member.latest_membership.fee %}
+            {% if member.current_membership %}
+            {% if member.current_membership.amount_paid >= member.current_membership.fee %}
             <span class="value green">Paid</span>
-            {% elif member.latest_membership.amount_paid == 0 %}
+            {% elif member.current_membership.amount_paid == 0 %}
             <span class="value red">Unpaid</span>
             {% else %}
             <span class="value orange">Partial</span>
@@ -267,6 +267,20 @@
 
 
           </small>
+          {% if history_by_payment.get(payment.id) %}
+          <details class="edit-history">
+            <summary>{{ history_by_payment.get(payment.id)|length }} recorded change{{ '' if history_by_payment.get(payment.id)|length == 1 else 's' }}</summary>
+            <div class="history-list">
+              {% for entry in history_by_payment.get(payment.id) %}
+              <div class="history-entry">
+                <div><strong>{{ entry.action|replace('_', ' ')|title }}</strong><small>by {{ entry.actor_name }} · {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') }}</small></div>
+                <p>{{ entry.reason }}</p>
+                {% if entry.before_data and entry.after_data %}<small>{{ entry.before_data.plan_name }} → {{ entry.after_data.plan_name }} · ₹{{ entry.before_data.amount_paid }} → ₹{{ entry.after_data.amount_paid }}</small>{% elif entry.before_data %}<small>Record removed: {{ entry.before_data.plan_name }} · ₹{{ entry.before_data.amount_paid }}</small>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </details>
+          {% endif %}
 
         </div>
 
@@ -292,6 +306,8 @@
           <label class="dialog-label" for="remarks-{{ payment.id }}">Remarks</label>
           <textarea id="remarks-{{ payment.id }}" name="remarks" class="dialog-input" rows="4">{{ payment.remarks or ''
             }}</textarea>
+          <label class="dialog-label" for="reason-{{ payment.id }}">Reason for this change <span aria-hidden="true">*</span></label>
+          <textarea id="reason-{{ payment.id }}" name="edit_reason" class="dialog-input" rows="3" minlength="3" maxlength="500" required placeholder="Explain what changed and why"></textarea>
           <div class="status-dialog-actions">
             <button type="button" class="secondary-btn" data-close-dialog>Cancel</button>
             <button type="submit" class="save-btn">Save changes</button>
@@ -309,6 +325,13 @@
 
       <p>No payment history.</p>
 
+      {% endif %}
+
+      {% if deleted_payment_history %}
+      <section class="card edit-history-panel">
+        <div class="section-title"><h2>Removed payment records</h2><span class="label">{{ deleted_payment_history|length }} archived</span></div>
+        <div class="history-list">{% for entry in deleted_payment_history %}<div class="history-entry"><div><strong>Payment deleted</strong><small>by {{ entry.actor_name }} · {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') }}</small></div><p>{{ entry.reason }}</p><small>{{ entry.before_data.plan_name }} · {{ entry.before_data.payment_date }} · ₹{{ entry.before_data.amount_paid }}</small></div>{% endfor %}</div>
+      </section>
       {% endif %}
 
 

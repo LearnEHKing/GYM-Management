@@ -13,6 +13,11 @@ CSRF_SESSION_KEY = "_csrf_token"
 CSRF_FORM_FIELD = "_csrf_token"
 
 
+def client_ip():
+    """Return the client address after trusted ProxyFix processing."""
+    return request.remote_addr or "unknown"
+
+
 def csrf_token():
     """Return the current session's CSRF token, creating it when needed."""
     token = session.get(CSRF_SESSION_KEY)

@@ -259,6 +259,37 @@ td small {
   padding: 28px
 }
 
+.form-grid textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 6px;
+  min-height: 76px;
+  padding: 11px 12px;
+  border: 1px solid #dce2eb;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--admin-ink);
+  font: inherit;
+  resize: vertical
+}
+.actions input {
+  width: 112px;
+  padding: 6px 7px;
+  border: 1px solid #dce2eb;
+  border-radius: 7px;
+  font: inherit;
+  font-size: .72rem
+}
+.history-row td { padding-top: 0; background: #fbfcff }
+.edit-history { color: var(--admin-muted); font-size: .8rem }
+.edit-history summary { cursor: pointer; color: var(--admin-brand); font-weight: 800 }
+.history-list { display: grid; gap: 8px; margin-top: 9px }
+.history-entry { padding: 9px 11px; border-left: 3px solid var(--admin-brand); background: #f3f5ff; border-radius: 7px }
+.history-entry div { display: flex; justify-content: space-between; gap: 12px }
+.history-entry strong { color: var(--admin-ink); font-size: .78rem }
+.history-entry small { color: var(--admin-muted) }
+.history-entry p { margin: 4px 0; color: var(--admin-ink); line-height: 1.4 }
+
 .flash {
   padding: 13px 16px;
   border-radius: 10px;

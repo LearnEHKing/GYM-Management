@@ -7,7 +7,8 @@ from werkzeug.security import generate_password_hash
 
 import config
 import backup
-from models import GymOwner, Member, MembershipPlan, OwnerPayment, db
+from models import EditHistory, GymOwner, Member, MembershipPlan, OwnerPayment, db
+from services.edit_history import record_edit
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -64,11 +65,20 @@ def gym_details(gym_id):
     payments = OwnerPayment.query.filter_by(owner_id=owner.id).order_by(
         OwnerPayment.payment_date.desc(), OwnerPayment.id.desc()
     ).all()
+    payment_history = EditHistory.query.filter_by(
+        owner_id=owner.id, entity_type="owner_payment"
+    ).order_by(EditHistory.created_at.desc(), EditHistory.id.desc()).all()
+    history_by_payment = {}
+    for entry in payment_history:
+        history_by_payment.setdefault(entry.entity_id, []).append(entry)
+    deleted_payment_history = [entry for entry in payment_history if entry.action == "deleted"]
     members_count = Member.query.filter_by(owner_id=owner.id).count()
     active_members = Member.query.filter_by(owner_id=owner.id, membership_active=True).count()
     return render_template("admin_gym_details.html", active_page="admin_gyms", owner=owner,
                            payments=payments, members_count=members_count,
-                           active_members=active_members, today=date.today(), owner_plans=config.plan)
+                           active_members=active_members, today=date.today(), owner_plans=config.plan,
+                           history_by_payment=history_by_payment,
+                           deleted_payment_history=deleted_payment_history)
 
 
 @admin_bp.route("/admin/payments")
@@ -125,16 +135,26 @@ def create_owner():
         send_reminder = request.form.get("send_reminder") == "True"
         join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
         if (not all((username, password, name, phone, plan_names, plan_durations, plan_fees))
-                or len(password) < 8 or trial_days < 0):
+                or len(password) < 8 or trial_days < 0
+                or len(plan_names) != len(plan_durations) or len(plan_names) != len(plan_fees)
+                or len(plan_names) > 20):
             raise ValueError
         if GymOwner.query.filter_by(username=username).first():
             raise ValueError
+        validated_plans = []
+        for plan_name, duration, fee in zip(plan_names, plan_durations, plan_fees):
+            plan_name = plan_name.strip()
+            duration = int(duration)
+            fee = int(fee)
+            if not plan_name or len(plan_name) > 50 or duration < 1 or duration > 120 or fee < 1:
+                raise ValueError
+            validated_plans.append((plan_name, duration, fee))
         owner = GymOwner(username=username, password_hash=generate_password_hash(password), name=name, phone=phone,
                          join_date=join_date, trial_days=trial_days,send_reminder=send_reminder)
         db.session.add(owner)
         db.session.flush()
-        for plan_name, duration, fee in zip(plan_names, plan_durations, plan_fees):
-            db.session.add(MembershipPlan(owner_id=owner.id, name=plan_name, duration_months=int(duration), fee=int(fee)))
+        for plan_name, duration, fee in validated_plans:
+            db.session.add(MembershipPlan(owner_id=owner.id, name=plan_name, duration_months=duration, fee=fee))
         db.session.commit()
         flash(f"Created the {name} gym profile.", "success")
     except (KeyError, ValueError):
@@ -205,6 +225,15 @@ def edit_owner_payment(payment_id):
     require_admin()
     payment = OwnerPayment.query.get_or_404(payment_id)
     try:
+        reason = request.form.get("edit_reason", "").strip()
+        if not 3 <= len(reason) <= 500:
+            raise ValueError
+        before_data = {
+            "plan_name": payment.plan_name,
+            "amount": payment.amount,
+            "payment_date": payment.payment_date.isoformat(),
+            "remarks": payment.remarks,
+        }
         plan_name = request.form["plan_name"]
         if plan_name not in config.plan:
             raise ValueError
@@ -212,6 +241,10 @@ def edit_owner_payment(payment_id):
         payment.amount = int(config.plan[plan_name]["fee"])
         payment.payment_date = datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date()
         payment.remarks = request.form.get("remarks", "").strip() or None
+        record_edit(payment.owner_id, current_user.id, current_user.username, "owner_payment", payment.id, "updated", reason,
+                before_data, {"plan_name": payment.plan_name, "amount": payment.amount,
+                       "payment_date": payment.payment_date.isoformat(), "remarks": payment.remarks},
+                context_id=payment.owner_id)
         refresh_owner_subscription(payment.owner)
         db.session.commit()
         flash("Payment updated.", "success")
@@ -228,6 +261,16 @@ def delete_owner_payment(payment_id):
     payment = OwnerPayment.query.get_or_404(payment_id)
     owner = payment.owner
     gym_id = owner.id
+    reason = request.form.get("edit_reason", "").strip()
+    if not 3 <= len(reason) <= 500:
+        flash("A deletion reason is required (3 to 500 characters).", "error")
+        return redirect(url_for("admin.gym_details", gym_id=gym_id))
+    record_edit(owner.id, current_user.id, current_user.username, "owner_payment", payment.id, "deleted", reason, {
+        "plan_name": payment.plan_name,
+        "amount": payment.amount,
+        "payment_date": payment.payment_date.isoformat(),
+        "remarks": payment.remarks,
+    }, None, context_id=owner.id)
     db.session.delete(payment)
     db.session.flush()
     refresh_owner_subscription(owner)

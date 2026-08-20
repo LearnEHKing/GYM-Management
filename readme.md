@@ -9,6 +9,8 @@ values before starting the app:
 $env:APP_SECRET_KEY = "a-long-random-production-secret"
 $env:ADMIN_USERNAME = "admin"
 $env:ADMIN_PASSWORD = "use-a-secret-manager-value"
+$env:DATABASE_URL = "postgresql+psycopg://user:password@db-host/gym"
+$env:TRUSTED_PROXY_HOPS = "1"
 python main.py
 ```
 
@@ -25,7 +27,15 @@ The helper sets variables only for the child process. Production must provide
 environment or a secret manager. `DEMO_PASSWORD` is required only when running
 `fake_data.py`.
 
-The application uses SQLite at `instance/gym.db`, creates missing tables, and
-applies the small compatibility migrations at startup.
+The application reads `DATABASE_URL` from the environment and creates missing
+tables at startup. Production should run behind HTTPS. Set `TRUSTED_PROXY_HOPS`
+to the exact number of trusted reverse proxies in front of the app; leave it at
+`0` when accessing the app directly. Never set it based on untrusted client
+input.
+
+The in-process login limiter protects each app process. For shared protection
+across workers, apply the Nginx configuration in `deploy/nginx.conf.example`,
+which limits `/login` to five requests per minute per client IP with a small
+burst allowance.
 
 Backups are SQLite files written to `backups/`.

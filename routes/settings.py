@@ -2,7 +2,8 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from models import MembershipPlan, db
+from models import EditHistory, MembershipPlan, db
+from services.edit_history import record_edit
 
 settings_bp = Blueprint("settings", __name__)
 
@@ -19,7 +20,16 @@ def membership_plans():
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id).order_by(
         MembershipPlan.active.desc(), MembershipPlan.duration_months, MembershipPlan.name
     ).all()
-    return render_template("membership_plans.html", active_page="settings", plans=plans)
+    plan_history = EditHistory.query.filter_by(
+        owner_id=current_user.id, entity_type="membership_plan"
+    ).filter(EditHistory.entity_id.in_([plan.id for plan in plans])).order_by(
+        EditHistory.created_at.desc(), EditHistory.id.desc()
+    ).all() if plans else []
+    history_by_plan = {}
+    for entry in plan_history:
+        history_by_plan.setdefault(entry.entity_id, []).append(entry)
+    return render_template("membership_plans.html", active_page="settings", plans=plans,
+                           history_by_plan=history_by_plan)
 
 
 @settings_bp.route("/settings/profile", methods=["POST"])
@@ -102,6 +112,11 @@ def create_plan():
 def edit_plan(plan_id):
     plan = MembershipPlan.query.filter_by(id=plan_id, owner_id=current_user.id).first_or_404()
     try:
+        reason = request.form.get("edit_reason", "").strip()
+        if not 3 <= len(reason) <= 500:
+            raise ValueError
+        before_data = {"name": plan.name, "duration_months": plan.duration_months,
+                       "fee": plan.fee, "active": plan.active}
         name = request.form["name"].strip()
         months = int(request.form["duration_months"])
         fee = int(request.form["fee"])
@@ -115,11 +130,14 @@ def edit_plan(plan_id):
         if duplicate:
             raise ValueError
         plan.name, plan.duration_months, plan.fee = name, months, fee
+        record_edit(plan.owner_id, current_user.id, current_user.username, "membership_plan", plan.id, "updated", reason,
+                before_data, {"name": plan.name, "duration_months": plan.duration_months,
+                       "fee": plan.fee, "active": plan.active}, context_id=plan.owner_id)
         db.session.commit()
         flash("Membership plan updated.", "success")
     except (KeyError, ValueError):
         db.session.rollback()
-        flash("Enter a unique plan name, valid duration, and fee.", "error")
+        flash("Enter a unique plan name, valid duration, fee, and edit reason (3 to 500 characters).", "error")
     return redirect(url_for("settings.membership_plans"))
 
 
@@ -127,7 +145,16 @@ def edit_plan(plan_id):
 @login_required
 def toggle_plan_status(plan_id):
     plan = MembershipPlan.query.filter_by(id=plan_id, owner_id=current_user.id).first_or_404()
+    reason = request.form.get("edit_reason", "").strip()
+    if not 3 <= len(reason) <= 500:
+        flash("A reason is required (3 to 500 characters).", "error")
+        return redirect(url_for("settings.membership_plans"))
+    before_data = {"name": plan.name, "duration_months": plan.duration_months,
+                   "fee": plan.fee, "active": plan.active}
     plan.active = not plan.active
+    record_edit(plan.owner_id, current_user.id, current_user.username, "membership_plan", plan.id, "status_changed", reason,
+                before_data, {"name": plan.name, "duration_months": plan.duration_months,
+                               "fee": plan.fee, "active": plan.active}, context_id=plan.owner_id)
     db.session.commit()
     flash(f"{plan.name} is now {'active' if plan.active else 'inactive'}.", "success")
     return redirect(url_for("settings.membership_plans"))

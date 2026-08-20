@@ -1,6 +1,6 @@
 todo:
 
-- Read DATABASE_URL from the environment and replace strftime with PostgreSQL-compatible extraction
+<!-- - -----Read DATABASE_URL from the environment and replace strftime with PostgreSQL-compatible extraction
 - Add a centralized before_request subscription guard or decorator to every owner route.
 - High | Data Integrity
 admin.py:134 uses zip() on plan arrays without checking equal lengths.
@@ -9,8 +9,8 @@ Fix: Require equal list lengths and validate every name, duration, fee, and maxi
 - High | Membership Correctness
 models.py:121 defines “latest” by payment date, while memberships.py:22 defines current membership by maximum expiry date.
 Scenario: Historic edits make the displayed plan disagree with the active expiry and current plan.
-Fix: Establish one canonical current-membership query and use it everywhere.
-- Most member routes are scoped correctly, but members.py:429 first loads a member globally and then checks ownership manually.
+Fix: Establish one canonical current-membership query and use it everywhere. -->
+<!-- - Most member routes are scoped correctly, but members.py:429 first loads a member globally and then checks ownership manually.
 Scenario: Future route changes accidentally expose data through an unscoped lookup.
 Fix: Always query with id and owner_id together, preferably through a shared tenant-scoped helper.
 - High | Session Security
@@ -23,8 +23,8 @@ Fix: app.config.update(
     REMEMBER_COOKIE_SECURE=True,
     REMEMBER_COOKIE_HTTPONLY=True,
     REMEMBER_COOKIE_SAMESITE="Lax",
-)
-- reverse-proxy rate limiting.
+) 
+- reverse-proxy rate limiting. -->
 - High | Backup/Database
 backup.py:17 is SQLite-specific and cannot back up PostgreSQL. It also lacks encryption, checksums, restore testing, failure alerts, and storage monitoring.
 Fix: Use PostgreSQL-native/object-storage backups and perform scheduled restore drills.

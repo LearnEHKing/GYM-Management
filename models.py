@@ -73,6 +73,23 @@ class OwnerPayment(db.Model):
     remarks = db.Column(db.Text)
 
 
+class EditHistory(db.Model):
+    __tablename__ = "edit_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False, index=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False)
+    actor_name = db.Column(db.String(100), nullable=False)
+    entity_type = db.Column(db.String(30), nullable=False, index=True)
+    entity_id = db.Column(db.Integer, nullable=False, index=True)
+    context_id = db.Column(db.Integer, index=True)
+    action = db.Column(db.String(20), nullable=False)
+    reason = db.Column(db.Text, nullable=False)
+    before_data = db.Column(db.JSON)
+    after_data = db.Column(db.JSON)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
 class MembershipPlan(db.Model):
     __tablename__ = "membership_plan"
 
@@ -152,16 +169,20 @@ class Member(db.Model):
     )
 
     @property
-    def latest_membership(self):
+    def current_membership(self):
         return (
             Membership.query
             .filter_by(member_id=self.id)
             .order_by(
-                Membership.payment_date.desc(),
+                Membership.expiry_date.desc(),
                 Membership.id.desc()
             )
             .first()
         )
+
+    @property
+    def latest_membership(self):
+        return self.current_membership
 
 
 class Membership(db.Model):

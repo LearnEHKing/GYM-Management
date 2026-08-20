@@ -3,7 +3,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash
 
 from models import GymOwner
-from security import login_rate_limiter
+from security import client_ip, login_rate_limiter
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -16,7 +16,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        ip_address = request.remote_addr or "unknown"
+        ip_address = client_ip()
         if login_rate_limiter.is_limited(ip_address, username):
             error = "Too many login attempts. Please try again in a minute."
         else:
