@@ -49,7 +49,11 @@ def index():
 
         today = date.today()
         month_start = today.replace(day=1)
-        total_members = Member.query.filter_by(owner_id=current_user.id).count()
+        # Removed members do not use a seat on the gym owner's subscription.
+        # An expired membership is still a member and remains counted.
+        total_members = Member.query.filter_by(
+            owner_id=current_user.id, membership_active=True
+        ).count()
         monthly_revenue = db.session.query(func.sum(Membership.amount_paid)).join(Member).filter(
             Member.owner_id == current_user.id,
             Membership.payment_date >= month_start,
@@ -57,10 +61,12 @@ def index():
         ).scalar() or 0
         today_attendance = Attendance.query.join(Member).filter(
             Member.owner_id == current_user.id,
+            Member.membership_active.is_(True),
             Attendance.attendance_date == today,
         ).count()
         expired_members = Member.query.filter(
             Member.owner_id == current_user.id,
+            Member.membership_active.is_(True),
             Member.membership_expiry < today,
         ).order_by(Member.membership_expiry.asc(), Member.name.asc()).all()
         expiring_soon = Member.query.filter(
@@ -99,7 +105,11 @@ def add_member():
             if owner_plan is None:
                 errors["plan"] = "Your gym does not have an active GYM-Manager plan. Please contact the administrator."
             else:
-                member_count = Member.query.filter_by(owner_id=current_user.id).count()
+                # A removed member frees a subscription seat; an expired member
+                # remains part of the gym until they are explicitly removed.
+                member_count = Member.query.filter_by(
+                    owner_id=current_user.id, membership_active=True
+                ).count()
                 if member_count >= int(owner_plan["member_allowed"]):
                     errors["plan"] = "You have reached your plan's member limit. Please update your plan to add more members."
         if not errors:
@@ -167,10 +177,9 @@ def attendance():
     now = datetime.now()
 
     members = Member.query.filter_by(owner_id=current_user.id).all()
-    eligible_member_ids = {
-        member.id for member in members
-        if member.membership_active and member.membership_expiry and member.membership_expiry >= today
-    }
+    # Attendance remains available after expiry. Only explicitly removed
+    # members are excluded from member actions.
+    attendance_enabled_ids = {member.id for member in members if member.membership_active}
     today_attendance = {
         record.member_id: record
         for record in Attendance.query.join(Member).filter(
@@ -190,7 +199,7 @@ def attendance():
         # Active members who still need a check-in are always first.  Within that
         # group, yesterday's matching hour is first, then the neighbouring hours.
         attendance_record = today_attendance.get(member.id)
-        if member.id not in eligible_member_ids:
+        if member.id not in attendance_enabled_ids:
             status_rank = 2
         elif attendance_record is None:
             status_rank = 0
@@ -212,8 +221,8 @@ def attendance():
         members=ordered_members,
         attendance_by_member=today_attendance,
         today=today,
-        eligible_member_ids=eligible_member_ids,
-        active_unchecked=sum(m.id in eligible_member_ids and m.id not in today_attendance for m in members),
+        attendance_enabled_ids=attendance_enabled_ids,
+        active_unchecked=sum(m.id in attendance_enabled_ids and m.id not in today_attendance for m in members),
         active_page="attendance",
     )
 
@@ -222,7 +231,7 @@ def attendance():
 @login_required
 def check_in_member(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    if member.membership_active and member.membership_expiry and member.membership_expiry >= date.today():
+    if member.membership_active:
         today = date.today()
         existing = Attendance.query.filter_by(member_id=member.id, attendance_date=today).first()
         if existing:
@@ -232,7 +241,7 @@ def check_in_member(member_id):
             db.session.commit()
             flash(f"Attendance marked for {member.name}.", "success")
     else:
-        flash("Attendance can only be marked for a current membership.", "error")
+        flash("Attendance is unavailable for a removed member.", "error")
     return redirect(url_for("members.attendance"))
 
 
@@ -459,16 +468,14 @@ def toggle_membership_active_status(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
     if member.membership_active:
         member.membership_active = False
+        status = "removed"
     else:
         member.membership_active = True
-    
-        if member.membership_expiry is None or member.membership_expiry < date.today():
-            member.membership_expiry = date.today()
+        status = "rejoined"
       
     try:
         db.session.commit()
-        status = "active" if member.membership_active else "inactive"
-        flash(f"{member.name}'s account is now marked as {status}.", "success")
+        flash(f"{member.name} has been {status}.", "success")
     except Exception as error:
         print(error)
         db.session.rollback()

@@ -11,7 +11,10 @@
     ====================================== -->
 
 <header class="header">
-  <h1>GYM 💪🏻</h1>
+  <div>
+    <p class="small-text">GYM MANAGER</p>
+    <h1>{{ current_user.name }} 💪🏻</h1>
+  </div>
   <button id="themeBtn" onclick="toggleTheme()">🌙</button>
 </header>
 
@@ -29,7 +32,7 @@
       <div class="stat-number">{{total_members}}</div>
 
       <div class="stat-growth green">
-        <span> registered members </span>
+        <span> not removed members </span>
       </div>
     </div>
 

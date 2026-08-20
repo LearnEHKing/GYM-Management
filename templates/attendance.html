@@ -20,13 +20,13 @@
 <section class="member-list" aria-label="Member attendance list">
   {% for member in members %}
   {% set record = attendance_by_member.get(member.id) %}
-  {% set eligible = member.id in eligible_member_ids %}
-  <article class="attendance-member {% if not eligible %}inactive{% endif %}" data-member data-search-text="{{ (member.name ~ ' ' ~ member.phone ~ ' ' ~ member.address)|lower }}">
+  {% set attendance_enabled = member.id in attendance_enabled_ids %}
+  <article class="attendance-member {% if not attendance_enabled %}inactive{% endif %}" data-member data-search-text="{{ (member.name ~ ' ' ~ member.phone ~ ' ' ~ member.address)|lower }}">
     <a class="member-profile" href="{{ url_for('members.member_details', member_id=member.id) }}">
       <span class="avatar">{{ member.name[0]|upper }}</span>
       <span class="member-copy">
         <strong>{{ member.name }}</strong>
-        <small>{% if not member.membership_active %}Removed · {% elif not eligible %}Membership expired · {% endif %}+91 {{ member.phone }}</small>
+        <small>{% if not member.membership_active %}Removed · {% endif %}+91 {{ member.phone }}</small>
       </span>
     </a>
     {% if record %}
@@ -44,7 +44,7 @@
         </div>
       </form>
     </dialog>
-    {% elif eligible %}
+    {% elif attendance_enabled %}
     <form method="post" action="{{ url_for('members.check_in_member', member_id=member.id) }}">
       <button class="attendance-toggle" type="submit" aria-label="Mark {{ member.name }} present">✓</button>
     </form>
