@@ -60,6 +60,8 @@ td small, .gym-link small { display: block; color: var(--admin-muted); font-size
 .actions { display: flex; align-items: center; gap: 10px; }
 .actions form { margin: 0; }
 .danger-link { color: #c42c3c; background: transparent; padding: 0; }
+.inline-action { display: inline-block; margin-top: 14px; text-decoration: none; }
+.form-grid small { display: block; margin-top: 5px; color: var(--admin-muted); font-size: .72rem; font-weight: 500; }
 
 @media (max-width: 700px) {
   .stats-grid, .stats-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }

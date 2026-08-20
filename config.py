@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+
 admin = {
     "username":"admin",
 }
@@ -21,6 +25,39 @@ plan = {
 # Send the capacity message once when a new member takes the count above this
 # many places below the limit.
 plan_delta_members_before_warning = 5
+
+# Values changed from the administrator settings page are kept out of source
+# control and loaded whenever the application starts.
+_runtime_settings_path = Path(__file__).with_name("instance") / "admin_settings.json"
+
+
+def _load_runtime_settings():
+    try:
+        return json.loads(_runtime_settings_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, json.JSONDecodeError):
+        return {}
+
+
+def update_runtime_settings(reminder_days, message_limit, warning_delta):
+    """Persist validated administrator settings and apply them immediately."""
+    values = {
+        "membership_reminder_days": reminder_days,
+        "daily_message_limit": message_limit,
+        "plan_delta_members_before_warning": warning_delta,
+    }
+    _runtime_settings_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = _runtime_settings_path.with_suffix(".tmp")
+    temporary_path.write_text(json.dumps(values, indent=2), encoding="utf-8")
+    temporary_path.replace(_runtime_settings_path)
+    globals().update(values)
+
+
+_runtime_settings = _load_runtime_settings()
+membership_reminder_days = _runtime_settings.get("membership_reminder_days", membership_reminder_days)
+daily_message_limit = _runtime_settings.get("daily_message_limit", daily_message_limit)
+plan_delta_members_before_warning = _runtime_settings.get(
+    "plan_delta_members_before_warning", plan_delta_members_before_warning
+)
 
 member_limit_warning_message = (
     "👋 Hi {},\n\n"

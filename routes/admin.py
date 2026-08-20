@@ -78,6 +78,25 @@ def payments():
     owner_payments = OwnerPayment.query.order_by(OwnerPayment.payment_date.desc(), OwnerPayment.id.desc()).all()
     return render_template("admin_payments.html", active_page="admin_payments", owner_payments=owner_payments)
 
+
+@admin_bp.route("/admin/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    require_admin()
+    if request.method == "POST":
+        try:
+            reminder_days = [int(day.strip()) for day in request.form["membership_reminder_days"].split(",") if day.strip()]
+            message_limit = int(request.form["daily_message_limit"])
+            warning_delta = int(request.form["plan_delta_members_before_warning"])
+            if not reminder_days or any(day < 0 for day in reminder_days) or message_limit < 0 or warning_delta < 0:
+                raise ValueError
+            config.update_runtime_settings(sorted(set(reminder_days), reverse=True), message_limit, warning_delta)
+            flash("Admin settings saved.", "success")
+        except (KeyError, TypeError, ValueError):
+            flash("Use non-negative numbers. Separate reminder days with commas.", "error")
+        return redirect(url_for("admin.settings"))
+    return render_template("admin_settings.html", active_page="admin_settings", config=config)
+
 @admin_bp.route("/admin/create_backup", methods=["GET"])
 @login_required
 def create_backup():
@@ -88,7 +107,7 @@ def create_backup():
     except Exception as e:
         print(e)
         flash("ERROR : Couldn't create backup.","error")
-    return redirect(url_for("admin.admin"))
+    return redirect(url_for("admin.settings") if request.args.get("return_to") == "settings" else url_for("admin.admin"))
 
 @admin_bp.route("/admin/owners", methods=["POST"])
 @login_required
