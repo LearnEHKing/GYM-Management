@@ -9,6 +9,7 @@ from jobs import (
     send_payment_reminders,
     send_owner_payment_reminders,
     remove_inactive_members,
+    reconcile_active_member_counts,
     
 )
 from observability import report_unexpected_error
@@ -86,6 +87,17 @@ def init_scheduler(flask_app):
         max_instances=1,
     )
     scheduler.add_job(
+        func=job_reconcile_active_member_counts,
+        trigger="cron",
+        hour=1,
+        minute=30,
+        id="active_member_count_reconciliation",
+        replace_existing=True,
+        misfire_grace_time=3000,
+        coalesce=True,
+        max_instances=1,
+    )
+    scheduler.add_job(
         func=restore_drill_job,
         trigger="cron",
         day_of_week="sun",
@@ -124,6 +136,11 @@ def job_send_owner_payment_reminders():
 def job_remove_inactive_members():
     with app.app_context():
         _run_job("inactive_member_removal", remove_inactive_members)
+
+
+def job_reconcile_active_member_counts():
+    with app.app_context():
+        _run_job("active_member_count_reconciliation", reconcile_active_member_counts)
 
 
 def _run_job(job_name, function):

@@ -43,6 +43,8 @@ class GymOwner(UserMixin, db.Model):
 
     # Remove active members after this many consecutive days without a visit.
     inactive_member_removal_days = db.Column(db.Integer, nullable=False, default=30)
+    # Whether removal expires a current membership or pauses its remaining days.
+    membership_removal_policy = db.Column(db.String(20), nullable=False, default="expire")
 
     #If gym owner wants to send automatic whatsapp payment reminder.
     send_reminder = db.Column(db.Boolean, nullable=False, default=False)
@@ -90,6 +92,7 @@ class OwnerPayment(db.Model):
 
     amount = db.Column(db.Integer, nullable=False)
     payment_date = db.Column(db.Date, default=local_today, nullable=False)
+    subscription_start_date = db.Column(db.Date)
     # Snapshot of the selected platform subscription at payment time.
     plan_name = db.Column(db.String(50))
     remarks = db.Column(db.Text)
@@ -162,6 +165,7 @@ class Member(db.Model):
 
     notes = db.Column(db.Text)
     membership_active = db.Column(db.Boolean, default=True, nullable=False)
+    reserved_membership_days = db.Column(db.Integer, nullable=False, default=0)
     send_membership_reminder = db.Column(db.Boolean, default=True)
     current_plan_id = db.Column(
         db.Integer,

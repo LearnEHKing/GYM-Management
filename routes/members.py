@@ -155,14 +155,20 @@ def add_member():
                 member = Member(owner_id=current_user.id, name=name, phone=phone, send_membership_reminder=send_membership_reminder,address=address, join_date=join_date, notes=notes)
                 db.session.add(member)
                 db.session.flush()
-                member.membership_start = join_date
-                # A one-day trial starts and ends on the joining date.
-                member.membership_expiry = (
-                    join_date + relativedelta(days=trial_days - 1)
-                    if trial_days > 0 else join_date - relativedelta(days=1)
-                )
-                member.membership_active = trial_days > 0
-                db.session.add(Membership(member_id=member.id, plan_id=None, plan_name="Trial", duration_months=0, fee=0, amount_paid=0, payment_date=join_date, start_date=member.membership_start, expiry_date=member.membership_expiry, remarks="Trial membership"))
+                if trial_days > 0:
+                    member.membership_start = join_date
+                    member.membership_expiry = join_date + relativedelta(days=trial_days - 1)
+                    member.membership_active = True
+                    db.session.add(Membership(
+                        member_id=member.id, plan_id=None, plan_name="Trial",
+                        duration_months=0, fee=0, amount_paid=0,
+                        payment_date=join_date, start_date=member.membership_start,
+                        expiry_date=member.membership_expiry, remarks="Trial membership",
+                    ))
+                else:
+                    member.membership_start = None
+                    member.membership_expiry = None
+                    member.membership_active = False
                 new_member_count = member_count + (1 if trial_days > 0 else 0)
                 warning_threshold = int(owner_plan["member_allowed"]) - int(config.plan_delta_members_before_warning)
                 should_send_limit_warning = (new_member_count > warning_threshold and current_user.member_limit_warning_plan != current_user.owner_plan)
@@ -534,14 +540,23 @@ def member_details(member_id):
 def toggle_membership_active_status(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
     try:
-        if member.membership_active:
-            member.membership_active = False
+        updated = db.session.query(Member).filter_by(
+            id=member.id, owner_id=current_user.id, membership_active=True
+        ).update(
+            {Member.membership_active: False}, synchronize_session=False
+        )
+        if updated == 1:
+            if current_user.membership_removal_policy == "pause" and member.membership_expiry:
+                member.reserved_membership_days = max((member.membership_expiry - local_today()).days + 1, 0)
+            else:
+                member.reserved_membership_days = 0
             db.session.query(GymOwner).filter_by(id=current_user.id).update(
                 {GymOwner.active_member_count: GymOwner.active_member_count - 1},
                 synchronize_session=False,
             )
             status = "removed"
         else:
+            db.session.rollback()
             owner_plan = config.plan.get(current_user.owner_plan)
             if owner_plan is None:
                 flash("Your gym does not have an active plan.", "error")
@@ -556,7 +571,22 @@ def toggle_membership_active_status(member_id):
             if capacity_update != 1:
                 flash("You have reached your plan's member limit.", "error")
                 return redirect(url_for("members.member_details", member_id=member.id))
-            member.membership_active = True
+            updated = db.session.query(Member).filter_by(
+                id=member.id, owner_id=current_user.id, membership_active=False
+            ).update(
+                {Member.membership_active: True}, synchronize_session=False
+            )
+            if updated != 1:
+                db.session.rollback()
+                flash("Member status was already changed.", "info")
+                return redirect(url_for("members.member_details", member_id=member.id))
+            if (current_user.membership_removal_policy == "pause"
+                    and member.reserved_membership_days > 0):
+                member.membership_start = local_today()
+                member.membership_expiry = local_today() + relativedelta(
+                    days=member.reserved_membership_days - 1
+                )
+                member.reserved_membership_days = 0
             status = "rejoined"
         db.session.commit()
         flash(f"{member.name} has been {status}.", "success")

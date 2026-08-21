@@ -5,7 +5,7 @@ import uuid
 from flask import Flask, g, jsonify, redirect, request, url_for
 from flask_login import LoginManager, current_user
 from flask_migrate import Migrate
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from scheduler import init_scheduler, scheduler
@@ -109,38 +109,14 @@ def create_app():
             return redirect(url_for("members.plan_over"))
 
     with app.app_context():
-        db.create_all()
-        for table in db.metadata.tables.values():
-            for index in table.indexes:
-                index.create(bind=db.engine, checkfirst=True)
-        inspector = inspect(db.engine)
-        owner_columns = {column["name"] for column in inspector.get_columns("gym_owner")}
-        if "owner_plan" not in owner_columns:
-            db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN owner_plan VARCHAR(50)"))
-        if "member_limit_warning_plan" not in owner_columns:
-            db.session.execute(text("ALTER TABLE gym_owner ADD COLUMN member_limit_warning_plan VARCHAR(50)"))
-        if "inactive_member_removal_days" not in owner_columns:
-            db.session.execute(
-                text("ALTER TABLE gym_owner ADD COLUMN inactive_member_removal_days INTEGER NOT NULL DEFAULT 30")
-            )
-        if "active_member_count" not in owner_columns:
-            db.session.execute(
-                text("ALTER TABLE gym_owner ADD COLUMN active_member_count INTEGER NOT NULL DEFAULT 0")
-            )
-            db.session.execute(text(
-                "UPDATE gym_owner SET active_member_count = "
-                "(SELECT COUNT(*) FROM member WHERE member.owner_id = gym_owner.id "
-                "AND member.membership_active IS TRUE)"
-            ))
-        payment_columns = {column["name"] for column in inspector.get_columns("owner_payment")}
-        if "plan_name" not in payment_columns:
-            db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))
-        history_columns = {column["name"] for column in inspector.get_columns("edit_history")}
-        if "actor_name" not in history_columns:
-            db.session.execute(text("ALTER TABLE edit_history ADD COLUMN actor_name VARCHAR(100)"))
-        if "context_id" not in history_columns:
-            db.session.execute(text("ALTER TABLE edit_history ADD COLUMN context_id INTEGER"))
-        db.session.commit()
+        try:
+            db.session.execute(text("SELECT 1 FROM gym_owner LIMIT 1"))
+        except Exception as error:
+            db.session.rollback()
+            raise RuntimeError(
+                "Database schema is unavailable or not migrated. "
+                "Run 'flask --app main db upgrade' before starting the application."
+            ) from error
 
     init_scheduler(app)
     
@@ -168,6 +144,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run(host="0.0.0.0",port=5000,debug=True)

@@ -12,6 +12,41 @@ from services.automatic_messages import (
 
 logger = logging.getLogger("gym_management.jobs")
 
+
+def reconcile_active_member_counts():
+    """Correct cached owner counters and warn when a mismatch is found."""
+    rows = db.session.query(
+        GymOwner.id,
+        GymOwner.active_member_count,
+        func.count(Member.id),
+    ).outerjoin(
+        Member,
+        (Member.owner_id == GymOwner.id) & Member.membership_active.is_(True),
+    ).group_by(GymOwner.id, GymOwner.active_member_count).all()
+    mismatch_count = 0
+    for owner_id, cached_count, actual_count in rows:
+        if cached_count == actual_count:
+            continue
+        mismatch_count += 1
+        logger.warning(
+            "active member count mismatch corrected",
+            extra={"context": {
+                "owner_id": owner_id,
+                "cached_count": cached_count,
+                "actual_count": actual_count,
+            }},
+        )
+        db.session.query(GymOwner).filter_by(id=owner_id).update(
+            {GymOwner.active_member_count: actual_count},
+            synchronize_session=False,
+        )
+    if mismatch_count:
+        db.session.commit()
+    logger.info(
+        "active member count reconciliation complete",
+        extra={"context": {"mismatches": mismatch_count}},
+    )
+
 def send_payment_reminders():
     """Queue today's member reminders, then deliver as many as quota permits."""
     logger.info("queueing membership reminders")
@@ -49,13 +84,16 @@ def send_owner_payment_reminders():
     """Queue today's owner reminders, then deliver as many as quota permits."""
     logger.info("queueing owner subscription reminders")
 
-    owners = GymOwner.query.filter(GymOwner.payment_due_date.is_not(None)).all()
+    owners = GymOwner.query.filter(
+        GymOwner.payment_due_date.is_not(None),
+        GymOwner.send_reminder.is_(True),
+    ).all()
     for owner in owners:
         selected_plan = config.plan.get(owner.owner_plan)
         if not selected_plan:
             continue
         days_left = (owner.payment_due_date - local_today()).days
-        if days_left not in {int(days) for days in selected_plan["whatsapp_reminder_days"]}:
+        if days_left not in {int(days) for days in config.owner_subscription_reminder_days}:
             continue
         message = config.owner_reminder_message.format(
             owner.name,
@@ -93,9 +131,15 @@ def remove_inactive_members():
     inactive_ids = [member.id for member in inactive_members]
     removed_count = len(inactive_ids)
     if inactive_ids:
-        db.session.execute(
-            update(Member).where(Member.id.in_(inactive_ids)).values(membership_active=False)
-        )
+        for member in inactive_members:
+            if (member.owner.membership_removal_policy == "pause"
+                    and member.membership_expiry):
+                member.reserved_membership_days = max(
+                    (member.membership_expiry - today).days + 1, 0
+                )
+            else:
+                member.reserved_membership_days = 0
+            member.membership_active = False
         for owner_id in {member.owner_id for member in inactive_members}:
             removed_for_owner = sum(member.owner_id == owner_id for member in inactive_members)
             db.session.execute(

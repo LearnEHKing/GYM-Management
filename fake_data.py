@@ -11,15 +11,16 @@ Logins:
     demo_gym8 / value of DEMO_PASSWORD
 """
 
-from datetime import date, datetime, time
+from datetime import datetime, time
 import os
 import random
 
 from dateutil.relativedelta import relativedelta
 from werkzeug.security import generate_password_hash
 
+import config
 from main import app
-from models import Attendance, GymOwner, Member, Membership, MembershipPlan, db, local_now, local_today
+from models import Attendance, GymOwner, Member, Membership, MembershipPlan, OwnerPayment, db, local_today
 from services.memberships import new_membership
 
 
@@ -57,24 +58,36 @@ def make_check_in(day):
 
 
 def seed_demo_gym():
-    db.create_all()
     for username, gym_name, due_days in GYMS:
         if GymOwner.query.filter_by(username=username).first():
             print(f"{username} already exists.")
             continue
     
         today = local_today()
+        member_count = random.randint(45, 95)
+        platform_plan_name = "starter" if member_count <= 50 else "growth"
+        platform_plan = config.plan[platform_plan_name]
+        subscription_start = today + relativedelta(days=due_days - int(platform_plan["days"]))
         owner = GymOwner(
             username=username,
             password_hash=generate_password_hash(DEMO_PASSWORD),
             name=gym_name,
             phone=f"9{random.randint(100000000, 999999999)}",
             join_date=today - relativedelta(months=random.randint(3, 18)),
+            owner_plan=platform_plan_name,
             payment_due_date=today + relativedelta(days=due_days),
             trial_days=3,
         )
         db.session.add(owner)
         db.session.flush()
+        db.session.add(OwnerPayment(
+            owner_id=owner.id,
+            amount=int(platform_plan["fee"]) + int(platform_plan.get("whatsapp_fee", 0)),
+            payment_date=subscription_start,
+            subscription_start_date=subscription_start,
+            plan_name=platform_plan_name,
+            remarks="Demo platform subscription",
+        ))
     
         plan_specs = [("Monthly", 1, 1200), ("Quarterly", 3, 3200), ("Half Yearly", 6, 5800), ("Annual", 12, 10500)]
         plans = {}
@@ -84,8 +97,6 @@ def seed_demo_gym():
             plans[name] = plan
         db.session.flush()
     
-        member_count = random.randint(45, 95)
-
         for index in range(member_count):
             name = f"{FIRST_NAMES[index % len(FIRST_NAMES)]} {LAST_NAMES[index // len(FIRST_NAMES)]}"
             joined = today - relativedelta(days=random.randint(8, 360))
@@ -133,6 +144,10 @@ def seed_demo_gym():
                 if random.random() < (0.44 if member.membership_active else 0.12):
                     db.session.add(Attendance(member_id=member.id, attendance_date=day, check_in=make_check_in(day)))
                 day += relativedelta(days=1)
+
+        owner.active_member_count = sum(
+            member.membership_active for member in owner.members
+        )
 
     db.session.commit()
     for username, _, _ in GYMS:

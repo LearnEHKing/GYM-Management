@@ -21,6 +21,10 @@ def require_admin():
         abort(403)
 
 
+def plan_total(plan):
+    return int(plan["fee"]) + int(plan.get("whatsapp_fee", 0))
+
+
 def refresh_owner_subscription(owner):
     """Keep a gym's current subscription aligned with its newest payment."""
     latest_payment = OwnerPayment.query.filter_by(owner_id=owner.id).order_by(
@@ -29,7 +33,8 @@ def refresh_owner_subscription(owner):
     if latest_payment and latest_payment.plan_name in config.plan:
         plan = config.plan[latest_payment.plan_name]
         owner.owner_plan = latest_payment.plan_name
-        owner.payment_due_date = latest_payment.payment_date + timedelta(days=int(plan["days"]))
+        subscription_start = latest_payment.subscription_start_date or latest_payment.payment_date
+        owner.payment_due_date = subscription_start + timedelta(days=int(plan["days"]))
     else:
         owner.owner_plan = None
         owner.payment_due_date = None
@@ -75,13 +80,20 @@ def gym_details(gym_id):
     for entry in payment_history:
         history_by_payment.setdefault(entry.entity_id, []).append(entry)
     deleted_payment_history = [entry for entry in payment_history if entry.action == "deleted"]
+    current_plan = config.plan.get(owner.owner_plan)
+    current_plan_total = plan_total(current_plan) if current_plan else 0
+    upgrade_plans = {
+        name: details for name, details in config.plan.items()
+        if current_plan and int(details["member_allowed"]) > int(current_plan["member_allowed"])
+    }
     members_count = Member.query.filter_by(owner_id=owner.id).count()
     active_members = Member.query.filter_by(owner_id=owner.id, membership_active=True).count()
     return render_template("admin_gym_details.html", active_page="admin_gyms", owner=owner,
                            payments=payments, members_count=members_count,
                            active_members=active_members, today=local_today(), owner_plans=config.plan,
                            history_by_payment=history_by_payment,
-                           deleted_payment_history=deleted_payment_history)
+                           deleted_payment_history=deleted_payment_history,
+                           current_plan_total=current_plan_total, upgrade_plans=upgrade_plans)
 
 
 @admin_bp.route("/admin/payments")
@@ -99,14 +111,21 @@ def settings():
     if request.method == "POST":
         try:
             reminder_days = [int(day.strip()) for day in request.form["membership_reminder_days"].split(",") if day.strip()]
+            owner_reminder_days = [int(day.strip()) for day in request.form["owner_subscription_reminder_days"].split(",") if day.strip()]
             message_limit = int(request.form["daily_message_limit"])
             warning_delta = int(request.form["plan_delta_members_before_warning"])
-            if not reminder_days or any(day < 0 for day in reminder_days) or message_limit < 0 or warning_delta < 0:
+            if (not reminder_days or not owner_reminder_days
+                    or any(day < 0 for day in reminder_days + owner_reminder_days)
+                    or message_limit < 0 or warning_delta < 0):
                 raise ValueError
-            config.update_runtime_settings(sorted(set(reminder_days), reverse=True), message_limit, warning_delta)
+            config.update_runtime_settings(
+                sorted(set(reminder_days), reverse=True),
+                sorted(set(owner_reminder_days), reverse=True),
+                message_limit, warning_delta,
+            )
             flash("Admin settings saved.", "success")
         except (KeyError, TypeError, ValueError, RuntimeError):
-            flash("Use non-negative numbers. Separate reminder days with commas.", "error")
+            flash("Use non-negative numbers. Separate both reminder-day lists with commas.", "error")
         return redirect(url_for("admin.settings"))
     return render_template("admin_settings.html", active_page="admin_settings", config=config)
 
@@ -226,17 +245,37 @@ def create_owner_payment():
         owner = GymOwner.query.get_or_404(int(request.form["owner_id"]))
         payment_date = datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date()
         plan_name = request.form["plan_name"]
+        payment_type = request.form.get("payment_type", "renewal")
         selected_plan = config.plan.get(plan_name)
         if selected_plan is None:
             raise ValueError
-        amount = int(selected_plan["fee"]) + int(selected_plan.get("whatsapp_fee", 0))
+        latest_payment = OwnerPayment.query.filter_by(owner_id=owner.id).order_by(
+            OwnerPayment.payment_date.desc(), OwnerPayment.id.desc()
+        ).first()
+        subscription_start_date = payment_date
+        if payment_type == "upgrade":
+            current_plan = config.plan.get(owner.owner_plan)
+            if (not current_plan or not owner.payment_due_date or owner.payment_due_date < payment_date
+                    or int(selected_plan["member_allowed"]) <= int(current_plan["member_allowed"])):
+                raise ValueError
+            amount = plan_total(selected_plan) - plan_total(current_plan)
+            if amount <= 0:
+                raise ValueError
+            subscription_start_date = (
+                latest_payment.subscription_start_date or latest_payment.payment_date
+            ) if latest_payment else payment_date
+            remarks = "Subscription upgrade. " + (request.form.get("remarks", "").strip() or "")
+        else:
+            amount = plan_total(selected_plan)
+            remarks = request.form.get("remarks", "").strip() or None
         owner.owner_plan = plan_name
-        owner.payment_due_date = payment_date + timedelta(days=int(selected_plan["days"]))
+        owner.payment_due_date = subscription_start_date + timedelta(days=int(selected_plan["days"]))
         owner.member_limit_warning_plan = None
         db.session.add(OwnerPayment(owner_id=owner.id, amount=amount, payment_date=payment_date,
-                                    plan_name=plan_name, remarks=request.form.get("remarks", "").strip() or None))
+                                    plan_name=plan_name, subscription_start_date=subscription_start_date,
+                                    remarks=remarks))
         db.session.commit()
-        flash("Owner payment recorded.", "success")
+        flash("Subscription upgraded." if payment_type == "upgrade" else "Owner payment recorded.", "success")
     except (KeyError, TypeError, ValueError):
         db.session.rollback()
         flash("Enter valid owner payment details.", "error")
@@ -262,7 +301,7 @@ def edit_owner_payment(payment_id):
         if plan_name not in config.plan:
             raise ValueError
         payment.plan_name = plan_name
-        payment.amount = int(config.plan[plan_name]["fee"])
+        payment.amount = plan_total(config.plan[plan_name])
         payment.payment_date = datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date()
         payment.remarks = request.form.get("remarks", "").strip() or None
         record_edit(payment.owner_id, current_user.id, current_user.username, "owner_payment", payment.id, "updated", reason,

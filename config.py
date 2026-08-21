@@ -15,6 +15,7 @@ admin = {
 }
 
 membership_reminder_days = [7, 2, 0]
+owner_subscription_reminder_days = [7, 2, 0]
 
 # Maximum number of automatic WhatsApp messages sent in a calendar day.  Set to
 # 0 to hold all automatic messages until the limit is increased.  Messages over
@@ -43,6 +44,7 @@ def _validate_runtime_settings(values):
         raise RuntimeError("instance/admin_settings.json must contain a JSON object.")
     expected_keys = {
         "membership_reminder_days",
+        "owner_subscription_reminder_days",
         "daily_message_limit",
         "plan_delta_members_before_warning",
     }
@@ -51,12 +53,13 @@ def _validate_runtime_settings(values):
             "instance/admin_settings.json contains unknown or missing settings."
         )
 
-    reminder_days = values["membership_reminder_days"]
-    if (not isinstance(reminder_days, list) or not reminder_days
+    for setting_name in ("membership_reminder_days", "owner_subscription_reminder_days"):
+        reminder_days = values[setting_name]
+        if (not isinstance(reminder_days, list) or not reminder_days
             or any(isinstance(day, bool) or not isinstance(day, int) or not 0 <= day <= 365
                    for day in reminder_days)
             or len(set(reminder_days)) != len(reminder_days)):
-        raise RuntimeError("membership_reminder_days must be unique integers from 0 to 365.")
+            raise RuntimeError(f"{setting_name} must be unique integers from 0 to 365.")
 
     for key in ("daily_message_limit", "plan_delta_members_before_warning"):
         value = values[key]
@@ -74,13 +77,16 @@ def _load_runtime_settings():
         raise RuntimeError(f"Could not read {_runtime_settings_path}: {error}") from error
     except json.JSONDecodeError as error:
         raise RuntimeError(f"Invalid JSON in {_runtime_settings_path}: {error}") from error
+    if "owner_subscription_reminder_days" not in values:
+        values["owner_subscription_reminder_days"] = list(owner_subscription_reminder_days)
     return _validate_runtime_settings(values)
 
 
-def update_runtime_settings(reminder_days, message_limit, warning_delta):
+def update_runtime_settings(reminder_days, owner_reminder_days, message_limit, warning_delta):
     """Persist validated administrator settings and apply them immediately."""
     values = _validate_runtime_settings({
         "membership_reminder_days": reminder_days,
+        "owner_subscription_reminder_days": owner_reminder_days,
         "daily_message_limit": message_limit,
         "plan_delta_members_before_warning": warning_delta,
     })
@@ -94,6 +100,7 @@ def update_runtime_settings(reminder_days, message_limit, warning_delta):
 _runtime_settings = _load_runtime_settings()
 if _runtime_settings:
     membership_reminder_days = _runtime_settings["membership_reminder_days"]
+    owner_subscription_reminder_days = _runtime_settings["owner_subscription_reminder_days"]
     daily_message_limit = _runtime_settings["daily_message_limit"]
     plan_delta_members_before_warning = _runtime_settings["plan_delta_members_before_warning"]
 

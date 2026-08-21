@@ -62,10 +62,16 @@ def update_member_defaults():
     try:
         trial_days = int(request.form.get("trial_days", 0))
         inactive_member_removal_days = int(request.form.get("inactive_member_removal_days", 30))
-        if trial_days < 0 or trial_days > 365 or inactive_member_removal_days < 1 or inactive_member_removal_days > 3650:
+        membership_removal_policy = request.form.get(
+            "membership_removal_policy", current_user.membership_removal_policy
+        )
+        if (trial_days < 0 or trial_days > 365 or inactive_member_removal_days < 1
+                or inactive_member_removal_days > 3650
+                or membership_removal_policy not in {"expire", "pause"}):
             raise ValueError
         current_user.trial_days = trial_days
         current_user.inactive_member_removal_days = inactive_member_removal_days
+        current_user.membership_removal_policy = membership_removal_policy
         db.session.commit()
         flash("Member defaults updated.", "success")
     except ValueError:
