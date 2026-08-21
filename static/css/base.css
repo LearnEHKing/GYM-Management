@@ -177,9 +177,27 @@ body {
   max-width: none;
 }
 
+.image-back-link,
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--white);
+  line-height: 1;
+  text-decoration: none;
+}
 .image-back-link img,
-.back-btn img { display: block; width: 42px; height: 42px; object-fit: contain; }
-.image-back-link { display: inline-flex; align-items: center; margin-bottom: 12px; }
+.back-btn img { display: block; width: 20px; height: 20px; object-fit: contain; }
+.image-back-link { margin-bottom: 12px; }
+body.light .image-back-link,
+body.light .back-btn { border-color: var(--border); background: var(--iconbg); }
 .password-wrap { position: relative; display: flex; align-items: center; }
 .password-wrap input { padding-right: 44px !important; }
 .password-toggle { position: absolute; right: 8px; border: 0; background: transparent; color: currentColor; cursor: pointer; padding: 6px; font-size: 1.05rem; }
