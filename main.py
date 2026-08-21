@@ -7,7 +7,7 @@ from sqlalchemy import inspect, text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from scheduler import init_scheduler
-from models import GymOwner, db
+from models import GymOwner, db, local_today
 from config import required_env
 from security import csrf_token, validate_csrf_request
 
@@ -54,7 +54,7 @@ def create_app():
         owner_endpoint = request.endpoint and request.endpoint.split(".", 1)[0]
         if (current_user.is_authenticated and owner_endpoint in {"members", "settings"}
                 and request.endpoint not in {"members.index", "members.plan_over"}
-                and (not current_user.payment_due_date or current_user.payment_due_date < date.today())):
+                and (not current_user.payment_due_date or current_user.payment_due_date < local_today())):
             return redirect(url_for("members.plan_over"))
 
     with app.app_context():
@@ -69,6 +69,15 @@ def create_app():
             db.session.execute(
                 text("ALTER TABLE gym_owner ADD COLUMN inactive_member_removal_days INTEGER NOT NULL DEFAULT 30")
             )
+        if "active_member_count" not in owner_columns:
+            db.session.execute(
+                text("ALTER TABLE gym_owner ADD COLUMN active_member_count INTEGER NOT NULL DEFAULT 0")
+            )
+            db.session.execute(text(
+                "UPDATE gym_owner SET active_member_count = "
+                "(SELECT COUNT(*) FROM member WHERE member.owner_id = gym_owner.id "
+                "AND member.membership_active = 1)"
+            ))
         payment_columns = {column["name"] for column in inspector.get_columns("owner_payment")}
         if "plan_name" not in payment_columns:
             db.session.execute(text("ALTER TABLE owner_payment ADD COLUMN plan_name VARCHAR(50)"))

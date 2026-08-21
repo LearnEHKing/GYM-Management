@@ -19,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 from werkzeug.security import generate_password_hash
 
 from main import app
-from models import Attendance, GymOwner, Member, Membership, MembershipPlan, db
+from models import Attendance, GymOwner, Member, Membership, MembershipPlan, db, local_now, local_today
 from services.memberships import new_membership
 
 
@@ -63,7 +63,7 @@ def seed_demo_gym():
             print(f"{username} already exists.")
             continue
     
-        today = date.today()
+        today = local_today()
         owner = GymOwner(
             username=username,
             password_hash=generate_password_hash(DEMO_PASSWORD),

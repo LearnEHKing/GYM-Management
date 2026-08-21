@@ -1,10 +1,21 @@
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
 import config
 
 db = SQLAlchemy()
+INDIA_TIMEZONE = ZoneInfo("Asia/Kolkata")
+
+
+def local_now():
+    """Return the current Asia/Kolkata time as a naive database datetime."""
+    return datetime.now(INDIA_TIMEZONE).replace(tzinfo=None)
+
+
+def local_today():
+    return local_now().date()
 
 
 class GymOwner(UserMixin, db.Model):
@@ -18,7 +29,7 @@ class GymOwner(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(15), nullable=False)
 
-    join_date = db.Column(db.Date, default=date.today)
+    join_date = db.Column(db.Date, default=local_today)
     payment_due_date = db.Column(db.Date)
     # Key of the platform subscription in config.plan.
     owner_plan = db.Column(db.String(50))
@@ -27,6 +38,8 @@ class GymOwner(UserMixin, db.Model):
 
     # Number of free trial days for new members
     trial_days = db.Column(db.Integer, nullable=False, default=0)
+
+    active_member_count = db.Column(db.Integer, nullable=False, default=0)
 
     # Remove active members after this many consecutive days without a visit.
     inactive_member_removal_days = db.Column(db.Integer, nullable=False, default=30)
@@ -73,7 +86,7 @@ class OwnerPayment(db.Model):
     )
 
     amount = db.Column(db.Integer, nullable=False)
-    payment_date = db.Column(db.Date, default=date.today, nullable=False)
+    payment_date = db.Column(db.Date, default=local_today, nullable=False)
     # Snapshot of the selected platform subscription at payment time.
     plan_name = db.Column(db.String(50))
     remarks = db.Column(db.Text)
@@ -93,7 +106,7 @@ class EditHistory(db.Model):
     reason = db.Column(db.Text, nullable=False)
     before_data = db.Column(db.JSON)
     after_data = db.Column(db.JSON)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=local_now, nullable=False, index=True)
 
 
 class MembershipPlan(db.Model):
@@ -228,7 +241,7 @@ class Membership(db.Model):
     payment_date = db.Column(
         db.Date,
         nullable=False,
-        default=date.today
+        default=local_today
     )
 
     start_date = db.Column(db.Date, nullable=False)
@@ -251,13 +264,13 @@ class Attendance(db.Model):
     check_in = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow
+        default=local_now
     )
 
     attendance_date = db.Column(
         db.Date,
         nullable=False,
-        default=date.today
+        default=local_today
     )
 
     notes = db.Column(db.String(100))
@@ -287,7 +300,7 @@ class AutomaticMessage(db.Model):
     # Identifies the event that produced this message and prevents duplicate
     # reminders when a scheduled job is run more than once.
     dedupe_key = db.Column(db.String(200), nullable=False, unique=True, index=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=local_now, index=True)
     sent_at = db.Column(db.DateTime, index=True)
     retry_count = db.Column(db.Integer, nullable=False, default=0)
     last_error = db.Column(db.Text)

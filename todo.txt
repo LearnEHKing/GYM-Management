@@ -1,96 +1,32 @@
 todo:
 
-<!-- 
-
-DONE :
-
-Completed: DATABASE_URL is required and SQL uses PostgreSQL-compatible extraction.
-- Add a centralized before_request subscription guard or decorator to every owner route.
-- High | Data Integrity
-admin.py:134 uses zip() on plan arrays without checking equal lengths.
-Scenario: A malformed request silently creates only part of the gym’s plan catalog.
-Fix: Require equal list lengths and validate every name, duration, fee, and maximum length.
-- High | Membership Correctness
-models.py:121 defines “latest” by payment date, while memberships.py:22 defines current membership by maximum expiry date.
-Scenario: Historic edits make the displayed plan disagree with the active expiry and current plan.
-Fix: Establish one canonical current-membership query and use it everywhere. -->
-<!-- - Most member routes are scoped correctly, but members.py:429 first loads a member globally and then checks ownership manually.
-Scenario: Future route changes accidentally expose data through an unscoped lookup.
-Fix: Always query with id and owner_id together, preferably through a shared tenant-scoped helper.
-- High | Session Security
-main.py:14 does not configure secure, HTTP-only, SameSite, or persistent-session settings.
-Scenario: Sessions are sent over HTTP or exposed more broadly than intended behind a reverse proxy.
-Fix: app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    REMEMBER_COOKIE_SECURE=True,
-    REMEMBER_COOKIE_HTTPONLY=True,
-    REMEMBER_COOKIE_SAMESITE="Lax",
-) 
-- reverse-proxy rate limiting. -->
-<!-- Completed: PostgreSQL-native encrypted backups, checksums, storage checks, and restore drills are implemented.
-- High | CSRF/Reliability
-admin_gym_details.html:10 relies on JavaScript in base.html:79 to inject CSRF fields. Forms fail when JavaScript is disabled or fails to load.
-Fix: Render hidden CSRF inputs directly in every unsafe form.
-- Broad except Exception blocks in members.py:144, settings.py:94, and admin.py:107 print errors and hide root causes.
-Fix: Catch expected exceptions, rollback centrally, use structured logging, and report unexpected failures to an error-monitoring service.
-- High | Transaction Safety
-members.py:125 commits membership creation and then immediately sends messages. External delivery is coupled to the request transaction.
-Fix: Commit only the outbox record in the request; let a worker deliver asynchronously. -->
-<!-- - Medium | Performance
-jobs.py:73 loads every owner, then every active member, then performs a separate attendance aggregate per member.
-Scenario: Daily inactive-member processing becomes increasingly slow and blocks the scheduler.
-Fix: Use one grouped query and batch updates.
-- Medium | Performance
-models.py:121 performs a query every time latest_membership is accessed. Templates access it repeatedly.
-Fix: Eager-load or calculate the latest membership once in the route.
-- Medium | UI Layout
-base.html:35 limits .app to roughly 500px, preventing the admin layout from using its desktop width.
-Fix: Use separate owner/admin shells or route-specific layout constraints.
-- Medium | Data Validation
-Phone validation differs between members.py:25, settings.py:30, and admin.py:124.
-Fix: Normalize and validate one canonical E.164 representation.
-- Medium | Data Loss UX
-Validation errors do not consistently repopulate all submitted fields, especially notes and payment values.
-Fix: Bind forms from submitted values after validation failure. -->
-<!-- - Subscription plan should also show the fee and days a user will get. each plan has whatsapp messaging on or off, which add additional cost x. and a user cant choose to send/not send whatsapp message in his settings, it can only be decided by admin or by the plan he purchased. but whatsapp message sending can be toggled for each individual gym member, if the user(gym owner) has message sending allowed in his plan.
-- Pressing on an attendance should also show time of the attendance checkin on the member details page in the atendance calander
-- The reasons text field in membership-plans page is not styled. add css and style as needed.
-- in membership_plans, status changed box is too crowded and sqeezed. redesign the text spacing.
-- Replace all back buttons with a round statics/images/components/back_button.png
-- Show all trial membership members as grey color (as expired members are in red color, trial will be in grey). Keep all other functions for trial members same as normal, including normal indexing as others in serches.
-- add eye button next to password fields to make them readable/unreadable. 
-
-
-- High | Backup/Privacy
-The filesystem contains legacy local database files and multiple backup artifacts, which may contain personal and payment data.
-Scenario: Source artifacts, workstation backups, or deployment packages expose customer records.
-Fix: Remove live data from source control/artifacts, encrypt backups, restrict permissions, and use off-site storage.
- 
-
--->
-
-
-ERRORS :
-the back button you have added has inconsistent and very big size in many pages. make it smaller and have consistent size. it should NOT take whole line and push the heading text below.
-
-TODO:
+DONE:
 - High | Business Logic/Race Condition
 members.py:110 checks the member limit before insertion without locking.
 Scenario: Two simultaneous requests both see one remaining seat and create two members over capacity.
 Fix: Enforce capacity with a serialized transaction or atomic database counter.
+
 - High | Database/Race Condition
 members.py:236 checks for an attendance row before inserting.
 Scenario: Double-clicks or two staff users create a unique-constraint failure and a 500 response.
 Fix: Catch IntegrityError, rollback, and treat the duplicate as already checked in.
+
 - Medium | Trial Logic
 members.py:120 makes trial_days=0 produce a one-day membership because expiry is join_date + max(days - 1, 0).
-Fix: zero means no access or one day encode that rule explicitly.
+Fix: zero means no access, encode that rule explicitly.
+
 - Medium | Time Zones
 The project mixes date.today(), datetime.now(), and datetime.utcnow() across models.py:225, members.py:177, and automatic_messages.py:60.
 Scenario: Reminder dates and attendance days differ around midnight, DST, or server timezone changes.
-Fix: Use indian standerd timezone for each and all.
+Fix: Use Asia/kolkata timezone for each and all.
+
+
+
+
+TODO:
+
+
+
 
 
 To think :
@@ -119,15 +55,11 @@ Fix: Allow zoom, add accessible labels, keyboard states, reduced-motion support,
 
 
 
-LOW to think about :
-- Low/Medium | PWA
-manifest.json:11 references missing /static/icon-192.png and /static/icon-512.png files. base.html:22 also declares two manifests.
-Fix: Keep one manifest and correct icon paths.
 
 
 
 
-Not correct :
+Rejected by me :
 - High | Financial Integrity
 admin.py:205 allows editing historical payments and recalculates the subscription from the latest date.
 Scenario: An old payment is changed to a future date, changing access and reports.
@@ -145,6 +77,7 @@ TODO in Production:
 - Medium | HTTP Hardening
 No security headers are configured: CSP, HSTS, X-Content-Type-Options, Referrer-Policy, or frame protection.
 Fix: Configure headers through Flask middleware or a reverse proxy
+
 
 
 

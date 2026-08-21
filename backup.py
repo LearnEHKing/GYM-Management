@@ -9,6 +9,7 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet
 from sqlalchemy.engine import make_url
+from models import local_now
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ def _check_storage(backup_dir):
 def create_backup():
     backup_dir = Path(os.environ.get("BACKUP_DIR", Path(__file__).resolve().parent / "backups"))
     backup_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = local_now().strftime("%Y-%m-%d_%H-%M-%S")
     backup_file = backup_dir / f"gym_backup_{timestamp}.dump.enc"
     encryptor = _encryption_key()
 
@@ -75,7 +76,7 @@ def create_backup():
 
     digest = _write_checksum(backup_file)
     metadata = {
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": local_now().isoformat(),
         "format": "postgresql-custom-dump",
         "encrypted": True,
         "sha256": digest,
@@ -91,7 +92,7 @@ def create_backup():
 
 
 def _cleanup_old_backups(backup_dir):
-    cutoff = datetime.utcnow() - timedelta(days=30)
+    cutoff = local_now() - timedelta(days=30)
     backups = sorted(backup_dir.glob("gym_backup_*.dump.enc"), key=lambda path: path.stat().st_mtime, reverse=True)
     monthly_kept = set()
     for backup in backups:

@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from sqlalchemy import func, update
-from models import Attendance, Member, GymOwner, db
+from models import Attendance, Member, GymOwner, db, local_today
 import config
 from send_message import send_whatsapp
 from services.automatic_messages import (
@@ -12,7 +12,7 @@ def send_payment_reminders():
     """Queue today's member reminders, then deliver as many as quota permits."""
     print("Queueing membership reminders...")
     target_dates = [
-        date.today() + timedelta(days=int(days))
+        local_today() + timedelta(days=int(days))
         for days in config.membership_reminder_days
     ]
     members = Member.query.filter(
@@ -25,7 +25,7 @@ def send_payment_reminders():
     ).all()
     print("\n\nMembers length:{}\n\n".format(len(members)))
     for member in members:
-        days_left = (member.membership_expiry - date.today()).days
+        days_left = (member.membership_expiry - local_today()).days
         message = config.reminder_message.format(
             member.name,
             member.owner.name,
@@ -50,7 +50,7 @@ def send_owner_payment_reminders():
         selected_plan = config.plan.get(owner.owner_plan)
         if not selected_plan:
             continue
-        days_left = (owner.payment_due_date - date.today()).days
+        days_left = (owner.payment_due_date - local_today()).days
         if days_left not in {int(days) for days in selected_plan["whatsapp_reminder_days"]}:
             continue
         message = config.owner_reminder_message.format(
@@ -69,7 +69,7 @@ def send_owner_payment_reminders():
 
 def remove_inactive_members():
     """Mark members as removed after their owner's configured absence period."""
-    today = date.today()
+    today = local_today()
     last_attendance = db.session.query(
         Attendance.member_id,
         func.max(Attendance.attendance_date).label("last_attendance_date"),
@@ -92,6 +92,13 @@ def remove_inactive_members():
         db.session.execute(
             update(Member).where(Member.id.in_(inactive_ids)).values(membership_active=False)
         )
+        for owner_id in {member.owner_id for member in inactive_members}:
+            removed_for_owner = sum(member.owner_id == owner_id for member in inactive_members)
+            db.session.execute(
+                update(GymOwner).where(GymOwner.id == owner_id).values(
+                    active_member_count=GymOwner.active_member_count - removed_for_owner
+                )
+            )
 
     if removed_count:
         db.session.commit()

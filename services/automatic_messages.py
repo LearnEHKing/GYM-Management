@@ -3,7 +3,7 @@
 from datetime import date, datetime, time, timedelta
 
 import config
-from models import AutomaticMessage, db
+from models import AutomaticMessage, db, local_now, local_today
 
 
 def enqueue_automatic_message(kind, phone, message, dedupe_key):
@@ -35,7 +35,7 @@ def send_queued_automatic_messages(send_message, today=None):
     if limit == 0:
         return 0
 
-    today = today or date.today()
+    today = today or local_today()
     day_start = datetime.combine(today, time.min)
     next_day = day_start + timedelta(days=1)
     already_sent = AutomaticMessage.query.filter(
@@ -61,7 +61,7 @@ def send_queued_automatic_messages(send_message, today=None):
             db.session.commit()
             continue
 
-        queued_message.sent_at = datetime.now()
+        queued_message.sent_at = local_now()
         queued_message.last_error = None
         db.session.commit()
         sent += 1

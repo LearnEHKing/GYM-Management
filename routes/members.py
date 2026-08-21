@@ -5,7 +5,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required, logout_user
 from sqlalchemy import func
 
-from models import Attendance, EditHistory, Member, Membership, MembershipPlan, db
+from models import Attendance, EditHistory, GymOwner, Member, Membership, MembershipPlan, db, local_now, local_today
 from services.memberships import new_membership, recalculate_memberships
 from services.edit_history import record_edit
 from services.automatic_messages import enqueue_automatic_message
@@ -68,11 +68,11 @@ def index():
     if current_user.is_authenticated:
         if current_user.username == config.admin["username"]:
             return redirect("/admin")
-        elif current_user.payment_due_date and date.today() > current_user.payment_due_date:
+        elif current_user.payment_due_date and local_today() > current_user.payment_due_date:
             logout_user()
             return redirect(url_for("members.plan_over"))
 
-        today = date.today()
+        today = local_today()
         month_start = today.replace(day=1)
         # Removed members do not use a seat on the gym owner's subscription.
         # An expired membership is still a member and remains counted.
@@ -121,7 +121,7 @@ def add_member():
         name, phone, send_membership_reminder, address, notes, errors = validate_member_form()
         try:
             join_date = datetime.strptime(request.form["join_date"], "%Y-%m-%d").date()
-            if join_date > date.today():
+            if join_date > local_today():
                 errors["join_date"] = "Joining date cannot be in the future."
         except ValueError:
             errors["join_date"] = "Invalid joining date."
@@ -139,15 +139,31 @@ def add_member():
                     errors["plan"] = "You have reached your plan's member limit. Please update your plan to add more members."
         if not errors:
             try:
+                trial_days = int(current_user.trial_days)
+                if trial_days > 0:
+                    capacity_update = db.session.query(GymOwner).filter(
+                        GymOwner.id == current_user.id,
+                        GymOwner.active_member_count < int(owner_plan["member_allowed"]),
+                    ).update(
+                        {GymOwner.active_member_count: GymOwner.active_member_count + 1},
+                        synchronize_session=False,
+                    )
+                    if capacity_update != 1:
+                        db.session.rollback()
+                        errors["plan"] = "You have reached your plan's member limit. Please update your plan to add more members."
+                        return render_template("add_member.html", errors=errors, server_error=server_error)
                 member = Member(owner_id=current_user.id, name=name, phone=phone, send_membership_reminder=send_membership_reminder,address=address, join_date=join_date, notes=notes)
                 db.session.add(member)
                 db.session.flush()
                 member.membership_start = join_date
                 # A one-day trial starts and ends on the joining date.
-                member.membership_expiry = join_date + relativedelta(days=max(current_user.trial_days - 1, 0))
-                member.membership_active = True
+                member.membership_expiry = (
+                    join_date + relativedelta(days=trial_days - 1)
+                    if trial_days > 0 else join_date - relativedelta(days=1)
+                )
+                member.membership_active = trial_days > 0
                 db.session.add(Membership(member_id=member.id, plan_id=None, plan_name="Trial", duration_months=0, fee=0, amount_paid=0, payment_date=join_date, start_date=member.membership_start, expiry_date=member.membership_expiry, remarks="Trial membership"))
-                new_member_count = member_count + 1
+                new_member_count = member_count + (1 if trial_days > 0 else 0)
                 warning_threshold = int(owner_plan["member_allowed"]) - int(config.plan_delta_members_before_warning)
                 should_send_limit_warning = (new_member_count > warning_threshold and current_user.member_limit_warning_plan != current_user.owner_plan)
                 if should_send_limit_warning:
@@ -198,9 +214,9 @@ def edit_member(member_id):
 @login_required
 def attendance():
     """Show today's check-in board, prioritised by yesterday's arrival time."""
-    today = date.today()
+    today = local_today()
     yesterday = today - relativedelta(days=1)
-    now = datetime.now()
+    now = local_now()
 
     members = Member.query.filter_by(owner_id=current_user.id).all()
     # Attendance remains available after expiry. Only explicitly removed
@@ -258,14 +274,18 @@ def attendance():
 def check_in_member(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
     if member.membership_active:
-        today = date.today()
+        today = local_today()
         existing = Attendance.query.filter_by(member_id=member.id, attendance_date=today).first()
         if existing:
             flash(f"{member.name} is already checked in today.", "info")
         else:
-            db.session.add(Attendance(member_id=member.id, attendance_date=today, check_in=datetime.now()))
-            db.session.commit()
-            flash(f"Attendance marked for {member.name}.", "success")
+            try:
+                db.session.add(Attendance(member_id=member.id, attendance_date=today, check_in=local_now()))
+                db.session.commit()
+                flash(f"Attendance marked for {member.name}.", "success")
+            except IntegrityError:
+                db.session.rollback()
+                flash(f"{member.name} is already checked in today.", "info")
     else:
         flash("Attendance is unavailable for a removed member.", "error")
     return redirect(url_for("members.attendance"))
@@ -276,7 +296,7 @@ def check_in_member(member_id):
 def remove_check_in(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
     if member.membership_active:
-        record = Attendance.query.filter_by(member_id=member.id, attendance_date=date.today()).first()
+        record = Attendance.query.filter_by(member_id=member.id, attendance_date=local_today()).first()
         if not record:
             flash(f"{member.name} has no attendance record for today.", "info")
         else:
@@ -302,7 +322,7 @@ def edit_member_attendance(member_id):
             return redirect(url_for("members.member_details", member_id=member.id))
     
         # Never accept future check-ins or dates from before the member existed.
-        if attendance_date < member.join_date or attendance_date > date.today():
+        if attendance_date < member.join_date or attendance_date > local_today():
             flash("Attendance can only be edited between the joining date and today.", "error")
             return redirect(url_for("members.member_details", member_id=member.id))
     
@@ -311,10 +331,14 @@ def edit_member_attendance(member_id):
             if record:
                 flash("Attendance is already marked for that date.", "info")
             else:
-                check_in = datetime.combine(attendance_date, datetime.now().time())
-                db.session.add(Attendance(member_id=member.id, attendance_date=attendance_date, check_in=check_in))
-                db.session.commit()
-                flash("Attendance marked successfully.", "success")
+                check_in = datetime.combine(attendance_date, local_now().time())
+                try:
+                    db.session.add(Attendance(member_id=member.id, attendance_date=attendance_date, check_in=check_in))
+                    db.session.commit()
+                    flash("Attendance marked successfully.", "success")
+                except IntegrityError:
+                    db.session.rollback()
+                    flash("Attendance is already marked for that date.", "info")
         elif action == "remove":
             if record:
                 db.session.delete(record)
@@ -332,7 +356,7 @@ def edit_member_attendance(member_id):
 @members_bp.route("/reports")
 @login_required
 def reports():
-    today = date.today()
+    today = local_today()
     try:
         selected_days = int(request.args.get("days", 30))
     except (TypeError, ValueError):
@@ -455,7 +479,8 @@ def members():
 def member_details(member_id):
     member = get_owned_member(member_id)
     total_paid = db.session.query(func.sum(Membership.amount_paid)).filter_by(member_id=member.id).scalar() or 0
-    membership_months = (date.today().year - member.join_date.year) * 12 + date.today().month - member.join_date.month
+    today = local_today()
+    membership_months = (today.year - member.join_date.year) * 12 + today.month - member.join_date.month
     payments = Membership.query.filter_by(member_id=member.id).order_by(Membership.payment_date.desc()).all()
     current_membership = max(payments, key=lambda item: (item.expiry_date, item.id), default=None)
     payment_history = EditHistory.query.filter_by(
@@ -468,11 +493,11 @@ def member_details(member_id):
         history_by_payment.setdefault(entry.entity_id, []).append(entry)
     deleted_payment_history = [entry for entry in payment_history if entry.action == "deleted"]
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id, active=True).order_by(MembershipPlan.name).all()
-    month_start = date.today().replace(day=1)
+    month_start = today.replace(day=1)
     attendance_this_month = Attendance.query.filter(
         Attendance.member_id == member.id,
         Attendance.attendance_date >= month_start,
-        Attendance.attendance_date <= date.today(),
+        Attendance.attendance_date <= today,
     ).count()
     attendance_records = Attendance.query.filter_by(member_id=member.id).with_entities(
         Attendance.attendance_date, Attendance.check_in
@@ -485,9 +510,9 @@ def member_details(member_id):
         Attendance.attendance_date.desc(), Attendance.check_in.desc()
     ).first()
     if latest_attendance:
-        if latest_attendance.attendance_date == date.today():
+        if latest_attendance.attendance_date == today:
             last_visit = "Today"
-        elif latest_attendance.attendance_date == date.today() - relativedelta(days=1):
+        elif latest_attendance.attendance_date == today - relativedelta(days=1):
             last_visit = "Yesterday"
         else:
             last_visit = latest_attendance.attendance_date.strftime("%d %b %Y")
@@ -497,7 +522,7 @@ def member_details(member_id):
         "member_details.html", member=member, total_paid=total_paid,
         membership_months=membership_months, attendance_this_month=attendance_this_month,
         attendance_dates=list(attendance_times), attendance_times=attendance_times,
-        last_visit=last_visit, today=date.today(), payments=payments, plans=plans,
+        last_visit=last_visit, today=today, payments=payments, plans=plans,
         current_membership=current_membership,
         history_by_payment=history_by_payment,
         deleted_payment_history=deleted_payment_history,
@@ -508,14 +533,31 @@ def member_details(member_id):
 @login_required
 def toggle_membership_active_status(member_id):
     member = Member.query.filter_by(id=member_id, owner_id=current_user.id).first_or_404()
-    if member.membership_active:
-        member.membership_active = False
-        status = "removed"
-    else:
-        member.membership_active = True
-        status = "rejoined"
-      
     try:
+        if member.membership_active:
+            member.membership_active = False
+            db.session.query(GymOwner).filter_by(id=current_user.id).update(
+                {GymOwner.active_member_count: GymOwner.active_member_count - 1},
+                synchronize_session=False,
+            )
+            status = "removed"
+        else:
+            owner_plan = config.plan.get(current_user.owner_plan)
+            if owner_plan is None:
+                flash("Your gym does not have an active plan.", "error")
+                return redirect(url_for("members.member_details", member_id=member.id))
+            capacity_update = db.session.query(GymOwner).filter(
+                GymOwner.id == current_user.id,
+                GymOwner.active_member_count < int(owner_plan["member_allowed"]),
+            ).update(
+                {GymOwner.active_member_count: GymOwner.active_member_count + 1},
+                synchronize_session=False,
+            )
+            if capacity_update != 1:
+                flash("You have reached your plan's member limit.", "error")
+                return redirect(url_for("members.member_details", member_id=member.id))
+            member.membership_active = True
+            status = "rejoined"
         db.session.commit()
         flash(f"{member.name} has been {status}.", "success")
     except Exception as error:
@@ -532,6 +574,11 @@ def permanently_delete_member(member_id):
     member_name = member.name
     try:
         # The model relationships cascade to attendance and membership history.
+        if member.membership_active:
+            db.session.query(GymOwner).filter_by(id=current_user.id).update(
+                {GymOwner.active_member_count: GymOwner.active_member_count - 1},
+                synchronize_session=False,
+            )
         db.session.delete(member)
         db.session.commit()
         flash(f"{member_name} and all of their information were permanently deleted.", "success")
@@ -598,7 +645,7 @@ def add_membership(member_id):
             errors["plan_id"] = "Please select a membership plan."
         try:
             payment_date = datetime.strptime(request.form.get("payment_date"), "%Y-%m-%d").date()
-            if payment_date < member.join_date or payment_date > date.today():
+            if payment_date < member.join_date or payment_date > local_today():
                 errors["payment_date"] = "Payment date must be between the joining date and today."
         except (TypeError, ValueError):
             errors["payment_date"] = "Invalid payment date."

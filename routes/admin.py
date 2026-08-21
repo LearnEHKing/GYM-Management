@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 
 import config
 import backup
-from models import EditHistory, GymOwner, Member, MembershipPlan, OwnerPayment, db
+from models import EditHistory, GymOwner, Member, MembershipPlan, OwnerPayment, db, local_today
 from services.edit_history import record_edit
 from observability import report_unexpected_error
 from services.phone import normalize_phone
@@ -40,7 +40,7 @@ def refresh_owner_subscription(owner):
 @login_required
 def admin():
     require_admin()
-    today = date.today()
+    today = local_today()
     month_start = today.replace(day=1)
     owners = GymOwner.query.order_by(GymOwner.name.asc()).all()
     active_subscriptions = GymOwner.query.filter(GymOwner.payment_due_date >= today).count()
@@ -57,7 +57,7 @@ def admin():
 @login_required
 def add_gym():
     require_admin()
-    return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+    return render_template("admin_add_gym.html", active_page="admin_add_gym", today=local_today())
 
 
 @admin_bp.route("/admin/gym_details/<int:gym_id>")
@@ -79,7 +79,7 @@ def gym_details(gym_id):
     active_members = Member.query.filter_by(owner_id=owner.id, membership_active=True).count()
     return render_template("admin_gym_details.html", active_page="admin_gyms", owner=owner,
                            payments=payments, members_count=members_count,
-                           active_members=active_members, today=date.today(), owner_plans=config.plan,
+                           active_members=active_members, today=local_today(), owner_plans=config.plan,
                            history_by_payment=history_by_payment,
                            deleted_payment_history=deleted_payment_history)
 
@@ -172,17 +172,17 @@ def create_owner():
         if message == "1":
             message = "Enter all required owner details and valid membership plans."
         flash(message, "error")
-        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=local_today())
     except IntegrityError as error:
         db.session.rollback()
         report_unexpected_error(error, "admin.create_owner.integrity")
         flash("Could not create the gym owner. The username or a plan name may already exist.", "error")
-        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=local_today())
     except SQLAlchemyError as error:
         db.session.rollback()
         report_unexpected_error(error, "admin.create_owner")
         flash("Could not create the gym owner right now.", "error")
-        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=local_today())
     return redirect(url_for("admin.gym_details", gym_id=owner.id))
 
 

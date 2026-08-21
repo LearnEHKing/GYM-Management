@@ -38,7 +38,7 @@ color:var(--text);
   padding-top:0;
 }
 
-.page-header{display:flex;align-items:center;gap:14px;margin:18px 0 24px}
+.page-header{display:flex;align-items:center;gap:14px;margin:4px 0 24px}
 .back-btn{
 width:30px;height:30px;border-radius:8px;
 display:flex;align-items:center;justify-content:center;
