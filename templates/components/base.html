@@ -76,6 +76,25 @@
 
     });
 
+    document.querySelectorAll('input[type="password"]').forEach((input) => {
+      const wrapper = document.createElement("span");
+      wrapper.className = "password-wrap";
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "password-toggle";
+      toggle.textContent = "◉";
+      toggle.setAttribute("aria-label", "Show password");
+      toggle.addEventListener("click", () => {
+        const visible = input.type === "text";
+        input.type = visible ? "password" : "text";
+        toggle.textContent = visible ? "◉" : "⊙";
+        toggle.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+      });
+      wrapper.appendChild(toggle);
+    });
+
     {% block script %}{% endblock %}
       
     </script>

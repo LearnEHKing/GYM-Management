@@ -153,8 +153,8 @@
   <div class="status-list">
     {% for member in expired_members %}
     {% if member.membership_active %}
-    <div class="status-item expired">
-      <div class="status-badge expired">Expired</div>
+    <div class="status-item {% if member.is_trial %}trial{% else %}expired{% endif %}">
+      <div class="status-badge {% if member.is_trial %}trial{% else %}expired{% endif %}">{{ 'Trial' if member.is_trial else 'Expired' }}</div>
       <a class="status-body" href="{{url_for('members.member_details',member_id=member.id)}}">
         <strong>{{ member.name }}</strong>
         <small>Expired on {{ member.membership_expiry.strftime('%d %b %Y') if member.membership_expiry else '—' }}</small>

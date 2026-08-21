@@ -54,13 +54,13 @@ Fix: Bind forms from submitted values after validation failure. -->
 - Pressing on an attendance should also show time of the attendance checkin on the member details page in the atendance calander
 - The reasons text field in membership-plans page is not styled. add css and style as needed.
 - in membership_plans, status changed box is too crowded and sqeezed. redesign the text spacing.
-- Replace all back buttons with a round statics/images/components/back.png
+- Replace all back buttons with a round statics/images/components/back_button.png
 - Show all trial membership members as grey color (as expired members are in red color, trial will be in grey). Keep all other functions for trial members same as normal, including normal indexing as others in serches.
-
+- add eye button next to password fields to make them readable/unreadable.
 
 
 ERRORS :
-- can't add a new gym owner.
+
 
 
 

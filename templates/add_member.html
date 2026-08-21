@@ -74,9 +74,9 @@
           {% endif %}
         </div>
         <div class="switch-row">
-                <p>Send WhatsApp reminders.</p>
+                <p>Send WhatsApp reminders{% if not current_user.whatsapp_enabled %} <small>(not included in your plan)</small>{% endif %}.</p>
             <label class="switch">
-                <input id="send_membership_reminder" name="send_membership_reminder" type="checkbox" value="True" checked>
+                <input id="send_membership_reminder" name="send_membership_reminder" type="checkbox" value="True" checked {% if not current_user.whatsapp_enabled %}disabled{% endif %}>
                 <span class="slider"></span>
             </label>
         </div>

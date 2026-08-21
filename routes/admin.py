@@ -229,7 +229,7 @@ def create_owner_payment():
         selected_plan = config.plan.get(plan_name)
         if selected_plan is None:
             raise ValueError
-        amount = int(selected_plan["fee"])
+        amount = int(selected_plan["fee"]) + int(selected_plan.get("whatsapp_fee", 0))
         owner.owner_plan = plan_name
         owner.payment_due_date = payment_date + timedelta(days=int(selected_plan["days"]))
         owner.member_limit_warning_plan = None

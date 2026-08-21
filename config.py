@@ -24,9 +24,9 @@ daily_message_limit = 249
 # GYM-Manager subscriptions for gym owners. Edit this catalog to add or change
 # the plans available when recording an owner payment.
 plan = {
-    "starter": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 50, "fee": 499},
-    "growth": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 150, "fee": 999},
-    "pro": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 500, "fee": 1499},
+    "starter": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 50, "fee": 499, "whatsapp_enabled": False, "whatsapp_fee": 0},
+    "growth": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 150, "fee": 999, "whatsapp_enabled": True, "whatsapp_fee": 199},
+    "pro": {"days": 30, "whatsapp_reminder_days": [7, 2, 0], "member_allowed": 500, "fee": 1499, "whatsapp_enabled": True, "whatsapp_fee": 299},
 }
 
 # Send the capacity message once when a new member takes the count above this

@@ -478,6 +478,7 @@
 }
 
 .status-item.warning {
+  .status-item.trial { border-color: #9ca3af; background: rgba(156,163,175,.14); }
   border-color: rgba(245, 158, 11, 0.4);
   background: linear-gradient(145deg, rgba(39, 30, 13, 0.94), rgba(18, 16, 10, 0.96));
 }
@@ -504,6 +505,7 @@
 }
 
 .status-badge.warning {
+  .status-badge.trial { color: #6b7280; background: rgba(156,163,175,.24); }
   background: rgba(245, 158, 11, 0.18);
   color: #fcd34d;
 }

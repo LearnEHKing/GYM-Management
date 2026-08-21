@@ -2,7 +2,7 @@
 {% block title %}Add gym | Admin{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
 {% block body %}<main class="admin-page narrow-page">
-  <a class="back-link" href="{{ url_for('admin.admin') }}">← All gyms</a>
+  <a class="back-link image-back-link" href="{{ url_for('admin.admin') }}"><img src="{{ url_for('static', filename='images/components/back_button.png') }}" alt="Back to all gyms"></a>
   <section class="panel form-panel"><p class="eyebrow">New account</p><h1>Add a gym</h1><p class="panel-copy">Create the gym owner login and the membership plans they can offer their members.</p>
     <form action="{{ url_for('admin.create_owner') }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><div class="form-grid">
       <label>Gym name<input name="name" value="{{ request.form.get('name', '') }}" required maxlength="100"></label><label>Owner username<input name="username" value="{{ request.form.get('username', '') }}" required maxlength="50" autocomplete="username"></label>

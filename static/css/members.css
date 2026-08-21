@@ -241,6 +241,8 @@
 .member.inactive {
     background: rgba(239, 68, 68, 0.12);
 }
+.member.trial { border-color: #9ca3af; color: #6b7280; background: rgba(156,163,175,.12); }
+.member.trial .name, .member.trial .phone { color: #6b7280; }
 
 /* =========================================
            SMALL PHONES

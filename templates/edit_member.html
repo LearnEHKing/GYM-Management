@@ -56,9 +56,9 @@
           {% endif %}
         </div>
         <div class="switch-row">
-                <p>Send WhatsApp reminders.</p>
+                <p>Send WhatsApp reminders{% if not current_user.whatsapp_enabled %} <small>(not included in your plan)</small>{% endif %}.</p>
             <label class="switch">
-                <input id="send_membership_reminder" name="send_membership_reminder" type="checkbox" value="True" {{"checked" if (request.form.get('send_membership_reminder') == 'True' if request.form else member.send_membership_reminder) else "" }} >
+                <input id="send_membership_reminder" name="send_membership_reminder" type="checkbox" value="True" {{"checked" if (request.form.get('send_membership_reminder') == 'True' if request.form else member.send_membership_reminder) else "" }} {% if not current_user.whatsapp_enabled %}disabled{% endif %}>
                 <span class="slider"></span>
             </label>
         </div>

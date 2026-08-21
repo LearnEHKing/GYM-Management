@@ -176,3 +176,10 @@ body {
 .app:has(.admin-page) {
   max-width: none;
 }
+
+.image-back-link img,
+.back-btn img { display: block; width: 42px; height: 42px; object-fit: contain; }
+.image-back-link { display: inline-flex; align-items: center; margin-bottom: 12px; }
+.password-wrap { position: relative; display: flex; align-items: center; }
+.password-wrap input { padding-right: 44px !important; }
+.password-toggle { position: absolute; right: 8px; border: 0; background: transparent; color: currentColor; cursor: pointer; padding: 6px; font-size: 1.05rem; }

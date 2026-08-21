@@ -2,6 +2,8 @@ from datetime import date, datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
+import config
+
 db = SQLAlchemy()
 
 
@@ -52,6 +54,10 @@ class GymOwner(UserMixin, db.Model):
         lazy=True,
         cascade="all, delete-orphan"
     )
+
+    @property
+    def whatsapp_enabled(self):
+        return bool(self.owner_plan and config.plan.get(self.owner_plan, {}).get("whatsapp_enabled"))
 
 
 class OwnerPayment(db.Model):
@@ -144,6 +150,10 @@ class Member(db.Model):
 
     current_plan = db.relationship("MembershipPlan", foreign_keys=[current_plan_id])
 
+    @property
+    def is_trial(self):
+        return self.current_plan_id is None and self.membership_expiry is not None
+
     membership_start = db.Column(db.Date)
     membership_expiry = db.Column(db.Date)
     memberships = db.relationship(
@@ -179,6 +189,10 @@ class Member(db.Model):
             )
             .first()
         )
+
+    @property
+    def whatsapp_enabled(self):
+        return bool(self.owner and self.owner.owner_plan and config.plan.get(self.owner.owner_plan, {}).get("whatsapp_enabled"))
 
     @property
     def latest_membership(self):

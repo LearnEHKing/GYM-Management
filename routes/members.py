@@ -26,7 +26,10 @@ def validate_member_form(member=None):
         phone = request.form.get("phone", "").strip()
     address = request.form["address"].strip()
     # HTML form values are strings, and unchecked checkboxes are omitted entirely.
-    send_membership_reminder = request.form.get("send_membership_reminder") == "True"
+    send_membership_reminder = (
+        current_user.whatsapp_enabled
+        and request.form.get("send_membership_reminder") == "True"
+    )
     notes = request.form["notes"].strip()
     errors = {}
     if len(name) < 3:
@@ -471,9 +474,13 @@ def member_details(member_id):
         Attendance.attendance_date >= month_start,
         Attendance.attendance_date <= date.today(),
     ).count()
-    attendance_dates = Attendance.query.filter_by(member_id=member.id).with_entities(
-        Attendance.attendance_date
+    attendance_records = Attendance.query.filter_by(member_id=member.id).with_entities(
+        Attendance.attendance_date, Attendance.check_in
     ).all()
+    attendance_times = {
+        record_date.isoformat(): check_in.strftime("%I:%M %p")
+        for record_date, check_in in attendance_records
+    }
     latest_attendance = Attendance.query.filter_by(member_id=member.id).order_by(
         Attendance.attendance_date.desc(), Attendance.check_in.desc()
     ).first()
@@ -489,7 +496,7 @@ def member_details(member_id):
     return render_template(
         "member_details.html", member=member, total_paid=total_paid,
         membership_months=membership_months, attendance_this_month=attendance_this_month,
-        attendance_dates=[record.attendance_date.isoformat() for record in attendance_dates],
+        attendance_dates=list(attendance_times), attendance_times=attendance_times,
         last_visit=last_visit, today=date.today(), payments=payments, plans=plans,
         current_membership=current_membership,
         history_by_payment=history_by_payment,

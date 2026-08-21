@@ -29,7 +29,7 @@
 
       <header class="page-header">
 
-        <a href="{{ url_for('members.members') }}" class="back-btn">←</a>
+        <a href="{{ url_for('members.members') }}" class="back-btn"><img src="{{ url_for('static', filename='images/components/back_button.png') }}" alt="Back to members"></a>
 
         <span class="sticky-member-name">{{ member.name }}</span>
 
@@ -469,6 +469,7 @@ if (localStorage.getItem("theme") === "light") {
   
 const calendar = document.querySelector(".attendance-calendar");
 const attendanceDates = new Set({{ attendance_dates|tojson }});
+const attendanceTimes = {{ attendance_times|tojson }};
 const joinDate = "{{ member.join_date.isoformat() }}";
 const todayDate = "{{ today.isoformat() }}";
 const attendanceForm = document.getElementById("attendance-edit-form");
@@ -567,7 +568,11 @@ function drawCalendar(date){
     day.textContent = d;
 
     const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    if (attendanceDates.has(isoDate)) day.classList.add("present");
+    if (attendanceDates.has(isoDate)) {
+      day.classList.add("present");
+      day.title = `Checked in at ${attendanceTimes[isoDate] || "time unavailable"}`;
+      day.setAttribute("aria-label", `${isoDate}, checked in at ${attendanceTimes[isoDate] || "time unavailable"}`);
+    }
     const isEditable = isoDate >= joinDate && isoDate <= todayDate;
     day.disabled = !isEditable;
     if (!isEditable) {
@@ -577,7 +582,7 @@ function drawCalendar(date){
         day.addEventListener("click", () => {
             if (attendanceDates.has(isoDate)) {
                 document.getElementById("remove-attendance-date").value = isoDate;
-                document.getElementById("remove-attendance-label").textContent = new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+                document.getElementById("remove-attendance-label").textContent = `${new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })} at ${attendanceTimes[isoDate] || "an unknown time"}`;
                 removeAttendanceDialog.showModal();
             } else {
                 attendanceDateInput.value = isoDate;

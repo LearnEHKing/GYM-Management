@@ -18,8 +18,10 @@ def send_payment_reminders():
     members = Member.query.filter(
         Member.membership_expiry.in_(target_dates),
         Member.membership_active.is_(True),
-        Member.send_membership_reminder == True,
-        Member.owner.has(GymOwner.send_reminder == True)
+        Member.send_membership_reminder.is_(True),
+        Member.owner.has(GymOwner.owner_plan.in_(
+            [name for name, details in config.plan.items() if details.get("whatsapp_enabled")]
+        )),
     ).all()
     print("\n\nMembers length:{}\n\n".format(len(members)))
     for member in members:

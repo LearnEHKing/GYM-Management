@@ -66,7 +66,6 @@ def update_member_defaults():
             raise ValueError
         current_user.trial_days = trial_days
         current_user.inactive_member_removal_days = inactive_member_removal_days
-        current_user.send_reminder = request.form.get("send_reminder") == "on"
         db.session.commit()
         flash("Member defaults updated.", "success")
     except ValueError:

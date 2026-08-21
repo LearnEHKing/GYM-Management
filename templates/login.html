@@ -142,6 +142,10 @@
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
       }
 
+      .password-wrap { position: relative; display: flex; align-items: center; }
+      .password-wrap .input { padding-right: 48px; }
+      .password-toggle { position: absolute; right: 10px; border: 0; background: transparent; color: var(--white); cursor: pointer; padding: 8px; }
+
       /* =====================================
            LOGIN BUTTON
         ===================================== */
@@ -248,5 +252,25 @@
         <button class="login-button" type="submit">Login</button>
       </form>
     </main>
+    <script>
+      document.querySelectorAll('input[type="password"]').forEach((input) => {
+        const wrapper = document.createElement("span");
+        wrapper.className = "password-wrap";
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "password-toggle";
+        toggle.textContent = "◉";
+        toggle.setAttribute("aria-label", "Show password");
+        toggle.addEventListener("click", () => {
+          const visible = input.type === "text";
+          input.type = visible ? "password" : "text";
+          toggle.textContent = visible ? "◉" : "⊙";
+          toggle.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+        });
+        wrapper.appendChild(toggle);
+      });
+    </script>
   </body>
 </html>
