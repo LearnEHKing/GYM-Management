@@ -547,6 +547,10 @@ def edit_membership(membership_id):
         before_data = membership_snapshot(membership)
         plan_id = request.form.get("plan_id")
         if plan_id:
+            try:
+                plan_id = int(plan_id)
+            except (TypeError, ValueError):
+                raise ValueError
             plan = MembershipPlan.query.filter_by(id=plan_id, owner_id=current_user.id, active=True).first()
             if not plan:
                 raise ValueError
@@ -578,7 +582,11 @@ def add_membership(member_id):
     plans = MembershipPlan.query.filter_by(owner_id=current_user.id, active=True).all()
     errors = {}
     if request.method == "POST":
-        plan = MembershipPlan.query.filter_by(id=request.form.get("plan_id"), owner_id=current_user.id, active=True).first()
+        try:
+            plan_id = int(request.form.get("plan_id", ""))
+        except (TypeError, ValueError):
+            plan_id = None
+        plan = MembershipPlan.query.filter_by(id=plan_id, owner_id=current_user.id, active=True).first() if plan_id else None
         if not plan:
             errors["plan_id"] = "Please select a membership plan."
         try:

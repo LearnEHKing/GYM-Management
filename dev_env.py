@@ -9,6 +9,7 @@ Production should provide these variables through its process manager or secret
 store instead of using this helper.
 """
 
+import base64
 import os
 import secrets
 import subprocess
@@ -22,6 +23,7 @@ DEFAULTS = {
     "DEMO_PASSWORD": "demo12345",
     "DATABASE_URL": "postgresql+psycopg://postgres:12345678@localhost:5432/repvaroDB", #will be changed in production
     "SESSION_COOKIE_SECURE": "false",
+    "BACKUP_ENCRYPTION_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
 }
 
 

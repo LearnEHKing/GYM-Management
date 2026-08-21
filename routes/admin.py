@@ -11,6 +11,7 @@ from models import EditHistory, GymOwner, Member, MembershipPlan, OwnerPayment, 
 from services.edit_history import record_edit
 from observability import report_unexpected_error
 from services.phone import normalize_phone
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -116,10 +117,10 @@ def create_backup():
     try :
         backup.create_backup()
         flash("New backup created.","success")
-    except (OSError, RuntimeError) as error:
+    except (OSError, RuntimeError, ValueError) as error:
         db.session.rollback()
         report_unexpected_error(error, "admin.create_backup")
-        flash("ERROR : Couldn't create backup.","error")
+        flash(f"Backup failed: {error}", "error")
     return redirect(url_for("admin.settings") if request.args.get("return_to") == "settings" else url_for("admin.admin"))
 
 @admin_bp.route("/admin/owners", methods=["POST"])
@@ -142,16 +143,20 @@ def create_owner():
                 or len(password) < 8 or trial_days < 0
                 or len(plan_names) != len(plan_durations) or len(plan_names) != len(plan_fees)
                 or len(plan_names) > 20):
-            raise ValueError
+            raise ValueError("Complete all owner fields, use a password of at least 8 characters, and add valid plans.")
         if GymOwner.query.filter_by(username=username).first():
-            raise ValueError
+            raise ValueError("That username is already in use.")
         validated_plans = []
+        plan_names_seen = set()
         for plan_name, duration, fee in zip(plan_names, plan_durations, plan_fees):
             plan_name = plan_name.strip()
             duration = int(duration)
             fee = int(fee)
-            if not plan_name or len(plan_name) > 50 or duration < 1 or duration > 120 or fee < 1:
-                raise ValueError
+            normalized_plan_name = plan_name.casefold()
+            if (not plan_name or len(plan_name) > 30 or duration < 1 or duration > 120 or fee < 1
+                    or normalized_plan_name in plan_names_seen):
+                raise ValueError("Plan names must be unique and 1-30 characters; duration and fee must be positive.")
+            plan_names_seen.add(normalized_plan_name)
             validated_plans.append((plan_name, duration, fee))
         owner = GymOwner(username=username, password_hash=generate_password_hash(password), name=name, phone=phone,
                          join_date=join_date, trial_days=trial_days,send_reminder=send_reminder)
@@ -161,9 +166,22 @@ def create_owner():
             db.session.add(MembershipPlan(owner_id=owner.id, name=plan_name, duration_months=duration, fee=fee))
         db.session.commit()
         flash(f"Created the {name} gym profile.", "success")
-    except (KeyError, ValueError):
+    except ValueError as error:
         db.session.rollback()
-        flash("Enter all required owner details and a password of at least 8 characters.", "error")
+        message = str(error) or "Enter all required owner details and valid membership plans."
+        if message == "1":
+            message = "Enter all required owner details and valid membership plans."
+        flash(message, "error")
+        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+    except IntegrityError as error:
+        db.session.rollback()
+        report_unexpected_error(error, "admin.create_owner.integrity")
+        flash("Could not create the gym owner. The username or a plan name may already exist.", "error")
+        return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
+    except SQLAlchemyError as error:
+        db.session.rollback()
+        report_unexpected_error(error, "admin.create_owner")
+        flash("Could not create the gym owner right now.", "error")
         return render_template("admin_add_gym.html", active_page="admin_add_gym", today=date.today())
     return redirect(url_for("admin.gym_details", gym_id=owner.id))
 
