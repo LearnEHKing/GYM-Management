@@ -1,124 +1,11 @@
 todo:
 
 DONE:
-- High | Business Logic/Race Condition
-members.py:110 checks the member limit before insertion without locking.
-Scenario: Two simultaneous requests both see one remaining seat and create two members over capacity.
-Fix: Enforce capacity with a serialized transaction or atomic database counter.
-
-- High | Database/Race Condition
-members.py:236 checks for an attendance row before inserting.
-Scenario: Double-clicks or two staff users create a unique-constraint failure and a 500 response.
-Fix: Catch IntegrityError, rollback, and treat the duplicate as already checked in.
-
-- Medium | Trial Logic
-members.py:120 makes trial_days=0 produce a one-day membership because expiry is join_date + max(days - 1, 0).
-Fix: zero means no access, encode that rule explicitly.
-
-- Medium | Time Zones
-The project mixes date.today(), datetime.now(), and datetime.utcnow() across models.py:225, members.py:177, and automatic_messages.py:60.
-Scenario: Reminder dates and attendance days differ around midnight, DST, or server timezone changes.
-Fix: Use Asia/kolkata timezone for each and all.
-
-- High | Configuration
-config.py:41 loads runtime JSON settings without schema or range validation on startup.
-Fix: Validate with a schema and reject invalid configuration before serving requests.
-- Medium | Database Indexing
-Attendance has a uniqueness constraint but no explicit useful indexes for common owner/date reporting queries.
-Fix: Add indexes on (member_id, attendance_date), (attendance_date, member_id), and appropriate membership/payment date columns.
-
-- Medium | Cascades/Referential Integrity
-Foreign keys do not consistently specify ondelete, and the PostgreSQL foreign-key behavior is not tested.
-Fix: Define explicit delete behavior and validate it with migration/integration tests.
-- Medium | Operational Observability
-Scheduler and jobs use print() in scheduler.py:91 and jobs.py:13. There are no request IDs, metrics, health checks, alerts, or error reporting.
-Fix: Add structured logs, metrics, /health and /ready endpoints, and alerting.
-
-- In settings, an Option to pause membership when a member is removed. A gym owner might want membership to get rejected if a member ws removed while being active membership. othr may want to reserve and reapply left days of membership when the memebr rejoins
-- Set days to send reminder to gym owners for expiring subscription in admin settings and send reminder to adminds on those days.
-- 3. Critical | Database/Migrations | Startup still mutates the schema
-main.py:112 calls db.create_all() and performs manual ALTER TABLE statements.
-
-Scenario: Multiple deployments start concurrently and race while adding columns. Migration state can disagree with the actual schema.
-
-Fix: Remove all startup schema creation and alteration. Production startup should only run:
-flask --app main db upgrade
-
-Application startup should fail clearly if the schema is missing.
-
-5. Critical | Business Logic/Race Condition | Active-member counter can drift
-members.py:535 decrements the counter after checking member.membership_active in Python. Two concurrent requests can both see the member as active and both decrement it.
-
-The same problem exists when rejoining.
-
-Scenario: Double-clicking “Remove” changes the count from 1 to -1. Concurrent rejoin requests can exceed capacity.
-
-Fix: Make the state transition conditional in SQL:
-updated = (
-    db.session.query(Member)
-    .filter_by(id=member.id, owner_id=current_user.id, membership_active=True)
-    .update({Member.membership_active: False}, synchronize_session=False)
-)
-
-if updated != 1:
-    db.session.rollback()
-    flash("Member status was already changed.", "info")
-    return redirect(...)
-    
-db.session.query(GymOwner).filter_by(id=current_user.id).update(
-    {GymOwner.active_member_count: GymOwner.active_member_count - 1},
-    synchronize_session=False,
-)
-
-Do the inverse for rejoining.
-
 
 
 TODO:
 
 
-6. High | Business Logic | Zero-day trials create invalid records
-members.py:161 sets:
-member.membership_expiry = join_date - relativedelta(days=1)
-member.membership_active = False
-
-but still creates a “Trial” membership record.
-
-Scenario: A member with no trial appears in payment history, has an expiry before joining, and may be treated inconsistently by reports and reminders.
-
-Fix: Either reject zero-day trials or create an explicitly inactive record with clear semantics. Prefer:
-if trial_days == 0:
-    member.membership_expiry = None
-    member.membership_active = False
-else:
-    member.membership_expiry = join_date + relativedelta(days=trial_days - 1)
-    member.membership_active = True
-
-7. High | Business Logic | Active counter is not continuously reconciled
-The counter is initialized only when the column is first added in main.py:126. It can later drift because of concurrent updates, failed deployments, manual SQL, or older code paths.
-
-Scenario: The UI shows 49 active members while the counter says 50, blocking valid additions or allowing over-capacity additions.
-
-Fix: Add a periodic reconciliation job and alert on mismatch
-UPDATE gym_owner owner
-SET active_member_count = (
-    SELECT COUNT(*)
-    FROM member
-    WHERE member.owner_id = owner.id
-      AND member.membership_active = TRUE
-);
-Better still, use a transactionally protected capacity table or database trigger.
-
-11. High | Financial Integrity | Editing a payment calculates the wrong amount
-admin.py:289 sets:
-payment.amount = int(config.plan[plan_name]["fee"])
-
-But new payments use plan_total(), which includes the WhatsApp fee.
-
-Scenario: Editing a Growth or Pro payment changes the ledger amount from ₹1,198/₹1,798 to only the base plan fee.
-
-Fix:
-payment.amount = plan_total(config.plan[plan_name])
 
 
 
@@ -128,13 +15,6 @@ payment.amount = plan_total(config.plan[plan_name])
 
 
 To think :
-4. Critical | Database/Migrations | Baseline migration cannot create a new database
-0826560045b9_baseline_existing_schema.py:20 assumes tables such as attendance, member, and gym_owner already exist. It only alters foreign keys.
-
-Scenario: flask db upgrade against a new PostgreSQL database fails because the tables do not exist.
-
-Fix: Create a real initial migration containing op.create_table(...) for every table, or maintain separate baseline procedures that are tested against an empty database.
-
 
 
 
