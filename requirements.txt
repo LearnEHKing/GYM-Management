@@ -1,6 +1,7 @@
 Flask
 Flask-Login
 Flask-SQLAlchemy
+Flask-Migrate
 psycopg[binary]
 APScheduler
 python-dateutil

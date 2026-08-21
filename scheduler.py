@@ -1,5 +1,7 @@
 # scheduler.py
 
+import logging
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from backup import create_backup, restore_drill
@@ -13,6 +15,7 @@ from observability import report_unexpected_error
 
 scheduler = BackgroundScheduler()
 app = None
+logger = logging.getLogger("gym_management.scheduler")
 
 
 def init_scheduler(flask_app):
@@ -101,22 +104,35 @@ def init_scheduler(flask_app):
 def backup_job():
     """Runs the daily backup."""
     with app.app_context():
-        print("[Scheduler] Running daily backup...")
-        create_backup()
+        logger.info("scheduled job started", extra={"context": {"job": "daily_backup"}})
+        try:
+            create_backup()
+        except Exception as error:
+            report_unexpected_error(error, "scheduler.daily_backup")
+            raise
 
       
 def job_send_payment_reminders():
     with app.app_context():
-        send_payment_reminders()
+        _run_job("payment_reminders", send_payment_reminders)
       
 def job_send_owner_payment_reminders():
     with app.app_context():
-        send_owner_payment_reminders()
+        _run_job("owner_payment_reminders", send_owner_payment_reminders)
 
 
 def job_remove_inactive_members():
     with app.app_context():
-        remove_inactive_members()
+        _run_job("inactive_member_removal", remove_inactive_members)
+
+
+def _run_job(job_name, function):
+    logger.info("scheduled job started", extra={"context": {"job": job_name}})
+    try:
+        function()
+    except Exception as error:
+        report_unexpected_error(error, f"scheduler.{job_name}")
+        raise
 
 
 def restore_drill_job():

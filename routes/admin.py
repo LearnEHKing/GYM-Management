@@ -105,7 +105,7 @@ def settings():
                 raise ValueError
             config.update_runtime_settings(sorted(set(reminder_days), reverse=True), message_limit, warning_delta)
             flash("Admin settings saved.", "success")
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError, RuntimeError):
             flash("Use non-negative numbers. Separate reminder days with commas.", "error")
         return redirect(url_for("admin.settings"))
     return render_template("admin_settings.html", active_page="admin_settings", config=config)

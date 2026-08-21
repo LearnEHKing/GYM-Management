@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+import logging
+
 from sqlalchemy import func, update
 from models import Attendance, Member, GymOwner, db, local_today
 import config
@@ -8,9 +10,11 @@ from services.automatic_messages import (
     send_queued_automatic_messages,
 )
 
+logger = logging.getLogger("gym_management.jobs")
+
 def send_payment_reminders():
     """Queue today's member reminders, then deliver as many as quota permits."""
-    print("Queueing membership reminders...")
+    logger.info("queueing membership reminders")
     target_dates = [
         local_today() + timedelta(days=int(days))
         for days in config.membership_reminder_days
@@ -23,7 +27,7 @@ def send_payment_reminders():
             [name for name, details in config.plan.items() if details.get("whatsapp_enabled")]
         )),
     ).all()
-    print("\n\nMembers length:{}\n\n".format(len(members)))
+    logger.info("membership reminders selected", extra={"context": {"count": len(members)}})
     for member in members:
         days_left = (member.membership_expiry - local_today()).days
         message = config.reminder_message.format(
@@ -39,11 +43,11 @@ def send_payment_reminders():
         )
     db.session.commit()
     sent = send_queued_automatic_messages(send_whatsapp)
-    print(f"Sent {sent} automatic WhatsApp message(s).")
+    logger.info("membership reminders sent", extra={"context": {"count": sent}})
 
 def send_owner_payment_reminders():
     """Queue today's owner reminders, then deliver as many as quota permits."""
-    print("Queueing owner subscription reminders...")
+    logger.info("queueing owner subscription reminders")
 
     owners = GymOwner.query.filter(GymOwner.payment_due_date.is_not(None)).all()
     for owner in owners:
@@ -64,7 +68,7 @@ def send_owner_payment_reminders():
         )
     db.session.commit()
     sent = send_queued_automatic_messages(send_whatsapp)
-    print(f"Sent {sent} automatic WhatsApp message(s).")
+    logger.info("owner subscription reminders sent", extra={"context": {"count": sent}})
 
 
 def remove_inactive_members():
@@ -102,4 +106,4 @@ def remove_inactive_members():
 
     if removed_count:
         db.session.commit()
-    print(f"Automatically removed {removed_count} inactive member(s).")
+    logger.info("inactive members removed", extra={"context": {"count": removed_count}})

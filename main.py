@@ -1,19 +1,32 @@
 from datetime import date, timedelta
 import os
+import uuid
 
-from flask import Flask, redirect, request, url_for
+from flask import Flask, g, jsonify, redirect, request, url_for
 from flask_login import LoginManager, current_user
+from flask_migrate import Migrate
 from sqlalchemy import inspect, text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from scheduler import init_scheduler
+from scheduler import init_scheduler, scheduler
 from models import GymOwner, db, local_today
 from config import required_env
+from observability import (
+    begin_request,
+    configure_logging,
+    metrics_snapshot,
+    record_request,
+    report_unexpected_error,
+)
 from security import csrf_token, validate_csrf_request
+
+
+migrate = Migrate()
 
 
 def create_app():
     app = Flask(__name__)
+    configure_logging()
     app.secret_key = required_env("APP_SECRET_KEY")
     app.config["SQLALCHEMY_DATABASE_URI"] = required_env("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -41,8 +54,46 @@ def create_app():
             x_host=trusted_proxy_hops,
         )
     db.init_app(app)
+    migrate.init_app(app, db)
 
     app.jinja_env.globals["csrf_token"] = csrf_token
+
+    @app.before_request
+    def observe_request():
+        g.request_id = request.headers.get("X-Request-ID", uuid.uuid4().hex)
+        g.request_method = request.method
+        g.request_path = request.path
+        begin_request()
+
+    @app.after_request
+    def finish_request(response):
+        record_request(response.status_code)
+        response.headers["X-Request-ID"] = g.request_id
+        return response
+
+    @app.get("/health")
+    def health():
+        return jsonify({"status": "ok"})
+
+    @app.get("/ready")
+    def ready():
+        try:
+            db.session.execute(text("SELECT 1"))
+            if not scheduler.running:
+                raise RuntimeError("scheduler is not running")
+        except Exception:
+            db.session.rollback()
+            return jsonify({"status": "not_ready"}), 503
+        return jsonify({"status": "ready"})
+
+    @app.get("/metrics")
+    def metrics():
+        return jsonify(metrics_snapshot())
+
+    @app.errorhandler(500)
+    def handle_internal_error(error):
+        report_unexpected_error(error, "http.internal_server_error")
+        return jsonify({"error": "Internal server error"}), 500
 
     @app.before_request
     def protect_unsafe_requests():
@@ -59,6 +110,9 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        for table in db.metadata.tables.values():
+            for index in table.indexes:
+                index.create(bind=db.engine, checkfirst=True)
         inspector = inspect(db.engine)
         owner_columns = {column["name"] for column in inspector.get_columns("gym_owner")}
         if "owner_plan" not in owner_columns:

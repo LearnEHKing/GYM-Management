@@ -51,21 +51,24 @@ class GymOwner(UserMixin, db.Model):
         "OwnerPayment",
         backref="owner",
         lazy=True,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     members = db.relationship(
         "Member",
         backref="owner",
         lazy=True,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     plans = db.relationship(
         "MembershipPlan",
         backref="owner",
         lazy=True,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @property
@@ -80,7 +83,7 @@ class OwnerPayment(db.Model):
 
     owner_id = db.Column(
         db.Integer,
-        db.ForeignKey("gym_owner.id"),
+        db.ForeignKey("gym_owner.id", ondelete="CASCADE"),
         nullable=False,
         index=True
     )
@@ -91,13 +94,17 @@ class OwnerPayment(db.Model):
     plan_name = db.Column(db.String(50))
     remarks = db.Column(db.Text)
 
+    __table_args__ = (
+        db.Index("ix_owner_payment_owner_date", "owner_id", "payment_date"),
+    )
+
 
 class EditHistory(db.Model):
     __tablename__ = "edit_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False, index=True)
-    actor_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id"), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id", ondelete="CASCADE"), nullable=False, index=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey("gym_owner.id", ondelete="CASCADE"), nullable=False)
     actor_name = db.Column(db.String(100))
     entity_type = db.Column(db.String(30), nullable=False, index=True)
     entity_id = db.Column(db.Integer, nullable=False, index=True)
@@ -116,7 +123,7 @@ class MembershipPlan(db.Model):
 
     owner_id = db.Column(
         db.Integer,
-        db.ForeignKey("gym_owner.id"),
+        db.ForeignKey("gym_owner.id", ondelete="CASCADE"),
         nullable=False
     )
 
@@ -142,7 +149,7 @@ class Member(db.Model):
 
     owner_id = db.Column(
         db.Integer,
-        db.ForeignKey("gym_owner.id"),
+        db.ForeignKey("gym_owner.id", ondelete="CASCADE"),
         nullable=False,
         index=True
     )
@@ -158,7 +165,7 @@ class Member(db.Model):
     send_membership_reminder = db.Column(db.Boolean, default=True)
     current_plan_id = db.Column(
         db.Integer,
-        db.ForeignKey("membership_plan.id")
+        db.ForeignKey("membership_plan.id", ondelete="SET NULL")
     )
 
     current_plan = db.relationship("MembershipPlan", foreign_keys=[current_plan_id])
@@ -189,6 +196,8 @@ class Member(db.Model):
             "name",
             name="uq_owner_member_name"
         ),
+        db.Index("ix_member_owner_expiry", "owner_id", "membership_expiry"),
+        db.Index("ix_member_owner_join_date", "owner_id", "join_date"),
     )
 
     @property
@@ -219,14 +228,14 @@ class Membership(db.Model):
 
     member_id = db.Column(
         db.Integer,
-        db.ForeignKey("member.id"),
+        db.ForeignKey("member.id", ondelete="CASCADE"),
         nullable=False,
         index=True
     )
 
     plan_id = db.Column(
         db.Integer,
-        db.ForeignKey("membership_plan.id")
+        db.ForeignKey("membership_plan.id", ondelete="SET NULL")
     )
 
     plan = db.relationship("MembershipPlan")
@@ -249,6 +258,11 @@ class Membership(db.Model):
 
     remarks = db.Column(db.Text, default="")
 
+    __table_args__ = (
+        db.Index("ix_membership_member_payment_date", "member_id", "payment_date"),
+        db.Index("ix_membership_payment_date", "payment_date"),
+    )
+
 
 class Attendance(db.Model):
     __tablename__ = "attendance"
@@ -257,7 +271,7 @@ class Attendance(db.Model):
 
     member_id = db.Column(
         db.Integer,
-        db.ForeignKey("member.id"),
+        db.ForeignKey("member.id", ondelete="CASCADE"),
         nullable=False
     )
 
@@ -281,6 +295,8 @@ class Attendance(db.Model):
             "attendance_date",
             name="uq_member_attendance"
         ),
+        db.Index("ix_attendance_member_date", "member_id", "attendance_date"),
+        db.Index("ix_attendance_date_member", "attendance_date", "member_id"),
     )
 
 

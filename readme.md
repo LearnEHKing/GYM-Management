@@ -32,6 +32,19 @@ environment or a secret manager. `DEMO_PASSWORD` is required only when running
 `fake_data.py`.
 
 The application requires `DATABASE_URL` and creates missing tables at startup.
+
+Database migrations use Flask-Migrate. After installing dependencies, initialize
+the migration repository once with `flask --app main db init`, then generate and
+apply schema changes with:
+
+```powershell
+flask --app main db migrate -m "describe the schema change"
+flask --app main db upgrade
+```
+
+For an existing database that was created by the startup bootstrap, review the
+generated initial migration and run `flask --app main db stamp head` instead of
+replaying the initial table creation.
 Use a PostgreSQL URL such as `postgresql+psycopg://user:password@db-host/gym`.
 Production should run behind HTTPS. Set `TRUSTED_PROXY_HOPS`
 to the exact number of trusted reverse proxies in front of the app; leave it at

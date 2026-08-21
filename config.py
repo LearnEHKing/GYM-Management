@@ -38,20 +38,52 @@ plan_delta_members_before_warning = 5
 _runtime_settings_path = Path(__file__).with_name("instance") / "admin_settings.json"
 
 
+def _validate_runtime_settings(values):
+    if not isinstance(values, dict):
+        raise RuntimeError("instance/admin_settings.json must contain a JSON object.")
+    expected_keys = {
+        "membership_reminder_days",
+        "daily_message_limit",
+        "plan_delta_members_before_warning",
+    }
+    if set(values) != expected_keys:
+        raise RuntimeError(
+            "instance/admin_settings.json contains unknown or missing settings."
+        )
+
+    reminder_days = values["membership_reminder_days"]
+    if (not isinstance(reminder_days, list) or not reminder_days
+            or any(isinstance(day, bool) or not isinstance(day, int) or not 0 <= day <= 365
+                   for day in reminder_days)
+            or len(set(reminder_days)) != len(reminder_days)):
+        raise RuntimeError("membership_reminder_days must be unique integers from 0 to 365.")
+
+    for key in ("daily_message_limit", "plan_delta_members_before_warning"):
+        value = values[key]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise RuntimeError(f"{key} must be a non-negative integer.")
+    return values
+
+
 def _load_runtime_settings():
     try:
-        return json.loads(_runtime_settings_path.read_text(encoding="utf-8"))
-    except (FileNotFoundError, OSError, json.JSONDecodeError):
+        values = json.loads(_runtime_settings_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
         return {}
+    except OSError as error:
+        raise RuntimeError(f"Could not read {_runtime_settings_path}: {error}") from error
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"Invalid JSON in {_runtime_settings_path}: {error}") from error
+    return _validate_runtime_settings(values)
 
 
 def update_runtime_settings(reminder_days, message_limit, warning_delta):
     """Persist validated administrator settings and apply them immediately."""
-    values = {
+    values = _validate_runtime_settings({
         "membership_reminder_days": reminder_days,
         "daily_message_limit": message_limit,
         "plan_delta_members_before_warning": warning_delta,
-    }
+    })
     _runtime_settings_path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = _runtime_settings_path.with_suffix(".tmp")
     temporary_path.write_text(json.dumps(values, indent=2), encoding="utf-8")
@@ -60,11 +92,10 @@ def update_runtime_settings(reminder_days, message_limit, warning_delta):
 
 
 _runtime_settings = _load_runtime_settings()
-membership_reminder_days = _runtime_settings.get("membership_reminder_days", membership_reminder_days)
-daily_message_limit = _runtime_settings.get("daily_message_limit", daily_message_limit)
-plan_delta_members_before_warning = _runtime_settings.get(
-    "plan_delta_members_before_warning", plan_delta_members_before_warning
-)
+if _runtime_settings:
+    membership_reminder_days = _runtime_settings["membership_reminder_days"]
+    daily_message_limit = _runtime_settings["daily_message_limit"]
+    plan_delta_members_before_warning = _runtime_settings["plan_delta_members_before_warning"]
 
 member_limit_warning_message = (
     "👋 Hi {},\n\n"
