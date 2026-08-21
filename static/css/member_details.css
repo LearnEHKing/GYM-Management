@@ -80,6 +80,10 @@ grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
 gap:14px;
 }
 
+.app{
+    padding-top: 4px !important;
+}
+
 .item,.detail,.stat-card{
 background:var(--surface2);
 border:1px solid var(--border);

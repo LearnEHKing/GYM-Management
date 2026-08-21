@@ -76,7 +76,7 @@ def create_app():
             db.session.execute(text(
                 "UPDATE gym_owner SET active_member_count = "
                 "(SELECT COUNT(*) FROM member WHERE member.owner_id = gym_owner.id "
-                "AND member.membership_active = 1)"
+                "AND member.membership_active IS TRUE)"
             ))
         payment_columns = {column["name"] for column in inspector.get_columns("owner_payment")}
         if "plan_name" not in payment_columns:
