@@ -16,7 +16,7 @@
     </div>
 
     {% for member in members %}
-    <a href="{{ url_for('members.member_details', member_id=member.id) }}" class="member {% if not member.membership_active %}inactive{% elif member.is_trial %}trial{% endif %}">
+    <a href="{{ url_for('members.member_details', member_id=member.id) }}" class="member {% if not member.membership_active %}inactive{% endif %}">
       <div class="member-info">
         <div class="name">{{member.name}}</div>
         <div class="address">
