@@ -1,6 +1,10 @@
 todo:
 
-<!-- Completed: DATABASE_URL is required and SQL uses PostgreSQL-compatible extraction.
+<!-- 
+
+DONE :
+
+Completed: DATABASE_URL is required and SQL uses PostgreSQL-compatible extraction.
 - Add a centralized before_request subscription guard or decorator to every owner route.
 - High | Data Integrity
 admin.py:134 uses zip() on plan arrays without checking equal lengths.
@@ -50,30 +54,28 @@ Fix: Normalize and validate one canonical E.164 representation.
 - Medium | Data Loss UX
 Validation errors do not consistently repopulate all submitted fields, especially notes and payment values.
 Fix: Bind forms from submitted values after validation failure. -->
-- Subscription plan should also show the fee and days a user will get. each plan has whatsapp messaging on or off, which add additional cost x. and a user cant choose to send/not send whatsapp message in his settings, it can only be decided by admin or by the plan he purchased. but whatsapp message sending can be toggled for each individual gym member, if the user(gym owner) has message sending allowed in his plan.
+<!-- - Subscription plan should also show the fee and days a user will get. each plan has whatsapp messaging on or off, which add additional cost x. and a user cant choose to send/not send whatsapp message in his settings, it can only be decided by admin or by the plan he purchased. but whatsapp message sending can be toggled for each individual gym member, if the user(gym owner) has message sending allowed in his plan.
 - Pressing on an attendance should also show time of the attendance checkin on the member details page in the atendance calander
 - The reasons text field in membership-plans page is not styled. add css and style as needed.
 - in membership_plans, status changed box is too crowded and sqeezed. redesign the text spacing.
 - Replace all back buttons with a round statics/images/components/back_button.png
 - Show all trial membership members as grey color (as expired members are in red color, trial will be in grey). Keep all other functions for trial members same as normal, including normal indexing as others in serches.
-- add eye button next to password fields to make them readable/unreadable.
+- add eye button next to password fields to make them readable/unreadable. 
+
+
+- High | Backup/Privacy
+The filesystem contains legacy local database files and multiple backup artifacts, which may contain personal and payment data.
+Scenario: Source artifacts, workstation backups, or deployment packages expose customer records.
+Fix: Remove live data from source control/artifacts, encrypt backups, restrict permissions, and use off-site storage.
+ 
+
+-->
 
 
 ERRORS :
+the back button you have added has inconsistent and very big size in many pages. make it smaller and have consistent size. it should NOT take whole line and push the heading text below.
 
-
-
-
-To think :
-- Critical | Authorization
-Admin access is based on mutable username comparison in admin.py:15.
-Scenario: Renaming the configured admin account breaks administration, and identity is not represented by a durable role.
-Fix: Add is_platform_admin or an immutable role column and check that value.
-- cron
-- Critical | Messaging/Race Condition
-automatic_messages.py:43 selects pending rows, sends them, then marks them sent.
-Scenario: Two workers send the same message before either transaction commits.
-Fix: Claim rows transactionally using PostgreSQL row locks, leases, or a real queue.
+TODO:
 - High | Business Logic/Race Condition
 members.py:110 checks the member limit before insertion without locking.
 Scenario: Two simultaneous requests both see one remaining seat and create two members over capacity.
@@ -82,24 +84,21 @@ Fix: Enforce capacity with a serialized transaction or atomic database counter.
 members.py:236 checks for an attendance row before inserting.
 Scenario: Double-clicks or two staff users create a unique-constraint failure and a 500 response.
 Fix: Catch IntegrityError, rollback, and treat the duplicate as already checked in.
-- High | Financial Integrity
-admin.py:205 allows editing historical payments and recalculates the subscription from the latest date.
-Scenario: An old payment is changed to a future date, changing access and reports.
-Fix: Make ledger entries immutable; add reversal/adjustment records instead.
-- High | Backup/Privacy
-The filesystem contains legacy local database files and multiple backup artifacts, which may contain personal and payment data.
-Scenario: Source artifacts, workstation backups, or deployment packages expose customer records.
-Fix: Remove live data from source control/artifacts, encrypt backups, restrict permissions, and use off-site storage.
-- High | Configuration
-config.py:41 loads runtime JSON settings without schema or range validation on startup.
-Fix: Validate with a schema and reject invalid configuration before serving requests.
 - Medium | Trial Logic
 members.py:120 makes trial_days=0 produce a one-day membership because expiry is join_date + max(days - 1, 0).
-Fix: Define whether zero means no access or one day, then encode that rule explicitly.
+Fix: zero means no access or one day encode that rule explicitly.
 - Medium | Time Zones
 The project mixes date.today(), datetime.now(), and datetime.utcnow() across models.py:225, members.py:177, and automatic_messages.py:60.
 Scenario: Reminder dates and attendance days differ around midnight, DST, or server timezone changes.
-Fix: Store timezone-aware UTC timestamps and convert using the gym’s configured timezone.
+Fix: Use indian standerd timezone for each and all.
+
+
+To think :
+
+
+- High | Configuration
+config.py:41 loads runtime JSON settings without schema or range validation on startup.
+Fix: Validate with a schema and reject invalid configuration before serving requests.
 - Medium | Database Indexing
 Attendance has a uniqueness constraint but no explicit useful indexes for common owner/date reporting queries.
 Fix: Add indexes on (member_id, attendance_date), (attendance_date, member_id), and appropriate membership/payment date columns.
@@ -109,12 +108,15 @@ Fix: Define explicit delete behavior and validate it with migration/integration 
 - Medium | Operational Observability
 Scheduler and jobs use print() in scheduler.py:91 and jobs.py:13. There are no request IDs, metrics, health checks, alerts, or error reporting.
 Fix: Add structured logs, metrics, /health and /ready endpoints, and alerting.
-- Medium | HTTP Hardening
-No security headers are configured: CSP, HSTS, X-Content-Type-Options, Referrer-Policy, or frame protection.
-Fix: Configure headers through Flask middleware or a reverse proxy
 - Medium | Accessibility
 base.html:8 disables user zoom. Reports use canvases without equivalent tabular summaries. Several controls rely on symbols and color.
 Fix: Allow zoom, add accessible labels, keyboard states, reduced-motion support, and textual report data.
+
+
+
+
+
+
 
 
 LOW to think about :
@@ -126,10 +128,36 @@ Fix: Keep one manifest and correct icon paths.
 
 
 Not correct :
+- High | Financial Integrity
+admin.py:205 allows editing historical payments and recalculates the subscription from the latest date.
+Scenario: An old payment is changed to a future date, changing access and reports.
+Fix: Make ledger entries immutable; add reversal/adjustment records instead.
 - High | Payment Editing
 members.py:520 changes amount_paid to the full plan fee when editing a historical membership.
 Scenario: Partial payments or corrected accounting records are silently overwritten.
 Fix: Preserve original payment amounts and make adjustments explicit.
+
+
+
+TODO in Production:
+- Cron
+
+- Medium | HTTP Hardening
+No security headers are configured: CSP, HSTS, X-Content-Type-Options, Referrer-Policy, or frame protection.
+Fix: Configure headers through Flask middleware or a reverse proxy
+
+
+
+NOT anytime soon:
+- Critical | Messaging/Race Condition
+automatic_messages.py:43 selects pending rows, sends them, then marks them sent.
+Scenario: Two workers send the same message before either transaction commits.
+Fix: Claim rows transactionally using PostgreSQL row locks, leases, or a real queue.
+
+- Critical | Authorization
+Admin access is based on mutable username comparison in admin.py:15.
+Scenario: Renaming the configured admin account breaks administration, and identity is not represented by a durable role.
+Fix: Add is_platform_admin or an immutable role column and check that value.
 - Medium | Password Security
 Passwords require only eight characters in settings.py:62. There is no MFA, session revocation after password change, password reset flow, or persistent lockout.
 Fix: Add stronger policy, MFA, session invalidation, and audited account recovery.
