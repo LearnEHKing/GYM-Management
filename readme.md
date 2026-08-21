@@ -14,6 +14,7 @@ $env:TRUSTED_PROXY_HOPS = "1"
 $env:BACKUP_ENCRYPTION_KEY = "generate-a-Fernet-key-and-store-it-in-a-secret-manager"
 $env:BACKUP_RESTORE_DATABASE_URL = "postgresql://restore_user:password@restore-db/gym_restore"
 $env:BACKUP_MAX_STORAGE_BYTES = "10737418240"
+$env:SESSION_COOKIE_SECURE = "true"
 python main.py
 ```
 
@@ -30,11 +31,16 @@ The helper sets variables only for the child process. Production must provide
 environment or a secret manager. `DEMO_PASSWORD` is required only when running
 `fake_data.py`.
 
-The application reads `DATABASE_URL` from the environment and creates missing
-tables at startup. Production should run behind HTTPS. Set `TRUSTED_PROXY_HOPS`
+The application requires `DATABASE_URL` and creates missing tables at startup.
+Use a PostgreSQL URL such as `postgresql+psycopg://user:password@db-host/gym`.
+Production should run behind HTTPS. Set `TRUSTED_PROXY_HOPS`
 to the exact number of trusted reverse proxies in front of the app; leave it at
 `0` when accessing the app directly. Never set it based on untrusted client
 input.
+
+For local HTTP development, keep `SESSION_COOKIE_SECURE=false` (the default
+provided by `dev_env.py`). Set it to `true` in HTTPS production; otherwise the
+browser will not send the session cookie and CSRF validation will fail.
 
 The in-process login limiter protects each app process. For shared protection
 across workers, apply the Nginx configuration in `deploy/nginx.conf.example`,
@@ -47,4 +53,3 @@ runs a weekly restore drill against the isolated `BACKUP_RESTORE_DATABASE_URL`;
 never point that value at the production database. Set `SENTRY_DSN` to report
 unexpected application failures to Sentry.
 
-Backups are SQLite files written to `backups/`.

@@ -1,6 +1,6 @@
 todo:
 
-<!-- - -----Read DATABASE_URL from the environment and replace strftime with PostgreSQL-compatible extraction
+<!-- Completed: DATABASE_URL is required and SQL uses PostgreSQL-compatible extraction.
 - Add a centralized before_request subscription guard or decorator to every owner route.
 - High | Data Integrity
 admin.py:134 uses zip() on plan arrays without checking equal lengths.
@@ -25,9 +25,7 @@ Fix: app.config.update(
     REMEMBER_COOKIE_SAMESITE="Lax",
 ) 
 - reverse-proxy rate limiting. -->
-<!-- - High | Backup/Database
-backup.py:17 is SQLite-specific and cannot back up PostgreSQL. It also lacks encryption, checksums, restore testing, failure alerts, and storage monitoring.
-Fix: Use PostgreSQL-native/object-storage backups and perform scheduled restore drills.
+<!-- Completed: PostgreSQL-native encrypted backups, checksums, storage checks, and restore drills are implemented.
 - High | CSRF/Reliability
 admin_gym_details.html:10 relies on JavaScript in base.html:79 to inject CSRF fields. Forms fail when JavaScript is disabled or fails to load.
 Fix: Render hidden CSRF inputs directly in every unsafe form.
@@ -52,7 +50,38 @@ Fix: Normalize and validate one canonical E.164 representation.
 - Medium | Data Loss UX
 Validation errors do not consistently repopulate all submitted fields, especially notes and payment values.
 Fix: Bind forms from submitted values after validation failure. -->
+- Subscription plan should also show the fee and days a user will get. each plan has whatsapp messaging on or off, which add additional cost x. and a user cant choose to send/not send whatsapp message in his settings, it can only be decided by admin or by the plan he purchased. but whatsapp message sending can be toggled for each individual gym member, if the user(gym owner) has message sending allowed in his plan.
+- Pressing on an attendance should also show time of the attendance checkin on the member details page in the atendance calander
+- The reasons text field in membership-plans page is not styled. add css and style as needed.
 
+ERRORS :
+- can't add a new gym owner.
+- cant add a new payment/membrship :     
+  File "C:\Users\geeta\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sqlalchemy\engine\base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+    
+  File "C:\Users\geeta\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sqlalchemy\engine\base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+    ^
+  File "C:\Users\geeta\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sqlalchemy\engine\base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\geeta\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+    ^
+  File "C:\Users\geeta\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\geeta\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedFunction) operator does not exist: integer = character varying
+LINE 3: WHERE membership_plan.id = $1::VARCHAR AND membership_plan.o...
+                                 ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+[SQL: SELECT membership_plan.id AS membership_plan_id, membership_plan.owner_id AS membership_plan_owner_id, membership_plan.name AS membership_plan_name, membership_plan.duration_months AS membership_plan_duration_months, membership_plan.fee AS membership_plan_fee, membership_plan.active AS membership_plan_active 
+FROM membership_plan 
+WHERE membership_plan.id = %(id_1)s::VARCHAR AND membership_plan.owner_id = %(owner_id_1)s::INTEGER AND membership_plan.active = true 
+ LIMIT %(param_1)s::INTEGER]
+[parameters: {'id_1': '19', 'owner_id_1': 6, 'param_1': 1}]
 
 
 To think :
@@ -78,7 +107,7 @@ admin.py:205 allows editing historical payments and recalculates the subscriptio
 Scenario: An old payment is changed to a future date, changing access and reports.
 Fix: Make ledger entries immutable; add reversal/adjustment records instead.
 - High | Backup/Privacy
-The filesystem contains gym.db and multiple files under backups, which may contain personal and payment data.
+The filesystem contains legacy local database files and multiple backup artifacts, which may contain personal and payment data.
 Scenario: Source artifacts, workstation backups, or deployment packages expose customer records.
 Fix: Remove live data from source control/artifacts, encrypt backups, restrict permissions, and use off-site storage.
 - High | Configuration

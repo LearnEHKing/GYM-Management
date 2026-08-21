@@ -1,2 +1,7 @@
 
 instance/admin_settings.json
+instance/gym.db
+backups/*.db
+backups/*.dump.enc
+backups/*.sha256
+backups/*.json

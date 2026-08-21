@@ -17,11 +17,14 @@ def create_app():
     app.secret_key = required_env("APP_SECRET_KEY")
     app.config["SQLALCHEMY_DATABASE_URI"] = required_env("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    cookie_secure = os.environ.get("SESSION_COOKIE_SECURE", "false").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
     app.config.update(
-        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SECURE=cookie_secure,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        REMEMBER_COOKIE_SECURE=True,
+        REMEMBER_COOKIE_SECURE=cookie_secure,
         REMEMBER_COOKIE_HTTPONLY=True,
         REMEMBER_COOKIE_SAMESITE="Lax",
         REMEMBER_COOKIE_DURATION=timedelta(days=30),
@@ -104,4 +107,4 @@ app = create_app()
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run()
+    app.run(host="0.0.0.0",port=5000,debug=True)
