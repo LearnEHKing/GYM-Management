@@ -26,6 +26,30 @@ python dev_env.py create_admin.py
 python dev_env.py fake_data.py
 ```
 
+Use the same helper for Flask-Migrate commands. The `-m flask` tells Python to
+run the Flask CLI as a module, while `dev_env.py` supplies the local database
+and application environment:
+
+```powershell
+python dev_env.py -m flask --app main db current
+python dev_env.py -m flask --app main db history
+python dev_env.py -m flask --app main db migrate -m "describe the schema change"
+python dev_env.py -m flask --app main db upgrade
+```
+
+For a database that already existed before Flask-Migrate was added, initialize
+the migration repository once, generate the baseline, review it, and then mark
+the existing schema as current:
+
+```powershell
+python dev_env.py -m flask --app main db init
+python dev_env.py -m flask --app main db migrate -m "baseline existing schema"
+python dev_env.py -m flask --app main db stamp head
+```
+
+Do not run `stamp head` on a new empty database. For a new database, use
+`db upgrade` to create the schema from migrations.
+
 The helper sets variables only for the child process. Production must provide
 `APP_SECRET_KEY`, `ADMIN_USERNAME`, and `ADMIN_PASSWORD` from the deployment
 environment or a secret manager. `DEMO_PASSWORD` is required only when running

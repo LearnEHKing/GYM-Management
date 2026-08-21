@@ -4,6 +4,8 @@ Examples:
     python dev_env.py main.py
     python dev_env.py create_admin.py
     python dev_env.py fake_data.py
+    python dev_env.py -m flask --app main db current
+    python dev_env.py -m flask --app main db upgrade
 
 Production should provide these variables through its process manager or secret
 store instead of using this helper.
