@@ -1,3 +1,24 @@
+.settings-form select {
+	min-width: 0;
+	width: 100%;
+	border: 1px solid var(--cardborder);
+	border-radius: 10px;
+	background: var(--card2);
+	color: var(--white);
+	padding: 11px 38px 11px 11px;
+	font: inherit;
+	cursor: pointer;
+}
+
+.settings-form select:focus {
+	outline: 2px solid var(--blue);
+	outline-offset: 1px;
+}
+
+.settings-form select option {
+	background: var(--card2);
+	color: var(--white);
+}
 .plan-form input[name="edit_reason"] { grid-column: 1 / -1; border-color: rgba(59,130,246,.45); background: var(--card3); }
 .plan-row > form:not(.edit-plan) { display: grid; gap: 8px; min-width: 150px; }
 .plan-row > form:not(.edit-plan) input { width: 100%; border: 1px solid var(--cardborder); border-radius: 10px; background: var(--card2); color: var(--white); padding: 10px; font: inherit; }

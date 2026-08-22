@@ -176,7 +176,9 @@ class Member(db.Model):
 
     @property
     def is_trial(self):
-        return self.current_plan_id is None and self.membership_expiry is not None
+        return (self.current_plan_id is None and self.membership_start is not None
+            and self.membership_expiry is not None
+            and self.membership_expiry >= self.membership_start)
 
     membership_start = db.Column(db.Date)
     membership_expiry = db.Column(db.Date)

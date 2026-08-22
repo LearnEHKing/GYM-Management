@@ -3,11 +3,12 @@ import os
 import uuid
 
 from flask import Flask, g, jsonify, redirect, request, url_for
-from flask_login import LoginManager, current_user
+from flask_login import LoginManager, current_user, logout_user
 from flask_migrate import Migrate
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+import config
 from scheduler import init_scheduler, scheduler
 from models import GymOwner, db, local_today
 from config import required_env
@@ -26,6 +27,7 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
+    running_flask_cli = os.environ.get("FLASK_RUN_FROM_CLI") == "true"
     configure_logging()
     app.secret_key = required_env("APP_SECRET_KEY")
     app.config["SQLALCHEMY_DATABASE_URI"] = required_env("DATABASE_URL")
@@ -104,21 +106,24 @@ def create_app():
     def require_active_subscription():
         owner_endpoint = request.endpoint and request.endpoint.split(".", 1)[0]
         if (current_user.is_authenticated and owner_endpoint in {"members", "settings"}
-                and request.endpoint not in {"members.index", "members.plan_over"}
-                and (not current_user.payment_due_date or current_user.payment_due_date < local_today())):
+            and current_user.username != config.admin["username"]
+            and request.endpoint != "members.plan_over"
+            and (not current_user.payment_due_date or current_user.payment_due_date < local_today())):
+            logout_user()
             return redirect(url_for("members.plan_over"))
 
-    with app.app_context():
-        try:
-            db.session.execute(text("SELECT 1 FROM gym_owner LIMIT 1"))
-        except Exception as error:
-            db.session.rollback()
-            raise RuntimeError(
-                "Database schema is unavailable or not migrated. "
-                "Run 'flask --app main db upgrade' before starting the application."
-            ) from error
+    if not running_flask_cli:
+        with app.app_context():
+            try:
+                db.session.execute(text("SELECT 1 FROM gym_owner LIMIT 1"))
+            except Exception as error:
+                db.session.rollback()
+                raise RuntimeError(
+                    "Database schema is unavailable or not migrated. "
+                    "Run 'flask --app main db upgrade' before starting the application."
+                ) from error
 
-    init_scheduler(app)
+        init_scheduler(app)
     
     login_manager = LoginManager()
     login_manager.init_app(app)

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -140,18 +140,17 @@ def add_member():
         if not errors:
             try:
                 trial_days = int(current_user.trial_days)
-                if trial_days > 0:
-                    capacity_update = db.session.query(GymOwner).filter(
-                        GymOwner.id == current_user.id,
-                        GymOwner.active_member_count < int(owner_plan["member_allowed"]),
-                    ).update(
-                        {GymOwner.active_member_count: GymOwner.active_member_count + 1},
-                        synchronize_session=False,
-                    )
-                    if capacity_update != 1:
-                        db.session.rollback()
-                        errors["plan"] = "You have reached your plan's member limit. Please update your plan to add more members."
-                        return render_template("add_member.html", errors=errors, server_error=server_error)
+                capacity_update = db.session.query(GymOwner).filter(
+                    GymOwner.id == current_user.id,
+                    GymOwner.active_member_count < int(owner_plan["member_allowed"]),
+                ).update(
+                    {GymOwner.active_member_count: GymOwner.active_member_count + 1},
+                    synchronize_session=False,
+                )
+                if capacity_update != 1:
+                    db.session.rollback()
+                    errors["plan"] = "You have reached your plan's member limit. Please update your plan to add more members."
+                    return render_template("add_member.html", errors=errors, server_error=server_error)
                 member = Member(owner_id=current_user.id, name=name, phone=phone, send_membership_reminder=send_membership_reminder,address=address, join_date=join_date, notes=notes)
                 db.session.add(member)
                 db.session.flush()
@@ -166,10 +165,10 @@ def add_member():
                         expiry_date=member.membership_expiry, remarks="Trial membership",
                     ))
                 else:
-                    member.membership_start = None
-                    member.membership_expiry = None
-                    member.membership_active = False
-                new_member_count = member_count + (1 if trial_days > 0 else 0)
+                    member.membership_start = join_date
+                    member.membership_expiry = join_date - timedelta(days=1)
+                member.membership_active = True
+                new_member_count = member_count + 1
                 warning_threshold = int(owner_plan["member_allowed"]) - int(config.plan_delta_members_before_warning)
                 should_send_limit_warning = (new_member_count > warning_threshold and current_user.member_limit_warning_plan != current_user.owner_plan)
                 if should_send_limit_warning:
