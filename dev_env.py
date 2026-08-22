@@ -26,6 +26,16 @@ DEFAULTS = {
     "DATABASE_URL": "postgresql+psycopg://postgres:12345678@localhost:5432/repvaroDB", #will be changed in production
     "SESSION_COOKIE_SECURE": "false",
     "BACKUP_ENCRYPTION_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
+    "GOOGLE_DRIVE_UPLOAD_ENABLED": "false",
+    "GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON": "",
+    "GOOGLE_DRIVE_BACKUP_FOLDER_ID": "",
+    "WHATSAPP_ACCESS_TOKEN": "",
+    "WHATSAPP_PHONE_NUMBER_ID": "",
+    "WHATSAPP_GRAPH_API_VERSION": "v25.0",
+    "WHATSAPP_MESSAGE_MODE": "template",
+    "WHATSAPP_TEMPLATE_NAME": "",
+    "WHATSAPP_TEMPLATE_LANGUAGE": "en_US",
+    "WHATSAPP_TIMEOUT_SECONDS": "15",
 }
 
 

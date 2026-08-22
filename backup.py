@@ -10,6 +10,7 @@ from pathlib import Path
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy.engine import make_url
 from models import local_now
+from services.google_drive import upload_backup_bundle
 
 
 logger = logging.getLogger(__name__)
@@ -129,9 +130,13 @@ def create_backup():
     backup_file.with_suffix(backup_file.suffix + ".json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"
     )
+    uploaded_file_ids = upload_backup_bundle(backup_file)
     _cleanup_old_backups(backup_dir)
     _check_storage(backup_dir)
-    logger.info("Created encrypted PostgreSQL backup", extra={"backup": str(backup_file), "sha256": digest})
+    logger.info(
+        "Created encrypted PostgreSQL backup",
+        extra={"backup": str(backup_file), "sha256": digest, "google_drive_file_ids": uploaded_file_ids},
+    )
     return backup_file
 
 

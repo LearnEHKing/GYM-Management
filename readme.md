@@ -15,9 +15,35 @@ $env:BACKUP_ENCRYPTION_KEY = "generate-a-Fernet-key-and-store-it-in-a-secret-man
 $env:BACKUP_RESTORE_DATABASE_URL = "postgresql://restore_user:password@restore-db/gym_restore"
 $env:BACKUP_MAX_STORAGE_BYTES = "10737418240"
 $env:BACKUP_COMMAND_TIMEOUT_SECONDS = "1800"
+$env:GOOGLE_DRIVE_UPLOAD_ENABLED = "true"
+$env:GOOGLE_DRIVE_BACKUP_FOLDER_ID = "your-drive-folder-id"
+$env:GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON = '{"type":"service_account",...}'
+$env:WHATSAPP_ACCESS_TOKEN = "meta-system-user-access-token"
+$env:WHATSAPP_PHONE_NUMBER_ID = "meta-phone-number-id"
+$env:WHATSAPP_TEMPLATE_NAME = "approved_reminder_template"
+$env:WHATSAPP_TEMPLATE_LANGUAGE = "en_US"
 $env:SESSION_COOKIE_SECURE = "true"
 python main.py
 ```
+
+## Google Drive backups
+
+Set `GOOGLE_DRIVE_UPLOAD_ENABLED=true` to upload each encrypted backup, its
+checksum, and metadata sidecar to Drive. Create a dedicated service account,
+enable the Drive API, and share only the target backup folder with that service
+account as a Contributor. Store the entire downloaded service-account JSON in
+`GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`; do not commit it or write it to disk.
+
+## WhatsApp reminders
+
+Automatic reminders use the Meta WhatsApp Cloud API. Set
+`WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` from a Meta system user
+with `whatsapp_business_messaging` permission. The default
+`WHATSAPP_MESSAGE_MODE=template` requires an approved template whose body has
+one text variable (`{{1}}`); the application puts the rendered reminder in
+that variable. Use `WHATSAPP_MESSAGE_MODE=text` only for recipients inside an
+active customer-service window. `WHATSAPP_GRAPH_API_VERSION` defaults to
+`v25.0` and can be changed without code changes when Meta retires it.
 
 For development, use the helper to launch a command with local defaults:
 
