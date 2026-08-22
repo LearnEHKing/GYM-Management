@@ -8,13 +8,13 @@
     <a class="hero-action" href="{{ url_for('admin.add_gym') }}">+ Add gym</a>
   </section>
   <section class="stats-grid">
-    <article class="metric"><span>Total gyms</span><strong>{{ owners|length }}</strong></article>
+    <article class="metric"><span>Total gyms</span><strong>{{ owners_total }}</strong></article>
     <article class="metric"><span>Active subscriptions</span><strong>{{ active_subscriptions }}</strong></article>
     <article class="metric"><span>Total members</span><strong>{{ total_members }}</strong></article>
     <article class="metric"><span>This month's revenue</span><strong>₹{{ '{:,.0f}'.format(monthly_revenue) }}</strong></article>
   </section>
   <section class="panel table-panel">
-    <div class="panel-title"><div><p class="eyebrow">Directory</p><h2>All gyms</h2></div><span id="gym-count">{{ owners|length }} total</span></div>
+    <div class="panel-title"><div><p class="eyebrow">Directory</p><h2>All gyms</h2></div><span id="gym-count">{{ owners_total }} total</span></div>
     <label class="search-box"><span>⌕</span><input id="gym-search" type="search" placeholder="Search by gym, username, or phone" autofocus></label>
     <div class="table-scroll"><table><thead><tr><th>Gym</th><th>Contact</th><th>Subscription</th><th>Due date</th><th></th></tr></thead>
       <tbody id="gym-list">{% for owner in owners %}<tr class="gym-row" data-search="{{ owner.name|lower }} {{ owner.username|lower }} {{ owner.phone }}">
@@ -24,6 +24,7 @@
         <td>{{ owner.payment_due_date.strftime('%d %b %Y') if owner.payment_due_date else 'Not set' }}</td><td><a class="text-button" href="{{ url_for('admin.gym_details', gym_id=owner.id) }}">Open →</a></td>
       </tr>{% else %}<tr><td colspan="5" class="empty">No gyms yet. Add your first gym to get started.</td></tr>{% endfor %}</tbody>
     </table></div>
+    {% if owner_pagination.pages > 1 %}<nav aria-label="Gym pages">{% if owner_pagination.has_prev %}<a href="{{ url_for('admin.admin', page=owner_pagination.prev_num) }}">Previous</a>{% endif %} <span>Page {{ owner_pagination.page }} of {{ owner_pagination.pages }}</span> {% if owner_pagination.has_next %}<a href="{{ url_for('admin.admin', page=owner_pagination.next_num) }}">Next</a>{% endif %}</nav>{% endif %}
   </section>
 </main>
 {% endblock %}

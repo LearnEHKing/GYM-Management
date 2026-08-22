@@ -208,9 +208,9 @@ def edit_member(member_id):
                 db.session.commit()
                 flash("Member updated successfully!", "success")
                 return redirect(url_for("members.member_details", member_id=member.id))
-            except Exception as error:
-                print(error)
+            except SQLAlchemyError as error:
                 db.session.rollback()
+                report_unexpected_error(error, "members.edit_member")
                 server_error = True
     return render_template("edit_member.html", member=member, errors=errors, server_error=server_error)
 
@@ -222,8 +222,12 @@ def attendance():
     today = local_today()
     yesterday = today - relativedelta(days=1)
     now = local_now()
-
-    members = Member.query.filter_by(owner_id=current_user.id).all()
+    page = request.args.get("page", 1, type=int)
+    member_pagination = Member.query.filter_by(owner_id=current_user.id).order_by(
+        Member.membership_active.desc(), Member.name
+    ).paginate(page=page, per_page=100, error_out=False)
+    members = member_pagination.items
+    member_ids = [member.id for member in members]
     # Attendance remains available after expiry. Only explicitly removed
     # members are excluded from member actions.
     attendance_enabled_ids = {member.id for member in members if member.membership_active}
@@ -231,6 +235,7 @@ def attendance():
         record.member_id: record
         for record in Attendance.query.join(Member).filter(
             Member.owner_id == current_user.id,
+            Attendance.member_id.in_(member_ids),
             Attendance.attendance_date == today,
         ).all()
     }
@@ -238,6 +243,7 @@ def attendance():
         record.member_id: record
         for record in Attendance.query.join(Member).filter(
             Member.owner_id == current_user.id,
+            Attendance.member_id.in_(member_ids),
             Attendance.attendance_date == yesterday,
         ).all()
     }
@@ -270,6 +276,7 @@ def attendance():
         today=today,
         attendance_enabled_ids=attendance_enabled_ids,
         active_unchecked=sum(m.id in attendance_enabled_ids and m.id not in today_attendance for m in members),
+        member_pagination=member_pagination,
         active_page="attendance",
     )
 
@@ -472,11 +479,15 @@ def reports():
 @members_bp.route("/members")
 @login_required
 def members():
-    members = Member.query.filter_by(owner_id=current_user.id).order_by(
+    page = request.args.get("page", 1, type=int)
+    member_pagination = Member.query.filter_by(owner_id=current_user.id).order_by(
         Member.membership_active.desc(),
         Member.name
-    ).all()
-    return render_template("members.html", members=members, active_page="members")
+    ).paginate(page=page, per_page=100, error_out=False)
+    return render_template(
+        "members.html", members=member_pagination.items,
+        member_pagination=member_pagination, active_page="members"
+    )
 
 
 @members_bp.route("/members/<int:member_id>")
@@ -589,9 +600,9 @@ def toggle_membership_active_status(member_id):
             status = "rejoined"
         db.session.commit()
         flash(f"{member.name} has been {status}.", "success")
-    except Exception as error:
-        print(error)
+    except SQLAlchemyError as error:
         db.session.rollback()
+        report_unexpected_error(error, "members.toggle_membership_active_status")
         flash("Could not update the account membership status.", "error")
     return redirect(url_for("members.member_details", member_id=member.id))
 
@@ -611,9 +622,9 @@ def permanently_delete_member(member_id):
         db.session.delete(member)
         db.session.commit()
         flash(f"{member_name} and all of their information were permanently deleted.", "success")
-    except Exception as error:
-        print(error)
+    except SQLAlchemyError as error:
         db.session.rollback()
+        report_unexpected_error(error, "members.permanently_delete_member")
         flash("Could not permanently delete this member.", "error")
     return redirect(url_for("members.members"))
 
@@ -651,9 +662,9 @@ def edit_membership(membership_id):
     except ValueError:
         db.session.rollback()
         flash("Choose a valid membership plan and provide an edit reason (3 to 500 characters).", "error")
-    except Exception as error:
-        print(error)
+    except SQLAlchemyError as error:
         db.session.rollback()
+        report_unexpected_error(error, "members.edit_membership")
         flash("Could not update the payment history.", "error")
     return redirect(url_for("members.member_details", member_id=member.id))
 
@@ -685,8 +696,9 @@ def add_membership(member_id):
                 db.session.commit()
                 flash("Payment recorded successfully.", "success")
                 return redirect(url_for("members.member_details", member_id=member.id))
-            except Exception:
+            except SQLAlchemyError as error:
                 db.session.rollback()
+                report_unexpected_error(error, "members.add_membership")
                 return render_template("payment.html", member=member, plans=plans, errors=errors, server_error=True)
     return render_template("payment.html", member=member, plans=plans, errors=errors, server_error=False)
 
@@ -711,8 +723,8 @@ def delete_membership(membership_id):
     except ValueError:
         db.session.rollback()
         flash("A deletion reason of 3 to 500 characters is required.", "error")
-    except Exception as error:
-        print(error)
+    except SQLAlchemyError as error:
         db.session.rollback()
+        report_unexpected_error(error, "members.delete_membership")
         flash("Could not delete membership.", "error")
     return redirect(url_for("members.member_details", member_id=member.id))

@@ -44,8 +44,8 @@ def update_profile():
         phone = normalize_phone(phone)
     except ValueError:
         phone = ""
-    if not name or not phone:
-        flash("Gym name and phone number are required.", "error")
+    if not name:
+        flash("Gym name is required.", "error")
     elif not phone:
         flash("Enter a valid Indian mobile number.", "error")
     else:

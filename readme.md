@@ -14,6 +14,7 @@ $env:TRUSTED_PROXY_HOPS = "1"
 $env:BACKUP_ENCRYPTION_KEY = "generate-a-Fernet-key-and-store-it-in-a-secret-manager"
 $env:BACKUP_RESTORE_DATABASE_URL = "postgresql://restore_user:password@restore-db/gym_restore"
 $env:BACKUP_MAX_STORAGE_BYTES = "10737418240"
+$env:BACKUP_COMMAND_TIMEOUT_SECONDS = "1800"
 $env:SESSION_COOKIE_SECURE = "true"
 python main.py
 ```
@@ -55,7 +56,10 @@ The helper sets variables only for the child process. Production must provide
 environment or a secret manager. `DEMO_PASSWORD` is required only when running
 `fake_data.py`.
 
-The application requires `DATABASE_URL` and creates missing tables at startup.
+The application requires `DATABASE_URL`. It does **not** create or upgrade
+tables at startup: production releases must run `flask --app main db upgrade`
+before starting application workers. Startup refuses to serve a database whose
+Alembic revision is not at the repository head.
 
 Database migrations use Flask-Migrate. After installing dependencies, initialize
 the migration repository once with `flask --app main db init`, then generate and

@@ -30,6 +30,14 @@
     </a>
     {% endfor %}
 
+    {% if member_pagination.pages > 1 %}
+    <nav aria-label="Member pages">
+      {% if member_pagination.has_prev %}<a href="{{ url_for('members.members', page=member_pagination.prev_num) }}">Previous</a>{% endif %}
+      <span>Page {{ member_pagination.page }} of {{ member_pagination.pages }}</span>
+      {% if member_pagination.has_next %}<a href="{{ url_for('members.members', page=member_pagination.next_num) }}">Next</a>{% endif %}
+    </nav>
+    {% endif %}
+
 
 
 

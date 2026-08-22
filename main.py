@@ -2,8 +2,9 @@ from datetime import date, timedelta
 import os
 import uuid
 
-from flask import Flask, g, jsonify, redirect, request, url_for
-from flask_login import LoginManager, current_user, logout_user
+from alembic.script import ScriptDirectory
+from flask import Flask, abort, g, jsonify, redirect, request, url_for
+from flask_login import LoginManager, current_user, login_required, logout_user
 from flask_migrate import Migrate
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -73,12 +74,20 @@ def create_app():
         response.headers["X-Request-ID"] = g.request_id
         return response
 
+    def require_platform_admin():
+        if not current_user.is_authenticated or current_user.username != config.admin["username"]:
+            abort(403)
+
     @app.get("/health")
+    @login_required
     def health():
+        require_platform_admin()
         return jsonify({"status": "ok"})
 
     @app.get("/ready")
+    @login_required
     def ready():
+        require_platform_admin()
         try:
             db.session.execute(text("SELECT 1"))
             if not scheduler.running:
@@ -89,7 +98,9 @@ def create_app():
         return jsonify({"status": "ready"})
 
     @app.get("/metrics")
+    @login_required
     def metrics():
+        require_platform_admin()
         return jsonify(metrics_snapshot())
 
     @app.errorhandler(500)
@@ -116,10 +127,20 @@ def create_app():
         with app.app_context():
             try:
                 db.session.execute(text("SELECT 1 FROM gym_owner LIMIT 1"))
+                migration_config = migrate.get_config()
+                expected_revisions = set(ScriptDirectory.from_config(migration_config).get_heads())
+                applied_revisions = set(
+                    db.session.execute(text("SELECT version_num FROM alembic_version")).scalars()
+                )
+                if applied_revisions != expected_revisions:
+                    raise RuntimeError(
+                        f"Database migrations are not current (applied: {sorted(applied_revisions)}, "
+                        f"expected: {sorted(expected_revisions)})."
+                    )
             except Exception as error:
                 db.session.rollback()
                 raise RuntimeError(
-                    "Database schema is unavailable or not migrated. "
+                    "Database schema is unavailable or migrations are not current. "
                     "Run 'flask --app main db upgrade' before starting the application."
                 ) from error
 

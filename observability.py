@@ -9,6 +9,7 @@ from flask import g, has_request_context
 
 
 logger = logging.getLogger("gym_management")
+_sentry_initialized = False
 _metrics_lock = threading.Lock()
 _metrics = {
     "requests_total": 0,
@@ -34,12 +35,20 @@ class JsonFormatter(logging.Formatter):
 
 
 def configure_logging():
+    global _sentry_initialized
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter())
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
     logger.addHandler(handler)
     logger.propagate = False
+    if not _sentry_initialized and os.environ.get("SENTRY_DSN"):
+        try:
+            sentry_sdk = importlib.import_module("sentry_sdk")
+            sentry_sdk.init(dsn=os.environ["SENTRY_DSN"], traces_sample_rate=0.0)
+            _sentry_initialized = True
+        except ImportError:
+            logger.warning("Sentry is not installed; unexpected errors will only be logged.")
 
 
 def begin_request():
@@ -71,11 +80,10 @@ def metrics_snapshot():
 
 def report_unexpected_error(error, context):
     logger.exception("Unexpected application error", extra={"context": context})
-    if not os.environ.get("SENTRY_DSN"):
+    if not _sentry_initialized:
         return
     try:
         sentry_sdk = importlib.import_module("sentry_sdk")
-        sentry_sdk.init(dsn=os.environ["SENTRY_DSN"], traces_sample_rate=0.0)
         sentry_sdk.capture_exception(error)
     except ImportError:
-        logger.warning("Sentry is not installed; unexpected error was only logged.")
+        return

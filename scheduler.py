@@ -13,8 +13,9 @@ from jobs import (
     
 )
 from observability import report_unexpected_error
+from models import INDIA_TIMEZONE
 
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone=INDIA_TIMEZONE)
 app = None
 logger = logging.getLogger("gym_management.scheduler")
 
@@ -154,10 +155,7 @@ def _run_job(job_name, function):
 
 def restore_drill_job():
     with app.app_context():
-        try:
-            restore_drill()
-        except (OSError, RuntimeError) as error:
-            report_unexpected_error(error, "scheduler.restore_drill")
+        _run_job("restore_drill", restore_drill)
 
 def shutdown_scheduler():
     """Stops the scheduler gracefully."""

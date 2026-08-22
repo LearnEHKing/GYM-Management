@@ -47,13 +47,17 @@ def admin():
     require_admin()
     today = local_today()
     month_start = today.replace(day=1)
-    owners = GymOwner.query.order_by(GymOwner.name.asc()).all()
+    page = request.args.get("page", 1, type=int)
+    owner_pagination = GymOwner.query.order_by(GymOwner.name.asc()).paginate(
+        page=page, per_page=100, error_out=False
+    )
     active_subscriptions = GymOwner.query.filter(GymOwner.payment_due_date >= today).count()
     total_members = db.session.query(func.count(Member.id)).scalar() or 0
     monthly_revenue = db.session.query(func.sum(OwnerPayment.amount)).filter(
         OwnerPayment.payment_date >= month_start, OwnerPayment.payment_date <= today
     ).scalar() or 0
-    return render_template("admin.html", active_page="admin_gyms", owners=owners, today=today,
+    return render_template("admin.html", active_page="admin_gyms", owners=owner_pagination.items,
+                           owner_pagination=owner_pagination, owners_total=owner_pagination.total, today=today,
                            active_subscriptions=active_subscriptions, total_members=total_members,
                            monthly_revenue=monthly_revenue)
 
@@ -100,8 +104,14 @@ def gym_details(gym_id):
 @login_required
 def payments():
     require_admin()
-    owner_payments = OwnerPayment.query.order_by(OwnerPayment.payment_date.desc(), OwnerPayment.id.desc()).all()
-    return render_template("admin_payments.html", active_page="admin_payments", owner_payments=owner_payments)
+    page = request.args.get("page", 1, type=int)
+    payment_pagination = OwnerPayment.query.order_by(
+        OwnerPayment.payment_date.desc(), OwnerPayment.id.desc()
+    ).paginate(page=page, per_page=100, error_out=False)
+    return render_template(
+        "admin_payments.html", active_page="admin_payments",
+        owner_payments=payment_pagination.items, payment_pagination=payment_pagination
+    )
 
 
 @admin_bp.route("/admin/settings", methods=["GET", "POST"])
@@ -252,7 +262,11 @@ def create_owner_payment():
         latest_payment = OwnerPayment.query.filter_by(owner_id=owner.id).order_by(
             OwnerPayment.payment_date.desc(), OwnerPayment.id.desc()
         ).first()
-        subscription_start_date = payment_date
+        # Preserve unused paid time when an owner renews before expiry.
+        subscription_start_date = max(
+            payment_date,
+            owner.payment_due_date + timedelta(days=1),
+        ) if owner.payment_due_date else payment_date
         if payment_type == "upgrade":
             current_plan = config.plan.get(owner.owner_plan)
             if (not current_plan or not owner.payment_due_date or owner.payment_due_date < payment_date
