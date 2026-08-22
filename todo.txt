@@ -4,7 +4,7 @@ DONE:
 
 
 TODO:
-
+- backup.py:107-127: Restore-drill decryption and encoding errors are not caught by the scheduler wrapper.
 
 
 
@@ -59,7 +59,8 @@ Scenario: An administrator records a payment dated next month, activating or ext
 Fix:
 Reason: Future payment are valid in my Business
 
-
+admin.py:291-312: Editing an owner payment date does not update subscription_start_date, but subscription expiry is recalculated from that stale field.
+Reason : The subscription updation updates, it doesn't add or changes last subscription date.
 
 
 
@@ -107,3 +108,11 @@ Fix: Add stronger policy, MFA, session invalidation, and audited account recover
 - Medium | Accessibility
 base.html:8 disables user zoom. Reports use canvases without equivalent tabular summaries. Several controls rely on symbols and color.
 Fix: Allow zoom, add accessible labels, keyboard states, reduced-motion support, and textual report data.
+
+- members.py:22-37: Invalid phone numbers that fail normalization are retained and only checked for +91 plus length, allowing malformed numbers into the database.
+Reason: Whatsapp willcheck it automaticall , we dont need it rn.
+
+
+
+
+

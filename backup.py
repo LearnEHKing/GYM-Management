@@ -7,7 +7,7 @@ import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy.engine import make_url
 from models import local_now
 
@@ -118,11 +118,18 @@ def restore_drill():
         raise RuntimeError("No encrypted backup is available for the restore drill.")
     backup_file = backups[0]
     checksum = hashlib.sha256(backup_file.read_bytes()).hexdigest()
-    expected = backup_file.with_suffix(backup_file.suffix + ".sha256").read_text(encoding="ascii").split()[0]
+    try:
+        expected = backup_file.with_suffix(backup_file.suffix + ".sha256").read_text(encoding="ascii").split()[0]
+    except (IndexError, UnicodeDecodeError) as error:
+        raise RuntimeError(f"Backup checksum file is invalid for {backup_file.name}.") from error
     if checksum != expected:
         raise RuntimeError(f"Checksum verification failed for {backup_file.name}.")
     with tempfile.TemporaryDirectory() as temporary_dir:
         dump_file = Path(temporary_dir) / "restore-check.dump"
-        dump_file.write_bytes(_encryption_key().decrypt(backup_file.read_bytes()))
+        try:
+            decrypted_dump = _encryption_key().decrypt(backup_file.read_bytes())
+        except InvalidToken as error:
+            raise RuntimeError(f"Backup decryption failed for {backup_file.name}.") from error
+        dump_file.write_bytes(decrypted_dump)
         _run(["pg_restore", "--clean", "--if-exists", "--exit-on-error", "--no-owner", "--dbname", restore_url, str(dump_file)])
     logger.info("Completed PostgreSQL backup restore drill", extra={"backup": str(backup_file)})
